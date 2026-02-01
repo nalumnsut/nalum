@@ -58,9 +58,14 @@
     @apply bg-background text-foreground;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   }
-  
+
   /* Prevent font swap layout shift */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-display: swap;
   }
 
@@ -115,27 +120,47 @@
   }
 
   @keyframes blinkTwice {
-    0%, 100% { border-color: rgb(59 130 246); }
-    25%, 75% { border-color: rgb(147 197 253); }
-    50% { border-color: rgb(59 130 246); }
+
+    0%,
+    100% {
+      border-color: rgb(59 130 246);
+    }
+
+    25%,
+    75% {
+      border-color: rgb(147 197 253);
+    }
+
+    50% {
+      border-color: rgb(59 130 246);
+    }
   }
 
   /* Mobile-safe viewport height utilities */
   .h-screen-safe {
-    height: 100vh; /* Fallback */
-    height: 100dvh; /* Dynamic viewport height */
-    height: calc(var(--vh, 1vh) * 100); /* Custom property fallback */
+    height: 100vh;
+    /* Fallback */
+    height: 100dvh;
+    /* Dynamic viewport height */
+    height: calc(var(--vh, 1vh) * 100);
+    /* Custom property fallback */
   }
 
   .min-h-screen-safe {
-    min-height: 100vh; /* Fallback */
-    min-height: 100dvh; /* Dynamic viewport height */
-    min-height: calc(var(--vh, 1vh) * 100); /* Custom property fallback */
+    min-height: 100vh;
+    /* Fallback */
+    min-height: 100dvh;
+    /* Dynamic viewport height */
+    min-height: calc(var(--vh, 1vh) * 100);
+    /* Custom property fallback */
   }
 
   .max-h-screen-safe {
-    max-height: 100vh; /* Fallback */
-    max-height: 100dvh; /* Dynamic viewport height */
-    max-height: calc(var(--vh, 1vh) * 100); /* Custom property fallback */
+    max-height: 100vh;
+    /* Fallback */
+    max-height: 100dvh;
+    /* Dynamic viewport height */
+    max-height: calc(var(--vh, 1vh) * 100);
+    /* Custom property fallback */
   }
 }

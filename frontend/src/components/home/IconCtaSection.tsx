@@ -1,30 +1,26 @@
 import { Link } from 'react-router-dom';
-import { Calendar, Users, Megaphone, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const IconCtaSection = () => {
   const ctaItems = [
     {
-      icon: Calendar,
       text: "Attend an Event",
-      description: "Join upcoming reunions, workshops, and campus celebrations",
+      description: "Join upcoming reunions, workshops, and campus celebrations designed to reconnect alumni and inspire students.",
       link: "/events/attend",
-      gradient: "from-nsut-maroon to-red-800",
-      bgColor: "bg-red-50",
-      hoverColor: "group-hover:bg-red-100"
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAP44Rre0Bvf4TVu2s1qNcTFyXwjNOCfnTglA0qGluSCEn4vE1teJn6LccEH1Ono_w3i1ei-TKcj4GpCVWvCjZqVXZygUn7UBG3Zy6YFV9QuMkCiTD8MUQjpAbniRVuR_JlxzA6FJq_hAGLe558ybOUt-rNmZA_kZiuOxPtNe7qQuUmaaNVd6hLmhKXUuR-c94I50DX2OOHJDY8QtETDCm7tZrb2o3E9CrghBClCcu25N7oTbxwH0XIW2v4Q6NGffFC3HWhcvW-_m3b",
+      overlayColor: "bg-nsut-maroon/10"
     },
     {
-      icon: Users,
       text: "Explore Communities",
-      description: "Connect with fellow alumni who share your interests",
+      description: "Connect with fellow alumni who share your interests through exclusive professional networks and social clubs.",
       link: "/communities/explore",
-      gradient: "from-nsut-yellow to-amber-500",
-      bgColor: "bg-amber-50",
-      hoverColor: "group-hover:bg-amber-100"
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBWmF5t4TWzBg2ul-4Z2X5Pq_TstQmMVJ8wlYkV7Ep_jsleFgltI99MxhffPgLZjK_4bAX8bsIQo62szdA4Y0xJajYcWQo59ce86qJUPBU_9q4IByE3IP6qhxNt4oGozbhZ-ho4uW-fNjPSOIIHj0qzlv9Eg3HfykPsqYKAy1cnPPXldz9abW9WSuhgd_Sug-Er9SOMi7l_7PDJkDE8V9CV21Qm5ln_xuoSbVmBFCf73jAxiZE6Zaj8MLVaX7b6ssc3wKV5eGGW8VrA",
+      overlayColor: "bg-yellow-500/10"
     },
   ];
 
   return (
-    <div className="relative bg-gradient-to-b from-white via-nsut-beige/30 to-white py-12 md:py-20">
+    <div className="relative bg-gradient-to-b from-white via-gray-50 to-white py-12 md:py-20">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
@@ -34,56 +30,49 @@ const IconCtaSection = () => {
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section header */}
-        <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-2xl md:text-4xl font-serif font-bold text-gray-900 mb-3">
+        <div className="text-center mb-12 md:mb-16">
+          <h2 className="text-2xl md:text-5xl font-serif font-bold text-gray-900 mb-4 tracking-tight">
             Get Involved
           </h2>
-          <p className="text-gray-600 text-base md:text-lg max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-600 font-medium max-w-2xl mx-auto">
             Stay connected and make an impact in the NSUT community
           </p>
         </div>
 
         {/* CTA Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto">
           {ctaItems.map((item, index) => (
-            <Link
-              to={item.link}
+            <div
               key={index}
-              className="group relative block"
+              className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col sm:flex-row border border-gray-100 h-full"
             >
-              <div className={`relative overflow-hidden rounded-2xl ${item.bgColor} ${item.hoverColor} border-2 border-transparent hover:border-gray-200 transition-all duration-500 h-full`}>
-                {/* Gradient overlay on hover */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
-
-                <div className="relative p-8">
-                  {/* Icon container with animation */}
-                  <div className="mb-6">
-                    <div className={`inline-flex p-4 rounded-xl bg-gradient-to-br ${item.gradient} transform transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg group-hover:shadow-2xl`}>
-                      <item.icon className="h-8 w-8 text-white" strokeWidth={2} />
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <h3 className="font-serif text-2xl font-bold text-gray-900 mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-nsut-maroon group-hover:to-red-700 transition-all duration-300">
-                    {item.text}
-                  </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed mb-4">
-                    {item.description}
-                  </p>
-
-                  {/* Arrow indicator */}
-                  <div className="flex items-center text-nsut-maroon font-semibold text-sm group-hover:gap-2 transition-all duration-300">
-                    <span>Learn more</span>
-                    <ArrowRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform duration-300" />
-                  </div>
-                </div>
-
-                {/* Decorative corner element */}
-                <div className="absolute top-0 right-0 w-20 h-20 transform translate-x-10 -translate-y-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  <div className={`w-full h-full rounded-full bg-gradient-to-br ${item.gradient} blur-xl`} />
-                </div>
+              {/* Image Container */}
+              <div className="w-full sm:w-2/5 h-64 sm:h-auto relative overflow-hidden">
+                <img
+                  src={item.image}
+                  alt={item.text}
+                  className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className={`absolute inset-0 ${item.overlayColor} group-hover:bg-transparent transition-colors duration-300`} />
               </div>
-            </Link>
+
+              {/* Content Container */}
+              <div className="w-full sm:w-3/5 p-8 flex flex-col justify-center relative">
+                <h3 className="font-serif text-2xl font-bold text-gray-900 mb-3">
+                  {item.text}
+                </h3>
+                <p className="text-gray-600 mb-8 leading-relaxed">
+                  {item.description}
+                </p>
+                <Link
+                  to={item.link}
+                  className="inline-flex items-center text-nsut-maroon font-semibold hover:text-red-700 transition-colors group/link"
+                >
+                  Learn more
+                  <ArrowRight className="ml-1 h-5 w-5 transform group-hover/link:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </div>
           ))}
         </div>
       </div>

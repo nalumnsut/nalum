@@ -22,7 +22,7 @@ const Header = ({ setHeaderHeight }) => {
       "Learning",
       "Alumni Directory",
     ],
-    Giving:[],
+    Giving: [],
     Stories: ["Notable Alumni", "Alumni Stories", "Giving Stories", "Campus News"],
   };
 
@@ -188,8 +188,8 @@ const Header = ({ setHeaderHeight }) => {
             {/* Header with Logo */}
             <div className="sticky top-0 bg-white border-b-2 border-nsut-maroon p-4 shadow-lg z-10">
               <div className="flex items-center justify-between mb-3">
-                <Link 
-                  to="/" 
+                <Link
+                  to="/"
                   className="flex items-center gap-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -216,11 +216,11 @@ const Header = ({ setHeaderHeight }) => {
                   <X size={24} />
                 </button>
               </div>
-              
+
               {/* Quick Action Buttons */}
               <div className="flex gap-2">
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className="flex-1 bg-white text-nsut-maroon font-semibold py-2 px-3 rounded-lg text-sm hover:shadow-lg hover:scale-105 transition-all duration-300 text-center"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -273,11 +273,11 @@ const Header = ({ setHeaderHeight }) => {
                   )}
                 </div>
               ))}
-              
+
               {/* About Link */}
               <div className="pt-4 border-t border-gray-200">
-                <Link 
-                  to="/about" 
+                <Link
+                  to="/about"
                   className="block py-3 px-4 text-gray-700 hover:bg-gradient-to-r hover:from-nsut-beige hover:to-transparent hover:text-nsut-maroon font-medium rounded-lg transition-all duration-200"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >

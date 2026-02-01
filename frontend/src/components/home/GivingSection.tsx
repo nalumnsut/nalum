@@ -1,38 +1,30 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { GraduationCap, BookOpen, Heart, Microscope, Building2, ArrowRight } from 'lucide-react';
 
 interface GivingCardProps {
   title: string;
   description: string;
-  icon: React.ElementType;
+  image: string;
   index: number;
 }
 
-const GivingCard = ({ title, description, icon: Icon, index }: GivingCardProps) => (
-  <div className="group">
-    <div className="relative bg-white rounded-xl border-2 border-gray-100 hover:border-nsut-maroon/30 transition-all duration-300 overflow-hidden h-full">
-      {/* Accent line */}
-      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-nsut-maroon to-nsut-yellow transform scale-y-0 group-hover:scale-y-100 transition-transform duration-300 origin-top" />
-
-      <div className="p-6 pl-8">
-        {/* Icon */}
-        <div className="mb-4">
-          <div className="inline-flex p-3 rounded-lg bg-gradient-to-br from-nsut-maroon/10 to-nsut-yellow/10 group-hover:from-nsut-maroon/20 group-hover:to-nsut-yellow/20 transition-all duration-300">
-            <Icon className="h-6 w-6 text-nsut-maroon" strokeWidth={2} />
-          </div>
-        </div>
-
-        {/* Content */}
-        <h3 className="font-serif text-xl font-bold text-gray-900 mb-2 group-hover:text-nsut-maroon transition-colors duration-300">
-          {title}
-        </h3>
-        <p className="text-gray-600 text-sm leading-relaxed">
-          {description}
-        </p>
-
-        {/* Hover indicator */}
-      </div>
+const GivingCard = ({ title, description, image, index }: GivingCardProps) => (
+  <div className="group rounded-xl overflow-hidden border border-gray-200 hover:border-nsut-maroon transition-colors duration-300 flex flex-col bg-white h-full">
+    <div className="h-56 overflow-hidden relative">
+      <div className="absolute inset-0 bg-nsut-maroon/10 group-hover:bg-nsut-maroon/0 transition-colors duration-300 z-10" />
+      <img
+        src={image}
+        alt={title}
+        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+      />
+    </div>
+    <div className="p-8 flex-1 flex flex-col bg-gray-50">
+      <h3 className="text-xl font-serif font-bold text-gray-900 mb-3 group-hover:text-nsut-maroon transition-colors">
+        {title}
+      </h3>
+      <p className="text-gray-600 text-sm leading-relaxed flex-1">
+        {description}
+      </p>
     </div>
   </div>
 );
@@ -41,28 +33,28 @@ const GivingSection = () => {
   const givingCategories = [
     {
       title: "NSUT Annual Fund",
-      description: "Support the university's most pressing needs and emerging opportunities",
-      icon: Heart
+      description: "Support the university's most pressing needs and emerging opportunities through flexible funding that impacts every student.",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAeOxmDQpmqo0g9mdNkIKKgRO7CmUQbplVgSjEzlpwHrXhvqYuf1BESuF2kvom3J4DmyMBQLEfPv539Kwf3J3c7mUnMtG5BqUMDBlsYu7nkCc9SThjWy_8iKEdvvBqitArNbRompifEpdcgGvFAbr9DO3mVx31g8jZEc6RuuhVxA_szvoa7KmStSixLR9VrfIaQ51QCiekfrJLCaTLb4k0JnSX7_2ihaGxHagRC81OItcfo6N0S435q-zkfjbas9ecWq7wkR3A_lzAb"
     },
     {
       title: "Scholarships & Aid",
-      description: "Help deserving students access quality education regardless of financial constraints",
-      icon: GraduationCap
+      description: "Help deserving students access quality education regardless of financial constraints through merit and need-based aid.",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCkmHg1-cSY2fh0kWDWypMJLC3az5EmOq09ude6OsfEAzdJcVnHd4KbjPgKaq9jkJadPgquIriPDEJaClFsWEe2ibHfKdT8GiuJ1euv2GuD05oTXVODS0PU4BQicjhnoDmSAvl29VZ9PZpqAmebwU_KTSdXKj6jlDXpV1oyNEcdpufxubSEd_X9oP54-T3d9tPc1RaulXHhnfVhjPKeKfAf4TUZqh998_q6sjOVhGXVTY4CB1_FvQaSQXzXwLuWIyycwhuNRSkYqjdd"
     },
     {
       title: "Research & Innovation",
-      description: "Fund groundbreaking research and technological advancements",
-      icon: Microscope
+      description: "Fund groundbreaking research and technological advancements that solve real-world problems and drive progress.",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBVPb0lGBQTzpQSG5nRJxRM9kX0Y3rgdJqnrMjZQHDso1GYddMA4VSgB47fQ25Y65UYHBnQeElWVQNm2-4CmzytQzn0vOq3CK6zPFIud3XDFdTxsx1ehWZAgMf-cRBz0YisYrHC3pmlaZ9IWAZ1GRi28Pk7bloXd3E7mdnVWVzjxy7WYqIfrYtDwy17x-S_3I4R3iVhmnHD8cGMtstOmahEWHuzUj76auD4mduiyY0Elr0BwE-12HXAyR-VEhnbsU1-eRG7-KfMJ8hB"
     },
     {
       title: "Infrastructure",
-      description: "Contribute to building world-class facilities and campus development",
-      icon: Building2
+      description: "Contribute to building world-class facilities and campus development that inspire learning and collaboration.",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDmj1sv-oCLJjBSV_6BV9Brz-YF7qXF_KEHSv3RQlmqDOjDUIzAHFfGCQlI_XguqkWBck53vgkEUe0wbaqXX6bxSkNHTpbkQkGwjEn8weDR0RrFroEWeYnoIG_oKsbTqq3sw83JQf1IkjB7QYC5Cp1qefIQTtlpyihMq1afYFSGYJVvZGyjX91tIQUM46vkpSaHMGPys1AOQYd3QoWotvXVKQo8kxsFtvADdmJsJ0iRZ9GglJ0AlIPNt-JHGGClMAR77aHOXOC8hybS"
     },
     {
       title: "Academic Programs",
-      description: "Enhance curriculum, faculty development, and learning resources",
-      icon: BookOpen
+      description: "Enhance curriculum, faculty development, and learning resources to maintain academic excellence.",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDhRRtuxK1FsDbzIYqzj9_CcpR7kij66wUqx1-IyO3tt8LjudEV-yHNLATPbxsrpjGP4-FnftvID1ucaHSpJx7sOuP_gBqoueQqEN49Ilm3xs36QapLNJJgEkRdFTl8qcrCtrs9hoyy0K4v-mvp_QrM-6RSWXsoLaHLMx0P56s1RCmuaU31795rJeDc6MempeXLMjvf2-U39GUOwNBse7h1Oca_uLceyaRLd0yGtfUMB3mzONqecXPLZJ1Vz_rHY-zPKbD9NTDyi9bN"
     },
   ];
 
@@ -101,7 +93,7 @@ const GivingSection = () => {
               key={index}
               title={category.title}
               description={category.description}
-              icon={category.icon}
+              image={category.image}
               index={index}
             />
           ))}
@@ -113,7 +105,7 @@ const GivingSection = () => {
             <Button
               asChild
               size="lg"
-              className="bg-nsut-maroon hover:bg-nsut-maroon/90 text-white font-semibold px-8"
+              className="bg-nsut-maroon hover:bg-nsut-maroon/90 text-white font-semibold px-8 h-14"
             >
               <Link to="/login">
                 Start Giving Today
