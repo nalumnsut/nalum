@@ -173,11 +173,70 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
     // New notification received
     socket.on('notification', (notification: Notification) => {
-      setNotifications(prev => [notification, ...prev]);
-      // Increment unread count if the notification is unread
-      if (!notification.read) {
-        setUnreadCount(prev => prev + 1);
-      }
+      setNotifications(prev => {
+        // Check if this notification ID already exists (backend updated existing one)
+        const existingIndex = prev.findIndex(n => n.id === notification.id);
+        
+        if (existingIndex !== -1) {
+          // This is an update to existing notification - replace it and move to top
+          const newList = [...prev];
+          newList.splice(existingIndex, 1); // Remove old version
+          return [notification, ...newList]; // Add updated version at top
+        }
+        
+        // For new message notifications, also check by conversation
+        if (notification.type === 'new_message' && (notification as any).metadata?.conversationId) {
+          const conversationId = (notification as any).metadata.conversationId;
+          
+          // Find existing notification from same conversation (different ID)
+          const convIndex = prev.findIndex(n => 
+            n.type === 'new_message' && 
+            (n as any).metadata?.conversationId === conversationId &&
+            !n.read // Only replace unread ones
+          );
+
+          if (convIndex !== -1) {
+            // Replace existing conversation notification with new one
+            const newList = [...prev];
+            const oldNotif = newList[convIndex];
+            newList.splice(convIndex, 1); // Remove old one
+            
+            // If old one was unread, don't increment count (it's a replacement)
+            if (!oldNotif.read && !notification.read) {
+              // Don't change unread count - just replacing
+              return [notification, ...newList];
+            }
+          }
+        }
+        
+        // Completely new notification - add to top and increment count
+        return [notification, ...prev];
+      });
+      
+      // Only increment unread count for truly NEW notifications
+      // (not updates/replacements - those are handled above)
+      setUnreadCount(prev => {
+        const existing = notifications.find(n => n.id === notification.id);
+        if (existing) {
+          // This is an update, not a new notification
+          return prev;
+        }
+        // Check if we're replacing a conversation notification
+        if (notification.type === 'new_message' && (notification as any).metadata?.conversationId) {
+          const conversationId = (notification as any).metadata.conversationId;
+          const hasExisting = notifications.some(n => 
+            n.type === 'new_message' && 
+            (n as any).metadata?.conversationId === conversationId &&
+            !n.read
+          );
+          if (hasExisting) {
+            // Replacing existing, don't increment
+            return prev;
+          }
+        }
+        // Truly new notification
+        return notification.read ? prev : prev + 1;
+      });
     });
 
     // Badge count update

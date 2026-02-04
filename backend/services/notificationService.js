@@ -63,21 +63,61 @@ class NotificationService {
         console.log('🌙 DND ACTIVE - Notification queued but may be delayed');
       }
 
-      // Create notification document
-      const notification = await Notification.create({
-        recipient: recipientId,
-        sender: senderId,
-        type,
-        title,
-        message,
-        actionUrl,
-        relatedEntity,
-        priority,
-        metadata,
-        expiresAt: this.getExpiryDate(type),
-      });
+      // For message notifications, update existing one from same conversation instead of creating duplicate
+      let notification;
+      if (type === 'new_message' && metadata.conversationId) {
+        console.log('🔍 Checking for existing message notification from this conversation...');
+        const existingNotification = await Notification.findOne({
+          recipient: recipientId,
+          type: 'new_message',
+          'metadata.conversationId': metadata.conversationId,
+          read: false, // Only update unread notifications
+        }).sort({ createdAt: -1 }); // Get the most recent one
 
-      console.log('✅ Notification Document Created - ID:', notification._id);
+        if (existingNotification) {
+          console.log('♻️  Found existing notification, updating instead of creating new');
+          console.log('   Existing ID:', existingNotification._id);
+          
+          // Update the existing notification with new message
+          existingNotification.message = message;
+          existingNotification.metadata = metadata;
+          existingNotification.createdAt = new Date(); // Update timestamp to move to top
+          existingNotification.priority = priority;
+          await existingNotification.save();
+          notification = existingNotification;
+          console.log('✅ Notification Updated - ID:', notification._id);
+        } else {
+          console.log('   No existing unread notification found, creating new one');
+          notification = await Notification.create({
+            recipient: recipientId,
+            sender: senderId,
+            type,
+            title,
+            message,
+            actionUrl,
+            relatedEntity,
+            priority,
+            metadata,
+            expiresAt: this.getExpiryDate(type),
+          });
+          console.log('✅ Notification Document Created - ID:', notification._id);
+        }
+      } else {
+        // For non-message notifications, always create new
+        notification = await Notification.create({
+          recipient: recipientId,
+          sender: senderId,
+          type,
+          title,
+          message,
+          actionUrl,
+          relatedEntity,
+          priority,
+          metadata,
+          expiresAt: this.getExpiryDate(type),
+        });
+        console.log('✅ Notification Document Created - ID:', notification._id);
+      }
 
       // Send via different channels
       const deliveryStatus = {};

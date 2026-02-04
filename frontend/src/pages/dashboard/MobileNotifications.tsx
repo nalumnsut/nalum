@@ -207,17 +207,17 @@ const MobileNotifications = () => {
             <div className="flex items-center justify-center h-64">
               <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
             </div>
-          ) : notifications.length === 0 ? (
+          ) : notifications.filter(n => !n.read).length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400 px-4">
               <Inbox className="h-16 w-16 mb-4 opacity-30" />
-              <p className="text-lg font-medium text-gray-300">No notifications yet</p>
+              <p className="text-lg font-medium text-gray-300">No notifications</p>
               <p className="text-sm text-gray-500 text-center mt-2">
-                You'll see notifications here when you receive connection requests, messages, or updates.
+                You're all caught up! You'll see notifications here when you receive connection requests, messages, or updates.
               </p>
             </div>
           ) : (
             <div className="divide-y divide-white/5">
-              {notifications.map((notification) => (
+              {notifications.filter(n => !n.read).map((notification) => (
                 <div key={notification.id} className="px-4">
                   <NotificationItem notification={notification} onClose={() => {}} />
                 </div>
