@@ -55,6 +55,10 @@ async function compressSingleFile(file, options, req, res) {
   const compressedFilename = `${parsedPath.name}.${format}`;
   const compressedPath = path.join(parsedPath.dir, compressedFilename);
 
+  // If the file is already in the target format, use a temp file to avoid same file error
+  const isSameFormat = parsedPath.ext.toLowerCase() === `.${format}`;
+  const tempPath = isSameFormat ? path.join(parsedPath.dir, `temp-${Date.now()}-${parsedPath.name}.${format}`) : compressedPath;
+
   try {
     console.log(`[ImageCompression] Starting compression for: ${file.filename}`);
     const startTime = Date.now();
@@ -96,16 +100,22 @@ async function compressSingleFile(file, options, req, res) {
         transformer = transformer.webp({ quality });
     }
 
-    // Save compressed image
-    await transformer.toFile(compressedPath);
+    // Save compressed image to temp path first if same format
+    await transformer.toFile(tempPath);
+
+    // If we used a temp file, rename it to the final path and delete original
+    if (isSameFormat) {
+      fs.unlinkSync(originalPath);
+      fs.renameSync(tempPath, compressedPath);
+    } else {
+      // Different format, just delete the original
+      fs.unlinkSync(originalPath);
+    }
 
     // Get compressed file size
     const compressedStats = fs.statSync(compressedPath);
     const compressedSize = compressedStats.size;
     const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(2);
-
-    // Delete original file
-    fs.unlinkSync(originalPath);
 
     // Update file object with new compressed file info
     file.filename = compressedFilename;
@@ -123,10 +133,19 @@ async function compressSingleFile(file, options, req, res) {
   } catch (error) {
     console.error("[ImageCompression] Compression failed:", error);
     
+    // Clean up temp file if it was created
+    if (isSameFormat && fs.existsSync(tempPath)) {
+      try {
+        fs.unlinkSync(tempPath);
+      } catch (cleanupError) {
+        console.error("[ImageCompression] Temp file cleanup error:", cleanupError);
+      }
+    }
+    
     // If compression fails, try to keep the original file
     if (fs.existsSync(originalPath)) {
       // Clean up compressed file if it was partially created
-      if (fs.existsSync(compressedPath)) {
+      if (!isSameFormat && fs.existsSync(compressedPath)) {
         try {
           fs.unlinkSync(compressedPath);
         } catch (cleanupError) {

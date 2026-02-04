@@ -26,7 +26,10 @@ exports.createPost = async (req, res) => {
       });
     }
 
-    if (user.role !== "alumni" || !user.verified_alumni) {
+    // Allow admins and verified alumni to create posts
+    if (user.role === "admin") {
+      // Admins can always create posts - continue to post creation
+    } else if (user.role !== "alumni" || !user.verified_alumni) {
       return res.status(403).json({
         success: false,
         message: "Only verified alumni can create posts",
@@ -35,9 +38,8 @@ exports.createPost = async (req, res) => {
 
     const { title, content } = req.body;
     const images = req.files ? req.files.map((file) => file.filename) : [];
-
-    // Check if posts should be auto-approved
-    const autoApprove = await shouldAutoApprove();
+    // Admin posts are always auto-approved
+    const autoApprove = user.role === "admin" ? true : await shouldAutoApprove();
 
     const post = await Post.create({
       title,

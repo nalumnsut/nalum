@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { FileText, RefreshCw, Search, Filter, Edit, Trash2 } from "lucide-react";
+import { FileText, RefreshCw, Search, Filter, Edit, Trash2, PlusCircle } from "lucide-react";
 import api from "../../lib/api";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import { toast } from "sonner";
 import PostCardAdmin, { Post } from "../../components/posts/PostCardAdmin";
+import AdminCreatePostModal from "../../components/posts/AdminCreatePostModal";
 
 const CurrentPosts = () => {
   const location = useLocation();
@@ -22,6 +23,9 @@ const CurrentPosts = () => {
   const [approvalMode, setApprovalMode] = useState(0); // 0=Manual, 1=Auto
   const [togglingApproval, setTogglingApproval] = useState(false);
   const [highlightPostId, setHighlightPostId] = useState<string | null>(null);
+
+  // Create Post Modal
+  const [createPostModalOpen, setCreatePostModalOpen] = useState(false);
 
   // Edit Dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -252,6 +256,14 @@ const CurrentPosts = () => {
             </div>
 
             <Button
+              onClick={() => setCreatePostModalOpen(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+            >
+              <PlusCircle size={18} />
+              Create Post
+            </Button>
+
+            <Button
               onClick={fetchPosts}
               disabled={isLoading}
               className="flex items-center gap-2"
@@ -432,6 +444,13 @@ const CurrentPosts = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Create Post Modal */}
+        <AdminCreatePostModal
+          open={createPostModalOpen}
+          onClose={() => setCreatePostModalOpen(false)}
+          onPostCreated={fetchPosts}
+        />
       </div>
     </AdminLayout>
   );
