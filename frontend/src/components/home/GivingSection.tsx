@@ -1,125 +1,106 @@
+import { Heart, Briefcase, Award, MessageSquare, BookOpen, ArrowRight, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-
-interface GivingCardProps {
-  title: string;
-  description: string;
-  image: string;
-  index: number;
-}
-
-const GivingCard = ({ title, description, image, index }: GivingCardProps) => (
-  <div className="group rounded-xl overflow-hidden border border-gray-200 hover:border-nsut-maroon transition-colors duration-300 flex flex-col bg-white h-full">
-    <div className="h-56 overflow-hidden relative">
-      <div className="absolute inset-0 bg-nsut-maroon/10 group-hover:bg-nsut-maroon/0 transition-colors duration-300 z-10" />
-      <img
-        src={image}
-        alt={title}
-        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-      />
-    </div>
-    <div className="p-8 flex-1 flex flex-col bg-gray-50">
-      <h3 className="text-xl font-serif font-bold text-gray-900 mb-3 group-hover:text-nsut-maroon transition-colors">
-        {title}
-      </h3>
-      <p className="text-gray-600 text-sm leading-relaxed flex-1">
-        {description}
-      </p>
-    </div>
-  </div>
-);
 
 const GivingSection = () => {
-  const givingCategories = [
+  const contributionTypes = [
     {
-      title: "NSUT Annual Fund",
-      description: "Support the university's most pressing needs and emerging opportunities through flexible funding that impacts every student.",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAeOxmDQpmqo0g9mdNkIKKgRO7CmUQbplVgSjEzlpwHrXhvqYuf1BESuF2kvom3J4DmyMBQLEfPv539Kwf3J3c7mUnMtG5BqUMDBlsYu7nkCc9SThjWy_8iKEdvvBqitArNbRompifEpdcgGvFAbr9DO3mVx31g8jZEc6RuuhVxA_szvoa7KmStSixLR9VrfIaQ51QCiekfrJLCaTLb4k0JnSX7_2ihaGxHagRC81OItcfo6N0S435q-zkfjbas9ecWq7wkR3A_lzAb"
+      icon: Briefcase,
+      title: 'Internship Opportunities',
+      description: 'Provide structured internships offering real-world exposure and professional experience.',
+      color: 'from-blue-500 to-blue-600'
     },
     {
-      title: "Scholarships & Aid",
-      description: "Help deserving students access quality education regardless of financial constraints through merit and need-based aid.",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCkmHg1-cSY2fh0kWDWypMJLC3az5EmOq09ude6OsfEAzdJcVnHd4KbjPgKaq9jkJadPgquIriPDEJaClFsWEe2ibHfKdT8GiuJ1euv2GuD05oTXVODS0PU4BQicjhnoDmSAvl29VZ9PZpqAmebwU_KTSdXKj6jlDXpV1oyNEcdpufxubSEd_X9oP54-T3d9tPc1RaulXHhnfVhjPKeKfAf4TUZqh998_q6sjOVhGXVTY4CB1_FvQaSQXzXwLuWIyycwhuNRSkYqjdd"
+      icon: Award,
+      title: 'Scholarship & Financial Support',
+      description: 'Support talented students facing financial constraints through scholarships.',
+      color: 'from-purple-500 to-purple-600'
     },
     {
-      title: "Research & Innovation",
-      description: "Fund groundbreaking research and technological advancements that solve real-world problems and drive progress.",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBVPb0lGBQTzpQSG5nRJxRM9kX0Y3rgdJqnrMjZQHDso1GYddMA4VSgB47fQ25Y65UYHBnQeElWVQNm2-4CmzytQzn0vOq3CK6zPFIud3XDFdTxsx1ehWZAgMf-cRBz0YisYrHC3pmlaZ9IWAZ1GRi28Pk7bloXd3E7mdnVWVzjxy7WYqIfrYtDwy17x-S_3I4R3iVhmnHD8cGMtstOmahEWHuzUj76auD4mduiyY0Elr0BwE-12HXAyR-VEhnbsU1-eRG7-KfMJ8hB"
+      icon: MessageSquare,
+      title: 'Mentorship & Career Guidance',
+      description: 'Guide students through mentoring, sharing career insights and life lessons.',
+      color: 'from-amber-500 to-amber-600'
     },
     {
-      title: "Infrastructure",
-      description: "Contribute to building world-class facilities and campus development that inspire learning and collaboration.",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDmj1sv-oCLJjBSV_6BV9Brz-YF7qXF_KEHSv3RQlmqDOjDUIzAHFfGCQlI_XguqkWBck53vgkEUe0wbaqXX6bxSkNHTpbkQkGwjEn8weDR0RrFroEWeYnoIG_oKsbTqq3sw83JQf1IkjB7QYC5Cp1qefIQTtlpyihMq1afYFSGYJVvZGyjX91tIQUM46vkpSaHMGPys1AOQYd3QoWotvXVKQo8kxsFtvADdmJsJ0iRZ9GglJ0AlIPNt-JHGGClMAR77aHOXOC8hybS"
-    },
-    {
-      title: "Academic Programs",
-      description: "Enhance curriculum, faculty development, and learning resources to maintain academic excellence.",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDhRRtuxK1FsDbzIYqzj9_CcpR7kij66wUqx1-IyO3tt8LjudEV-yHNLATPbxsrpjGP4-FnftvID1ucaHSpJx7sOuP_gBqoueQqEN49Ilm3xs36QapLNJJgEkRdFTl8qcrCtrs9hoyy0K4v-mvp_QrM-6RSWXsoLaHLMx0P56s1RCmuaU31795rJeDc6MempeXLMjvf2-U39GUOwNBse7h1Oca_uLceyaRLd0yGtfUMB3mzONqecXPLZJ1Vz_rHY-zPKbD9NTDyi9bN"
-    },
+      icon: BookOpen,
+      title: 'Academic & Institutional Support',
+      description: 'Deliver guest lectures, workshops, and support research initiatives.',
+      color: 'from-green-500 to-green-600'
+    }
   ];
 
   return (
-    <div className="relative py-12 md:py-20 bg-gradient-to-b from-gray-50 to-white">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-5">
+    <section className="relative py-16 md:py-24 bg-gradient-to-br from-nsut-maroon via-red-900 to-nsut-maroon text-white overflow-hidden">
+      {/* Background pattern - lighter opacity for dark background */}
+      <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23FFD700' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }} />
       </div>
 
-      {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-nsut-maroon to-transparent opacity-20" />
+      {/* Decorative gradient accents */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-nsut-yellow/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-nsut-yellow/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto max-w-7xl px-4 relative z-10">
         {/* Header */}
-        <div className="text-center mb-12 max-w-3xl mx-auto">
-          <div className="inline-block mb-3">
-            <span className="text-nsut-maroon text-xs md:text-sm font-semibold tracking-wider uppercase">
-              Give Back
-            </span>
+        <div className="text-center mb-10">
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <Heart className="w-10 h-10 text-nsut-yellow" />
+            <h2 className="font-serif text-4xl md:text-5xl font-bold">
+              Giving Back to NSUT
+            </h2>
           </div>
-          <h2 className="text-2xl md:text-4xl font-serif font-bold text-gray-900 mb-4">
-            Make a Difference
-          </h2>
-          <p className="text-base md:text-lg text-gray-600 leading-relaxed">
-            Support NSUT students and faculty in various ways, from funding scholarships to advancing critical research and infrastructure development.
+          <p className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed text-white/90">
+            Sustaining Excellence Through Alumni Contributions. Help sustain a supportive ecosystem where knowledge, opportunity, and values are passed from one generation to the next.
           </p>
         </div>
 
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          {givingCategories.map((category, index) => (
-            <GivingCard
+        {/* Contribution Types Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+          {contributionTypes.map((type, index) => (
+            <div
               key={index}
-              title={category.title}
-              description={category.description}
-              image={category.image}
-              index={index}
-            />
+              className="group bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20 hover:bg-white/15 transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className={`w-12 h-12 bg-gradient-to-br ${type.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                <type.icon className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="font-serif text-lg font-bold text-nsut-yellow mb-2">
+                {type.title}
+              </h3>
+              <p className="text-white/80 text-sm leading-relaxed">
+                {type.description}
+              </p>
+            </div>
           ))}
         </div>
 
-        {/* CTA Section */}
-        <div className="text-center">
-          <div className="inline-flex flex-col sm:flex-row gap-4 items-center">
-            <Button
-              asChild
-              size="lg"
-              className="bg-nsut-maroon hover:bg-nsut-maroon/90 text-white font-semibold px-8 h-14"
-            >
-              <Link to="/login">
-                Start Giving Today
-              </Link>
-            </Button>
-          </div>
-
-          {/* Trust indicator */}
-          <p className="mt-6 text-sm text-gray-500">
-            Your contribution is tax-deductible and goes directly to supporting NSUT's mission
-          </p>
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <Link
+            to="/login"
+            className="group bg-nsut-yellow hover:bg-nsut-yellow/90 text-nsut-maroon px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
+          >
+            <Lock className="w-5 h-5" />
+            Login to Start Giving
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </Link>
+          <Link
+            to="/giving"
+            className="group bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-2 border-white/30 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105"
+          >
+            Learn More
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
+
+        {/* Trust indicator */}
+        <p className="mt-6 text-sm text-white/70 text-center">
+          Your contribution is tax-deductible and goes directly to supporting NSUT's mission
+        </p>
       </div>
-    </div>
+    </section>
   );
 };
 

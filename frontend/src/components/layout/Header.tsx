@@ -22,6 +22,7 @@ const Header = ({ setHeaderHeight }) => {
       "Learning",
       "Alumni Directory",
     ],
+    Events: [],
     Giving: [],
     Stories: ["Notable Alumni", "Alumni Stories", "Giving Stories", "Campus News"],
   };
@@ -127,10 +128,10 @@ const Header = ({ setHeaderHeight }) => {
             {/* Nav Links */}
             <div className="hidden md:flex items-center space-x-8">
               {Object.entries(navLinks).map(([title, sublinks], index) => (
-                title === "Giving" ? (
+                (title === "Giving" || title === "Events") ? (
                   <Link
                     key={title}
-                    to="/giving"
+                    to={`/${title.toLowerCase()}`}
                     className="font-serif relative text-gray-800 transition-colors duration-300 hover:text-nsut-maroon after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-0.5 after:bg-gradient-to-r after:from-nsut-maroon after:to-nsut-yellow after:transition-all after:duration-400 after:ease-out after:rounded-sm hover:after:w-full"
                   >
                     <span className="relative">{title}</span>
@@ -240,9 +241,9 @@ const Header = ({ setHeaderHeight }) => {
             <nav className="p-4 space-y-1">
               {Object.entries(navLinks).map(([title, sublinks]) => (
                 <div key={title} className="mb-4">
-                  {title === "Giving" && sublinks.length === 0 ? (
+                  {(title === "Giving" || title === "Events") && sublinks.length === 0 ? (
                     <Link
-                      to="/giving"
+                      to={`/${title.toLowerCase()}`}
                       className="block py-3 px-4 font-serif text-base font-semibold text-nsut-maroon bg-gradient-to-r from-amber-50 to-transparent rounded-lg hover:from-amber-100 transition-all duration-200"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
