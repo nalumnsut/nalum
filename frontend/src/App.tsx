@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,6 +7,8 @@ import { NotificationProvider } from "@/context/NotificationContext";
 import { startKeepAlive, stopKeepAlive } from "@/lib/keepAlive";
 import { AppRoutes } from "@/routes";
 import { AuthErrorHandler, SessionLoadingScreen } from "@/components/app/AppComponents";
+import { LoadingAnimation } from "@/components/LoadingAnimation";
+import { useLocation } from "react-router-dom";
 
 // Create QueryClient instance outside component to avoid recreating on each render
 const queryClient = new QueryClient({
@@ -21,6 +23,8 @@ const queryClient = new QueryClient({
 // App Content with Session Check
 function AppContent() {
   const { isRestoringSession } = useAuth();
+  const location = useLocation();
+  const [showIntro, setShowIntro] = useState(location.pathname === "/");
 
   if (isRestoringSession) {
     return <SessionLoadingScreen />;
@@ -29,6 +33,9 @@ function AppContent() {
   return (
     <>
       <AuthErrorHandler />
+      {showIntro && (
+        <LoadingAnimation onAnimationComplete={() => setShowIntro(false)} />
+      )}
       <TooltipProvider>
         <AppRoutes />
         <Toaster />

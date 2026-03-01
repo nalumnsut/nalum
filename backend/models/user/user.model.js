@@ -14,18 +14,18 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       validate: {
-        validator: function(v) {
+        validator: function (v) {
           // Basic email validation
           if (!/^\S+@\S+\.\S+$/.test(v)) return false;
-          
+
           // If role is student, email must end with @nsut.ac.in
           if (this.role === "student" && !v.endsWith("@nsut.ac.in")) {
             return false;
           }
-          
+
           return true;
         },
-        message: function(props) {
+        message: function (props) {
           if (props.instance.role === "student") {
             return "Student email must end with @nsut.ac.in";
           }
@@ -58,7 +58,7 @@ const userSchema = new mongoose.Schema(
     // Only applicable for alumni - students and admins don't have this field
     verified_alumni: {
       type: Boolean,
-      default: function() {
+      default: function () {
         // Only alumni need this field
         return this.role === "alumni" ? false : true;
       },
@@ -80,18 +80,18 @@ const userSchema = new mongoose.Schema(
 );
 
 // Method to check if student email verification has expired (30 days)
-userSchema.methods.isStudentVerificationExpired = function() {
+userSchema.methods.isStudentVerificationExpired = function () {
   if (this.role !== "student") return false;
   if (!this.email_verified || !this.email_verified_at) return true;
-  
+
   const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 180);
+
   return this.email_verified_at < thirtyDaysAgo;
 };
 
 // Method to check if user needs alumni verification
-userSchema.methods.needsAlumniVerification = function() {
+userSchema.methods.needsAlumniVerification = function () {
   // Only alumni need verification
   if (this.role !== "alumni") return false;
   return !this.verified_alumni;

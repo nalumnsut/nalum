@@ -8,6 +8,7 @@ import AlumniDirectorySection from '@/components/home/AlumniDirectorySection';
 import NotableAlumniSection from '@/components/home/NotableAlumniSection';
 import AlumniMap from "@/components/home/AlumniMap";
 
+
 const HomePage = () => {
   return (
     <main>
@@ -19,7 +20,7 @@ const HomePage = () => {
       <AlumniDirectorySection />
       <NewsSection />
       <AlumniMap />
-      <BenefitsSection />
+
       <GivingSection />
     </main>
   );

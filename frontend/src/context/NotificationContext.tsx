@@ -49,13 +49,13 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       });
 
       // Transform _id to id for consistency with socket notifications
-      const transformedNotifications = response.data.data.notifications.map((n: any) => ({
+      const transformedNotifications = (response.data?.data?.notifications || []).map((n: any) => ({
         ...n,
         id: n._id || n.id,
       }));
 
       setNotifications(transformedNotifications);
-      
+
       // Also fetch unread count
       const countResponse = await api.get('/notifications/unread-count');
       setUnreadCount(countResponse.data.count);
@@ -112,17 +112,17 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Find the notification being deleted
       const notification = notifications.find(n => n.id === notificationId);
-      
+
       // If notification doesn't exist locally, it's already been removed
       if (!notification) {
         console.log('Notification already removed from local state:', notificationId);
         return;
       }
-      
+
       // If it's a message notification and we want to delete all from same sender
       if (deleteAllFromSameSender && notification?.type === 'new_message' && notification.sender?._id) {
         const senderId = notification.sender._id;
-        
+
         // Get all message notification IDs from this sender
         const notificationIdsToDelete = notifications
           .filter(n => n.type === 'new_message' && n.sender?._id === senderId)
@@ -130,7 +130,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
         // Delete all of them from backend (silently ignore 404s)
         await Promise.allSettled(
-          notificationIdsToDelete.map(id => 
+          notificationIdsToDelete.map(id =>
             api.delete(`/notifications/${id}`).catch(err => {
               if (err.response?.status === 404) {
                 console.log(`Notification ${id} already deleted on server`);
@@ -142,7 +142,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         );
 
         // Update local state - remove all message notifications from this sender
-        setNotifications(prev => prev.filter(n => 
+        setNotifications(prev => prev.filter(n =>
           !(n.type === 'new_message' && n.sender?._id === senderId)
         ));
       } else {
@@ -176,21 +176,21 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       setNotifications(prev => {
         // Check if this notification ID already exists (backend updated existing one)
         const existingIndex = prev.findIndex(n => n.id === notification.id);
-        
+
         if (existingIndex !== -1) {
           // This is an update to existing notification - replace it and move to top
           const newList = [...prev];
           newList.splice(existingIndex, 1); // Remove old version
           return [notification, ...newList]; // Add updated version at top
         }
-        
+
         // For new message notifications, also check by conversation
         if (notification.type === 'new_message' && (notification as any).metadata?.conversationId) {
           const conversationId = (notification as any).metadata.conversationId;
-          
+
           // Find existing notification from same conversation (different ID)
-          const convIndex = prev.findIndex(n => 
-            n.type === 'new_message' && 
+          const convIndex = prev.findIndex(n =>
+            n.type === 'new_message' &&
             (n as any).metadata?.conversationId === conversationId &&
             !n.read // Only replace unread ones
           );
@@ -200,7 +200,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             const newList = [...prev];
             const oldNotif = newList[convIndex];
             newList.splice(convIndex, 1); // Remove old one
-            
+
             // If old one was unread, don't increment count (it's a replacement)
             if (!oldNotif.read && !notification.read) {
               // Don't change unread count - just replacing
@@ -208,11 +208,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         }
-        
+
         // Completely new notification - add to top and increment count
         return [notification, ...prev];
       });
-      
+
       // Only increment unread count for truly NEW notifications
       // (not updates/replacements - those are handled above)
       setUnreadCount(prev => {
@@ -224,8 +224,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         // Check if we're replacing a conversation notification
         if (notification.type === 'new_message' && (notification as any).metadata?.conversationId) {
           const conversationId = (notification as any).metadata.conversationId;
-          const hasExisting = notifications.some(n => 
-            n.type === 'new_message' && 
+          const hasExisting = notifications.some(n =>
+            n.type === 'new_message' &&
             (n as any).metadata?.conversationId === conversationId &&
             !n.read
           );
