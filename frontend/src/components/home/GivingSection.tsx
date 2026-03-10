@@ -61,19 +61,23 @@ const GivingSection = () => {
       <div className="rounded-2xl bg-gradient-to-br from-gray-700 via-gray-800 to-gray-700 p-6 mb-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {contributionTypes.map((type, index) => (
-            <div
-              key={index}
-              className="group bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20 hover:bg-white/15 transition-all duration-300 hover:-translate-y-1"
-            >
-              <div className={`w-12 h-12 bg-gradient-to-br ${type.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                <type.icon className="w-6 h-6 text-white" />
+            <div key={index}>
+              <div className="flex items-start gap-4 md:gap-6 py-5 md:py-6">
+                <span className="text-nsut-yellow/40 font-serif text-4xl md:text-5xl font-bold leading-none select-none shrink-0 w-10 md:w-14 text-right">
+                  {index + 1}
+                </span>
+                <div className="pt-1">
+                  <h3 className="font-serif text-lg md:text-xl font-bold text-white mb-1">
+                    {type.title}
+                  </h3>
+                  <p className="text-white/70 text-sm md:text-base leading-relaxed">
+                    {type.description}
+                  </p>
+                </div>
               </div>
-              <h3 className="font-serif text-lg font-bold text-nsut-yellow mb-2">
-                {type.title}
-              </h3>
-              <p className="text-white/80 text-sm leading-relaxed">
-                {type.description}
-              </p>
+              {index < contributionTypes.length - 1 && (
+                <hr className="border-nsut-yellow/20 ml-14 md:ml-20" />
+              )}
             </div>
           ))}
         </div>

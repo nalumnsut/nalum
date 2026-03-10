@@ -57,7 +57,7 @@ const IconCtaSection = () => {
               </div>
 
               {/* Content Container */}
-              <div className="w-full sm:w-3/5 p-8 flex flex-col justify-center relative">
+              <div className="w-full sm:w-3/5 p-5 md:p-8 flex flex-col justify-center relative">
                 <h3 className="font-serif text-2xl font-bold text-gray-900 mb-3">
                   {item.text}
                 </h3>

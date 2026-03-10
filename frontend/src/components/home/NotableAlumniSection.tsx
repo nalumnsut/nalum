@@ -119,14 +119,14 @@ const AlumniCard = ({ alumni, index }: { alumni: AlumniProfile; index: number })
 
             {/* Mobile View */}
             <div className="lg:hidden max-w-md mx-auto mb-8 bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="relative w-full">
+                <div className="relative w-full bg-gray-50">
                     {!imageLoaded && (
                         <div className={`absolute inset-0 bg-gradient-to-br ${alumni.gradientFrom} ${alumni.gradientTo} opacity-20 animate-pulse`} />
                     )}
                     <img
                         src={getImagePath()}
                         alt={alumni.name}
-                        className="w-full h-48 object-cover"
+                        className="w-full h-72 object-contain"
                         onLoad={() => setImageLoaded(true)}
                         loading={index < 2 ? "eager" : "lazy"}
                     />

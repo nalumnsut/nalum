@@ -34,7 +34,7 @@ const NewsCard = ({ article }: { article: NewsArticle }) => {
         {/* Accent line - change color if completed */}
         <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${isCompleted ? 'from-gray-400 to-gray-200' : 'from-nsut-maroon to-nsut-yellow'} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
 
-        <div className="p-8 flex-grow flex flex-col">
+        <div className="p-5 md:p-8 flex-grow flex flex-col">
 
           {/* Content */}
           <h3 className={`font-serif text-2xl font-bold ${isCompleted ? 'text-gray-600' : 'text-gray-900'} mb-3 group-hover:text-nsut-maroon transition-colors duration-300`}>

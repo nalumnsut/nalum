@@ -38,7 +38,7 @@ const ExploreLoginCta = () => {
                 className="group/pill flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 md:px-6 py-2 md:py-3 shadow-md hover:shadow-lg hover:border-nsut-yellow/50 transition-all duration-300 hover:-translate-y-1"
               >
                 <feature.icon className="w-4 h-4 md:w-5 md:h-5 text-nsut-maroon group-hover/pill:scale-110 transition-transform duration-300" />
-                <span className="text-sm md:text-base font-medium text-gray-700 whitespace-nowrap">
+                <span className="text-sm md:text-base font-medium text-gray-700">
                   {feature.text}
                 </span>
               </div>
@@ -49,11 +49,11 @@ const ExploreLoginCta = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animation-delay-800 animate-fade-in">
             <Link
               to="/login"
-              className="group/btn relative inline-flex items-center gap-3 bg-gradient-to-r from-nsut-maroon to-[#800000] hover:from-[#800000] hover:to-nsut-maroon text-white px-8 md:px-10 py-4 md:py-5 rounded-xl font-bold text-lg md:text-xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden hover:scale-105"
+              className="group/btn relative inline-flex items-center gap-2 md:gap-3 bg-gradient-to-r from-nsut-maroon to-[#800000] hover:from-[#800000] hover:to-nsut-maroon text-white px-6 md:px-10 py-3 md:py-5 rounded-xl font-bold text-base md:text-xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden hover:scale-105"
             >
               {/* Shimmer effect */}
               <div className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-              
+
               <LogIn className="w-6 h-6 group-hover/btn:rotate-12 transition-transform duration-300" />
               <span className="relative">Login to Explore</span>
               <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform duration-300" />
@@ -61,7 +61,7 @@ const ExploreLoginCta = () => {
 
             <Link
               to="/signup"
-              className="group/btn inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-nsut-maroon border-2 border-nsut-maroon hover:border-[#800000] px-8 md:px-10 py-4 md:py-5 rounded-xl font-bold text-lg md:text-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              className="group/btn inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-nsut-maroon border-2 border-nsut-maroon hover:border-[#800000] px-6 md:px-10 py-3 md:py-5 rounded-xl font-bold text-base md:text-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
               <span>Create Account</span>
               <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform duration-300" />

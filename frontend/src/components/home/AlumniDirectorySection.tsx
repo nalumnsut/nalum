@@ -23,25 +23,30 @@ const AlumniDirectorySection = () => {
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-nsut-yellow/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
 
             <div className="container mx-auto max-w-7xl px-4 relative z-10">
-                <div className="flex items-center gap-4 mb-6">
-                    <Users className="w-12 h-12 text-nsut-yellow" />
-                    <h2 className="font-serif text-5xl md:text-6xl font-bold">
+                <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
+                    <Users className="w-8 h-8 md:w-12 md:h-12 text-nsut-yellow" />
+                    <h2 className="font-serif text-3xl md:text-6xl font-bold">
                         Alumni Directory
                     </h2>
                 </div>
-                <p className="text-xl md:text-2xl max-w-5xl leading-relaxed text-white/95">
+                <p className="text-lg md:text-2xl max-w-5xl leading-relaxed text-white/95">
                     Connect with NSUT Alumni Worldwide
                 </p>
-                <p className="text-lg max-w-5xl mt-4 leading-relaxed text-white/90">
+                <p className="text-base md:text-lg max-w-5xl mt-4 leading-relaxed text-white/90">
                     The NSUT Alumni Directory is your gateway to connecting with fellow NSUTians across the globe. Discover alumni working at leading organizations, find mentors, explore career opportunities, and strengthen the bonds of our vibrant community.
                 </p>
 
-                {/* Stats Bar */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12">
+                {/* Stats — inline strip with vertical dividers */}
+                <div className="flex flex-wrap items-center gap-y-4 mt-12">
                     {stats.map((stat, index) => (
-                        <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20 hover:bg-white/15 transition-all duration-300">
-                            <div className="text-3xl md:text-4xl font-bold text-nsut-yellow mb-1">{stat.number}</div>
-                            <div className="text-sm md:text-base text-white/90">{stat.label}</div>
+                        <div key={index} className="flex items-center">
+                            <div className="text-center px-3 md:px-6 py-2">
+                                <div className="text-xl md:text-3xl font-bold text-nsut-yellow">{stat.number}</div>
+                                <div className="text-xs md:text-sm text-white/70 mt-0.5">{stat.label}</div>
+                            </div>
+                            {index < stats.length - 1 && (
+                                <div className="hidden sm:block w-px h-12 bg-nsut-yellow/30" />
+                            )}
                         </div>
                     ))}
                 </div>

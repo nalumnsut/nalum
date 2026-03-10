@@ -186,7 +186,7 @@ const CounterCard = ({ label, value, suffix }: { label: string; value: number; s
 
     return (
         <div ref={ref} className="text-center">
-            <div className="text-5xl md:text-6xl font-bold text-nsut-maroon mb-2">
+            <div className="text-3xl md:text-6xl font-bold text-nsut-maroon mb-2">
                 {count.toLocaleString()}{suffix}
             </div>
             <div className="text-sm text-gray-600 font-medium uppercase tracking-wide">{label}</div>
@@ -256,7 +256,7 @@ const WhereWeWorkSection = () => {
                     <div className="inline-block px-4 py-1.5 bg-white/10 rounded-full text-sm font-medium mb-6 backdrop-blur-sm border border-white/20">
                         NSUT Alumni Network
                     </div>
-                    <h2 className="font-serif text-4xl md:text-6xl font-bold mb-6 leading-tight">
+                    <h2 className="font-serif text-2xl md:text-6xl font-bold mb-6 leading-tight">
                         A Global Community of<br />
                         <span className="text-nsut-yellow">Innovators & Leaders</span>
                     </h2>
