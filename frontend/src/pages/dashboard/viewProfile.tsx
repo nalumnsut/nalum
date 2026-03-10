@@ -200,6 +200,16 @@ const ViewProfile = () => {
       <div className="container mx-auto">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
+          <div className="mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate(-1)}
+              className="gap-2 text-gray-400 hover:text-white hover:bg-white/10"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </div>
 
           {/* Profile Header */}
           <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-md shadow-xl p-8 mb-6 overflow-visible">

@@ -6,8 +6,11 @@ const { sendEmail } = require('../mail/notificationMailer');
 
 // Configure web-push with VAPID keys
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  const vapidSubject = process.env.MAIL_FROM_EMAIL
+    ? `mailto:${process.env.MAIL_FROM_EMAIL}`
+    : `https://${process.env.FRONTEND_URL || 'localhost'}`;
   webPush.setVapidDetails(
-    `mailto:${process.env.MAIL_FROM_EMAIL}`,
+    vapidSubject,
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
@@ -255,7 +258,11 @@ class NotificationService {
                 auth: subscription.keys.auth,
               },
             },
-            payload
+            payload,
+            {
+              TTL: 60,          // seconds — FCM requires this; 60s = deliver within 1 min or drop
+              urgency: 'normal', // FCM respects this
+            }
           );
 
           // Update last used

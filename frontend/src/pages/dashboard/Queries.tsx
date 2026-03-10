@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import QueryCard from "@/components/QueryCard";
@@ -33,6 +33,7 @@ const Queries = () => {
   const [content, setContent] = useState("");
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const resolverRef = useRef<(t: string) => string>((t) => t);
 
   useEffect(() => {
     fetchMyQueries();
@@ -99,7 +100,7 @@ const Queries = () => {
     try {
       const formData = new FormData();
       formData.append("title", title);
-      formData.append("content", content);
+      formData.append("content", resolverRef.current(content));
       selectedImages.forEach((image) => {
         formData.append("images", image);
       });
@@ -183,6 +184,7 @@ const Queries = () => {
             <MentionTextarea
               value={content}
               onChange={setContent}
+              onResolverReady={(fn) => { resolverRef.current = fn; }}
               placeholder="Describe your query in detail... (type @ to mention someone)"
               maxLength={500}
               required

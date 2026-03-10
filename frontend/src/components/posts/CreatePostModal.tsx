@@ -32,6 +32,7 @@ const CreatePostModal = ({
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const resolverRef = useRef<(t: string) => string>((t) => t);
 
   const handleClose = () => {
     setTitle("");
@@ -61,7 +62,7 @@ const CreatePostModal = ({
     try {
       const formData = new FormData();
       formData.append("title", title);
-      formData.append("content", content);
+      formData.append("content", resolverRef.current(content));
       selectedImages.forEach((file) => {
         formData.append("images", file);
       });
@@ -117,6 +118,7 @@ const CreatePostModal = ({
             placeholder="What's on your mind? Type @ to mention someone"
             value={content}
             onChange={setContent}
+            onResolverReady={(fn) => { resolverRef.current = fn; }}
             style={{ minHeight: "144px" }}
             className="focus-visible:ring-blue-500/50"
           />

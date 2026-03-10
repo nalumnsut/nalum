@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,6 +88,7 @@ const HostEvent = () => {
   const [deleting, setDeleting] = useState(false);
   const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
   const [selectedReason, setSelectedReason] = useState<string>("");
+  const descriptionResolverRef = useRef<(t: string) => string>((t) => t);
   const [hostingAllowed, setHostingAllowed] = useState(true);
   const [checkingHosting, setCheckingHosting] = useState(true);
 
@@ -277,7 +278,7 @@ const HostEvent = () => {
       // Use FormData for file upload
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
-      formDataToSend.append("description", formData.description);
+      formDataToSend.append("description", descriptionResolverRef.current(formData.description));
       formDataToSend.append("event_date", formData.event_date);
       formDataToSend.append("event_time", formData.event_time);
       formDataToSend.append("location", formData.location);
@@ -380,7 +381,7 @@ const HostEvent = () => {
       // Use FormData for file upload
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
-      formDataToSend.append("description", formData.description);
+      formDataToSend.append("description", descriptionResolverRef.current(formData.description));
       formDataToSend.append("event_date", formData.event_date);
       formDataToSend.append("event_time", formData.event_time);
       formDataToSend.append("location", formData.location);
@@ -629,6 +630,7 @@ const HostEvent = () => {
                       placeholder="Describe your event, what attendees can expect, agenda, etc. — type @ to mention someone"
                       value={formData.description}
                       onChange={(v) => handleInputChange("description", v)}
+                      onResolverReady={(fn) => { descriptionResolverRef.current = fn; }}
                       className="mt-1 focus:border-blue-500/50"
                       style={{ minHeight: "120px" }}
                     />
@@ -920,6 +922,7 @@ const HostEvent = () => {
                 id="dialog-description"
                 value={formData.description}
                 onChange={(v) => handleInputChange("description", v)}
+                onResolverReady={(fn) => { descriptionResolverRef.current = fn; }}
                 className="mt-1"
                 style={{ minHeight: "100px" }}
                 placeholder="Describe your event — type @ to mention someone"

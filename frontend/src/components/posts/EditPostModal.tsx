@@ -51,6 +51,7 @@ const EditPostModal = ({
   const [newImages, setNewImages] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const resolverRef = useRef<(t: string) => string>((t) => t);
 
   useEffect(() => {
     if (post) {
@@ -100,7 +101,7 @@ const EditPostModal = ({
     try {
       const formData = new FormData();
       formData.append("title", title);
-      formData.append("content", content);
+      formData.append("content", resolverRef.current(content));
       newImages.forEach((file) => {
         formData.append("images", file);
       });
@@ -153,6 +154,7 @@ const EditPostModal = ({
             className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-blue-500/50"
           />
           <MentionTextarea
+            onResolverReady={(fn) => { resolverRef.current = fn; }}
             placeholder="What's on your mind? Type @ to mention someone"
             value={content}
             onChange={setContent}

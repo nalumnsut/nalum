@@ -25,6 +25,8 @@ interface MentionTextareaProps
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  /** Called once on mount with a resolver that replaces @Name → @[Name](userId) */
+  onResolverReady?: (resolver: (text: string) => string) => void;
 }
 
 // ─── Helper: auto-grow textarea ──────────────────────────────────────────────
@@ -38,9 +40,29 @@ function autoGrow(el: HTMLTextAreaElement | null) {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
-  ({ value, onChange, className, ...rest }, forwardedRef) => {
+  ({ value, onChange, className, onResolverReady, ...rest }, forwardedRef) => {
     const internalRef = useRef<HTMLTextAreaElement>(null);
     useImperativeHandle(forwardedRef, () => internalRef.current!);
+
+    // Map of mention name → userId accumulated during this session
+    const mentionsMapRef = useRef<Record<string, string>>({});
+
+    // Fire onResolverReady once with a resolver that converts @Name → @[Name](userId)
+    useEffect(() => {
+      if (!onResolverReady) return;
+      onResolverReady((text: string) => {
+        let result = text;
+        for (const [name, id] of Object.entries(mentionsMapRef.current)) {
+          const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          result = result.replace(
+            new RegExp("@" + escaped + "(?=[\\s.,!?]|$)", "g"),
+            `@[${name}](${id})`
+          );
+        }
+        return result;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Mention dropdown state
     const [suggestions, setSuggestions] = useState<MentionUser[]>([]);
@@ -108,6 +130,9 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
         const after = value.slice(cursor);
         const token = `@${user.name}`;
         const newValue = before + token + " " + after;
+
+        // Track name → userId for resolver
+        mentionsMapRef.current[user.name] = user._id;
 
         onChange(newValue);
         setShowDropdown(false);

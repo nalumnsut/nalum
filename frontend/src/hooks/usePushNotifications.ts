@@ -59,30 +59,41 @@ export const usePushNotifications = () => {
         const existingReg = existingRegistrations[0];
         const existingSub = await existingReg.pushManager.getSubscription();
         if (existingSub) {
-          console.log('   Found existing subscription, checking validity...');
+          console.log('   Found existing subscription, re-registering with backend...');
           try {
-            // Try to verify the subscription is still valid by checking its properties
-            const endpoint = existingSub.endpoint;
-            if (endpoint && endpoint.includes('fcm.googleapis.com')) {
-              console.log('✅ Already subscribed with valid subscription!');
-              console.log('   Endpoint:', endpoint.substring(0, 50) + '...');
-              setSubscription(existingSub);
-              console.log('\n🎉 EXISTING SUBSCRIPTION CONFIRMED');
-              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-              return true;
-            } else {
-              console.log('   Subscription appears invalid, will recreate');
-              await existingSub.unsubscribe();
-              console.log('   ✅ Unsubscribed from stale subscription');
-            }
+            // Always re-save to backend so server always has valid subscription
+            // (covers deploys, DB resets, etc. — Chrome FCM subscriptions persist
+            // in the browser but the server record can be lost)
+            await api.post(
+              '/notifications/push/subscribe',
+              {
+                endpoint: existingSub.endpoint,
+                keys: {
+                  p256dh: arrayBufferToBase64(existingSub.getKey('p256dh')!),
+                  auth: arrayBufferToBase64(existingSub.getKey('auth')!),
+                },
+                deviceInfo: {
+                  userAgent: navigator.userAgent,
+                  browser: getBrowserName(),
+                  os: getOSName(),
+                },
+              }
+            );
+            console.log('\u2705 Existing subscription re-saved to backend');
+            console.log('   Endpoint:', existingSub.endpoint.substring(0, 60) + '...');
+            setSubscription(existingSub);
+            console.log('\n\uD83C\uDF89 SUBSCRIPTION CONFIRMED');
+            console.log('\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n');
+            return true;
           } catch (err) {
-            console.log('   Error checking subscription, will recreate:', err.message);
+            console.log('   Error re-saving subscription, will recreate:', err.message);
+            await existingSub.unsubscribe();
           }
         } else {
           console.log('   Existing registration found but no subscription');
         }
         
-        // Clean slate approach - unregister and start fresh
+        // Unregister for clean slate before creating fresh subscription
         console.log('   Unregistering existing service worker for clean slate...');
         await existingReg.unregister();
         console.log('   ✅ Service worker unregistered');

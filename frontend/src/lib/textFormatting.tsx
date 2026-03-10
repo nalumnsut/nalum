@@ -1,3 +1,6 @@
+import { Link, useNavigate } from "react-router-dom";
+import api from "@/lib/api";
+
 // ── Mention token (legacy): @[Name](userId) → rendered as profile link ──────
 const MENTION_PATTERN = /@\[([^\]]+)\]\(([^)]+)\)/g;
 
@@ -12,22 +15,46 @@ export const parseMentionSegment = (
     if (segments[i]) result.push(segments[i]);
     if (segments[i + 1] && segments[i + 2]) {
       result.push(
-        <a
+        <Link
           key={`mention-${lineIndex}-${partIndex}-${i}`}
-          href={`/dashboard/alumni/${segments[i + 2]}`}
+          to={`/dashboard/alumni/${segments[i + 2]}`}
           className="inline-flex items-center text-blue-400 hover:text-blue-300 font-medium"
           onClick={(e) => e.stopPropagation()}
         >
           @{segments[i + 1]}
-        </a>
+        </Link>
       );
     }
   }
   return result;
 };
 
-// ── Plain @mention: @Name → styled blue span ─────────────────────────────────
+// ── Plain @mention: @Name → clickable, looks up profile by name on click ────
 const PLAIN_MENTION_PATTERN = /@(\w+)/g;
+
+const PlainMentionLink = ({ name, mentionKey }: { name: string; mentionKey: string }) => {
+  const navigate = useNavigate();
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    try {
+      const { data } = await api.get(`/mention?q=${encodeURIComponent(name)}`);
+      const users: { _id: string; name: string }[] = data.users || [];
+      const exact = users.find(u => u.name.toLowerCase() === name.toLowerCase());
+      const target = exact ?? users[0];
+      if (target) navigate(`/dashboard/alumni/${target._id}`);
+    } catch { /* ignore */ }
+  };
+  return (
+    <span
+      key={mentionKey}
+      className="text-blue-400 font-medium cursor-pointer hover:text-blue-300 hover:underline"
+      onClick={handleClick}
+    >
+      @{name}
+    </span>
+  );
+};
 
 const parsePlainMentions = (
   text: string,
@@ -40,12 +67,11 @@ const parsePlainMentions = (
     if (segments[i]) result.push(segments[i]);
     if (segments[i + 1]) {
       result.push(
-        <span
+        <PlainMentionLink
           key={`pmention-${lineIndex}-${partIndex}-${i}`}
-          className="text-blue-400 font-medium"
-        >
-          @{segments[i + 1]}
-        </span>
+          mentionKey={`pmention-${lineIndex}-${partIndex}-${i}`}
+          name={segments[i + 1]}
+        />
       );
     }
   }
