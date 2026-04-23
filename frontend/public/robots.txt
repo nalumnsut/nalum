@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://nsut.alumninet.in/sitemap.xml
+Sitemap: https://alumni.nsut.ac.in/sitemap.xml

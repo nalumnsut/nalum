@@ -338,7 +338,7 @@ const AboutPage = () => {
                     <div>
                       <h3 className="font-serif text-lg font-bold text-nsut-maroon mb-2">Email Us</h3>
                       <a href="mailto:alumni@nsut.ac.in" className="text-gray-700 hover:text-nsut-maroon transition-colors">
-                        admin@alumninet.in
+                        alumni@nsut.ac.in
                       </a>
                     </div>
                   </div>

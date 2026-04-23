@@ -42,7 +42,7 @@ router.post("/" , async (req , res) => {
     return res.status(500).json(tokenResponse);
   }
 
-  const frontendUrl = process.env.FRONTEND_URL || "https://www.nsut.alumninet.in";
+  const frontendUrl = process.env.FRONTEND_URL || "https://alumni.nsut.ac.in";
   const verificationLink = `${frontendUrl}/verify-account?email=${encodeURIComponent(sanitizedEmail)}&token=${tokenResponse.data.token}`;
 
   // Log verification link for testing (always log when DEBUG_MAIL is enabled)

@@ -39,8 +39,7 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin: [
-      "https://nsut.alumninet.in",
-      "https://www.nsut.alumninet.in",
+      "https://alumni.nsut.ac.in",
       "http://localhost:5173",
       "http://localhost",
     ],

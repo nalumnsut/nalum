@@ -41,7 +41,7 @@ router.post("/", async (req, res) => {
     { expiresIn: "5m" }
   );
 
-  const frontendUrl = process.env.FRONTEND_URL || "https://www.nsut.alumninet.in";
+  const frontendUrl = process.env.FRONTEND_URL || "https://alumni.nsut.ac.in";
   const verificationLink = `${frontendUrl}/reset-password?token=${token}`;
 
   // Log password reset link for testing (always log when DEBUG_MAIL is enabled)
