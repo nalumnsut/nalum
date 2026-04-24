@@ -9,6 +9,7 @@ import { AppRoutes } from "@/routes";
 import { AuthErrorHandler, SessionLoadingScreen } from "@/components/app/AppComponents";
 import { LoadingAnimation } from "@/components/LoadingAnimation";
 import { useLocation } from "react-router-dom";
+import { usePageTracking } from "@/hooks/usePageTracking";
 
 // Create QueryClient instance outside component to avoid recreating on each render
 const queryClient = new QueryClient({
@@ -25,6 +26,9 @@ function AppContent() {
   const { isRestoringSession } = useAuth();
   const location = useLocation();
   const [showIntro, setShowIntro] = useState(location.pathname === "/");
+
+  // Automatic page-view tracking for every route change
+  usePageTracking();
 
   if (isRestoringSession) {
     return <SessionLoadingScreen />;

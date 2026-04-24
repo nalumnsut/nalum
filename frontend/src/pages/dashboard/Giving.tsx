@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { trackFormSubmit, trackEvent } from "@/lib/analytics";
 
 interface Giving {
   _id: string;
@@ -115,6 +116,7 @@ const Giving = () => {
       });
 
       toast.success("Giving submitted successfully");
+      trackFormSubmit('giving_form');
       setTitle("");
       setContent("");
       setSelectedImages([]);
@@ -122,6 +124,7 @@ const Giving = () => {
       fetchMyGiving();
     } catch (err: any) {
       console.error("Error submitting giving:", err);
+      trackEvent('giving_submit_error');
       toast.error(err.response?.data?.message || "Failed to submit giving");
     } finally {
       setIsSubmitting(false);

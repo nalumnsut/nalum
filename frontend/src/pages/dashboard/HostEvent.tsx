@@ -32,6 +32,7 @@ import api from "@/lib/api";
 import { BASE_URL } from "@/lib/constants";
 import { useAuth } from "@/context/AuthContext";
 import { AxiosError } from "axios";
+import { trackFormSubmit, trackEvent } from "@/lib/analytics";
 
 interface Event {
   _id: string;
@@ -313,6 +314,8 @@ const HostEvent = () => {
         description: "Your event has been submitted for admin approval.",
       });
 
+      trackFormSubmit('host_event_form', { event_type: formData.event_type });
+
       // Reset form and refresh events
       setFormData({
         title: "",
@@ -334,6 +337,7 @@ const HostEvent = () => {
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>;
       const message = axiosError.response?.data?.message || "Failed to create event";
+      trackEvent('host_event_error', { error_message: message });
       toast.error("Error", {
         description: message,
       });

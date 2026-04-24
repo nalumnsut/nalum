@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { useResponsivePagination } from "./useResponsivePagination";
+import { trackSearch } from "@/lib/analytics";
 
 export interface AlumniProfile {
   _id: string;
@@ -236,6 +237,10 @@ export const useAlumniDirectory = () => {
     setAlumni([]); // Clear previous results before new search
     setCurrentPage(1);
     setLastSearchedFilters({ ...filters }); // Store the filters we're searching with
+    const activeFilters = [filters.name, filters.batch, filters.branch, filters.campus, filters.company, filters.city, filters.country]
+      .filter(Boolean)
+      .join(', ');
+    if (activeFilters) trackSearch(activeFilters, 'alumni_directory');
     fetchAlumni(1);
   };
 

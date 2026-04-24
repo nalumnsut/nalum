@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Image, X, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
+import { trackFormSubmit, trackEvent } from "@/lib/analytics";
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -82,9 +83,11 @@ const CreatePost = () => {
       });
 
       toast.success("Post created successfully!");
+      trackFormSubmit('create_post', { has_images: selectedImages.length > 0 });
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Error creating post:", error);
+      trackEvent('create_post_error');
       toast.error(error.response?.data?.message || "Failed to create post");
     } finally {
       setIsLoading(false);

@@ -17,6 +17,7 @@ import nsutCampusHero from "@/assets/hero.webp";
 import apiClient from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
+import { trackLogin, trackEvent } from "@/lib/analytics";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -88,6 +89,8 @@ const Login = () => {
       // Set full user data in auth context
       setAuth(access_token, email, verified_alumni, user);
 
+      trackLogin(formData.role);
+
       toast.success("Login Successful!", {
         description: "Welcome back to the NSUT Alumni Portal 🎉",
         style: {
@@ -120,6 +123,10 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
+      trackEvent('login_error', {
+        error_status: axios.isAxiosError(error) ? String(error.response?.status) : 'unknown',
+        error_code: axios.isAxiosError(error) ? error.response?.data?.code : undefined,
+      });
       if (
         axios.isAxiosError(error) &&
         error.response?.status === 401 &&

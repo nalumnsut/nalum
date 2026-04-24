@@ -17,6 +17,7 @@ import { Mail, Lock, User, Briefcase, Eye, EyeOff } from "lucide-react";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
 import { useAuth } from "@/context/AuthContext";
+import { trackSignUp, trackEvent } from "@/lib/analytics";
 
 const Signup = () => {
   const { toast } = useToast();
@@ -130,8 +131,13 @@ const Signup = () => {
       }
 
       toast({ title: "Registration successful! Please verify your email." });
+      trackSignUp(formData.role);
       navigate("/otp-verification", { state: { email: formData.email } });
     } catch (error: unknown) {
+      trackEvent('signup_error', {
+        error_code: axios.isAxiosError(error) ? error.response?.data?.code : 'unknown',
+        error_status: axios.isAxiosError(error) ? String(error.response?.status) : 'unknown',
+      });
       if (axios.isAxiosError(error)) {
         const errorCode = error.response?.data?.code;
         if (errorCode === "USER_NOT_VERIFIED") {
