@@ -23,6 +23,7 @@ concurrency:
 
 env:
   WORKING_DIRECTORY: ./backend
+  DEPLOY_DIRECTORY: /var/www/NALUM
 
 jobs:
   lint:
@@ -107,9 +108,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Deploy placeholder
-        run: |
-          echo "Test, lint, and docker build succeeded."
-          echo "Ready to deploy safely. Proceeding with deployment logic..."
-          # Example using secrets securely (do not print directly):
-          # ssh -i ${{ secrets.SSH_PRIVATE_KEY }} user@${{ secrets.SERVER_IP }} 'bash deploy.sh'
+      - name: Deploy Backend over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            set -e
+            cd ${{ env.DEPLOY_DIRECTORY }}
+            git fetch origin main
+            git reset --hard origin/main
+            docker compose up -d --build backend
+            docker image prune -f
