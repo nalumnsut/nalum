@@ -51,7 +51,7 @@ router.post("/",async (req,res) => {
   }
   if(existingUser.data){
     // If user exists but is not verified, allow them to resend OTP
-    if(!existingUser.data.is_verified){
+    if(!existingUser.data.email_verified){
       return res.status(200).json({
         err: false,
         code: 200,

@@ -1,5 +1,4 @@
 require("dotenv").config();
-console.log("Starting backend server...");
 const express = require("express");
 const http = require("http");
 const app = express();
@@ -29,6 +28,20 @@ const morgan = require("morgan");
 const redisConfig = require("./config/redis.config.js");
 const { initializeSocket } = require("./sockets/chatSocket.js");
 const { initPostgres } = require("./config/postgres.js");
+
+const logStartupStep = (message) => {
+  console.log(`[startup] ${message}`);
+};
+
+const listen = (port) =>
+  new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, "127.0.0.1", () => {
+      server.off("error", reject);
+      resolve();
+    });
+  });
+
 app.use(morgan("dev"));
 app.use((req, res, next) => {
   console.log(
@@ -62,34 +75,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-dbConnect();
-initPostgres();
-// connect to redis server (must be done before Socket.io initialization)
-redisConfig
-  .connectRedis()
-  .then(() => {
-    console.log("Redis initialization complete");
-
-    // Start geocoding queue worker
-    startProcessing();
-    console.log("Geocoding queue worker started");
-
-    // Initialize Socket.io for chat after Redis is ready
-    initializeSocket(server)
-      .then((io) => {
-        app.set("io", io);
-        global.io = io; // Make io globally accessible for notifications
-        console.log("Socket.io initialization complete");
-      })
-      .catch((err) => {
-        console.error("Socket.io initialization failed:", err);
-      });
-  })
-  .catch((err) => {
-    console.error("Redis initialization failed:", err);
-    console.log("Continuing without Redis (some features may not work)");
-  });
-
 // Apply checkBanned middleware to protected routes (not to auth or admin routes)
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", checkBanned, profileRoutes);
@@ -117,9 +102,45 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Backend is working!" });
 });
 
-// listening to port
 const port = process.env.PORT || 2478;
-server.listen(port, "127.0.0.1", () => {
-  console.log(`Server is running on port ${port}`);
-  console.log(`Socket.io is running on port ${port}`);
-});
+
+async function startServer() {
+  try {
+    logStartupStep("Starting backend server...");
+
+    logStartupStep("Connecting to Redis...");
+    await redisConfig.connectRedis();
+    logStartupStep("Redis initialization complete");
+
+    logStartupStep("Connecting to MongoDB...");
+    await dbConnect();
+    logStartupStep("MongoDB initialization complete");
+
+    logStartupStep("Connecting to Postgres...");
+    const postgresConnected = await initPostgres();
+    if (!postgresConnected) {
+      throw new Error("Postgres connection check failed");
+    }
+    logStartupStep("Postgres initialization complete");
+
+    logStartupStep("Starting geocoding queue worker...");
+    startProcessing();
+    logStartupStep("Geocoding queue worker started");
+
+    logStartupStep("Initializing Socket.io...");
+    const io = await initializeSocket(server);
+    app.set("io", io);
+    global.io = io; // Make io globally accessible for notifications
+    logStartupStep("Socket.io initialization complete");
+
+    logStartupStep(`Starting HTTP server on port ${port}...`);
+    await listen(port);
+    logStartupStep(`Server is running on port ${port}`);
+    logStartupStep(`Socket.io is running on port ${port}`);
+  } catch (err) {
+    console.error("[startup] Backend startup failed:", err);
+    process.exit(1);
+  }
+}
+
+startServer();
