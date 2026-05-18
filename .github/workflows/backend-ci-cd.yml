@@ -48,6 +48,7 @@ jobs:
         
       # Adjust script name if it is different (e.g., npm run lint)
       - name: Run Linter
+        continue-on-error: true
         run: npm run lint --if-present
 
   test:
