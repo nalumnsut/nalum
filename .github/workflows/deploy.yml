@@ -1,0 +1,66 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+env:
+  DEPLOY_DIRECTORY: /var/www/NALUM
+
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            set -e
+            cd ${{ env.DEPLOY_DIRECTORY }}
+            git pull
+            docker compose up -d --build
+            docker compose ps
+
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              if curl --fail --silent --show-error http://127.0.0.1:2478/api/health; then
+                echo "Backend healthy"
+                break
+              fi
+
+              if [ "$i" -eq 10 ]; then
+                echo "Backend health check failed"
+                exit 1
+              fi
+
+              sleep 5
+            done
+
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              if curl --fail --silent --show-error http://127.0.0.1:3000; then
+                echo "Frontend healthy"
+                break
+              fi
+
+              if [ "$i" -eq 10 ]; then
+                echo "Frontend health check failed"
+                exit 1
+              fi
+
+              sleep 5
+            done
+
+            docker image prune -f

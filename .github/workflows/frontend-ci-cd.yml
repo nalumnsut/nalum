@@ -6,13 +6,13 @@ on:
       - main
     paths:
       - 'frontend/**'
-      - '.github/workflows/**'
+      - '.github/workflows/frontend-ci-cd.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'frontend/**'
-      - '.github/workflows/**'
+      - '.github/workflows/frontend-ci-cd.yml'
 
 permissions:
   contents: read
@@ -23,7 +23,6 @@ concurrency:
 
 env:
   WORKING_DIRECTORY: ./frontend
-  DEPLOY_DIRECTORY: /var/www/NALUM
 
 jobs:
   lint:
@@ -120,27 +119,3 @@ jobs:
           tags: alumni-frontend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  deploy:
-    name: Deploy Frontend
-    needs: [docker-build]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Deploy Frontend over SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.PORT }}
-          script: |
-            set -e
-            cd ${{ env.DEPLOY_DIRECTORY }}
-            git fetch origin main
-            git reset --hard origin/main
-            docker compose up -d --build frontend
-            docker compose ps frontend
-            curl --fail --silent --show-error http://127.0.0.1:3000
-            docker image prune -f

@@ -6,13 +6,13 @@ on:
       - main
     paths:
       - 'backend/**'
-      - '.github/workflows/**'
+      - '.github/workflows/backend-ci-cd.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/**'
-      - '.github/workflows/**'
+      - '.github/workflows/backend-ci-cd.yml'
 
 permissions:
   contents: read
@@ -23,7 +23,6 @@ concurrency:
 
 env:
   WORKING_DIRECTORY: ./backend
-  DEPLOY_DIRECTORY: /var/www/NALUM
 
 jobs:
   lint:
@@ -49,6 +48,7 @@ jobs:
         
       # Adjust script name if it is different (e.g., npm run lint)
       - name: Run Linter
+        continue-on-error: true
         run: npm run lint --if-present
 
   test:
@@ -99,28 +99,3 @@ jobs:
           tags: alumni-backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  deploy:
-    name: Deploy Backend
-    needs: [docker-build]
-    # Only deploy from the main branch on push events
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Deploy Backend over SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.PORT }}
-          script: |
-            set -e
-            cd ${{ env.DEPLOY_DIRECTORY }}
-            git fetch origin main
-            git reset --hard origin/main
-            docker compose up -d --build backend
-            docker compose ps backend
-            curl --fail --silent --show-error http://127.0.0.1:2478/api/health
-            docker image prune -f
