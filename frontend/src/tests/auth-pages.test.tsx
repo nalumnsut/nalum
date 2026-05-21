@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi, Mock } from "vitest";
 import Login from "@/pages/auth/Login";
 import Signup from "@/pages/auth/SignUp";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
@@ -72,14 +72,11 @@ const renderWithRouter = (ui: React.ReactElement, route = "/") => {
 beforeEach(() => {
   mockedUseAuth.mockReturnValue({
     accessToken: null,
-    email: null,
     user: null,
-    isVerifiedAlumni: null,
-    isRestoringSession: false,
+    isLoading: false,
     isAuthenticated: false,
     isAdmin: false,
     setAuth: setAuthMock,
-    refreshUser: vi.fn(),
     logout: vi.fn(),
   });
 });
@@ -102,7 +99,7 @@ describe("auth pages", () => {
 
   it("logs in and redirects completed profiles to the dashboard", async () => {
     const user = userEvent.setup();
-    mockedApi.post.mockResolvedValueOnce({
+    (mockedApi.post as Mock).mockResolvedValueOnce({
       data: {
         data: {
           access_token: "access-token",
@@ -119,7 +116,7 @@ describe("auth pages", () => {
         },
       },
     });
-    mockedApi.get.mockResolvedValueOnce({
+    (mockedApi.get as Mock).mockResolvedValueOnce({
       data: { profileCompleted: true },
     });
 
@@ -138,8 +135,6 @@ describe("auth pages", () => {
     });
     expect(setAuthMock).toHaveBeenCalledWith(
       "access-token",
-      "student@nsut.ac.in",
-      true,
       expect.objectContaining({ id: "user-1" }),
     );
     expect(mockedApi.get).toHaveBeenCalledWith("/profile/status", {
@@ -168,7 +163,7 @@ describe("auth pages", () => {
 
   it("signs up a valid student and sends them to OTP verification", async () => {
     const user = userEvent.setup();
-    mockedApi.post.mockResolvedValueOnce({
+    (mockedApi.post as Mock).mockResolvedValueOnce({
       data: {
         err: false,
         data: { email: "new@nsut.ac.in" },
@@ -199,7 +194,7 @@ describe("auth pages", () => {
   it("shows the forgot-password confirmation even when the API rejects", async () => {
     const user = userEvent.setup();
     vi.spyOn(console, "error").mockImplementation(() => {});
-    mockedApi.post.mockRejectedValueOnce(new Error("network down"));
+    (mockedApi.post as Mock).mockRejectedValueOnce(new Error("network down"));
 
     renderWithRouter(<ForgotPassword />, "/forgot-password");
 
@@ -224,7 +219,7 @@ describe("auth pages", () => {
 
   it("submits a valid password reset token and shows success", async () => {
     const user = userEvent.setup();
-    mockedApi.post.mockResolvedValueOnce({ data: { error: false } });
+    (mockedApi.post as Mock).mockResolvedValueOnce({ data: { error: false } });
 
     renderWithRouter(<ResetPassword />, "/reset-password?token=reset-token");
 
