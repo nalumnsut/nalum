@@ -11,8 +11,13 @@ exports.protectAdmin = async (req, res, next) => {
     
     let token;
 
-    // Check for token in Authorization header
-    if (
+    // First, try to read from httpOnly cookie
+    if (req.cookies && req.cookies.access_token) {
+      token = req.cookies.access_token;
+      console.log("[AdminAuth] Token found in access_token cookie");
+    }
+    // Fall back to Authorization header
+    else if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {

@@ -16,8 +16,15 @@ router.post('/', async (req, res) => {
             }
         }
 
-        // Clear the refresh token cookie
+        // Clear the refresh token and access token cookies
         res.clearCookie('refresh_token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            path: '/'
+        });
+
+        res.clearCookie('access_token', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
@@ -31,8 +38,15 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.error('Logout error:', error);
         
-        // Even if there's an error, clear the cookie
+        // Even if there's an error, clear the cookies
         res.clearCookie('refresh_token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            path: '/'
+        });
+
+        res.clearCookie('access_token', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
