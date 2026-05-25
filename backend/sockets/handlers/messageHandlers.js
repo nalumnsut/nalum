@@ -1,13 +1,14 @@
 const Message = require('../../models/chat/messages.model');
 const Conversation = require('../../models/chat/conversations.model');
 const Connection = require('../../models/chat/connections.model');
+const Community = require('../../models/chat/communities.model');
 const redisClient = require('../../config/redis');
 const notificationService = require('../../services/notificationService');
 const User = require('../../models/user/user.model');
 
 async function handleSendMessage(io, socket, data) {
   try {
-    const { conversationId, content, tempId } = data;
+    const { conversationId, communityId, content, tempId } = data;
     const userId = socket.userId;
 
     // Validate content
@@ -38,53 +39,89 @@ async function handleSendMessage(io, socket, data) {
     }
 
     // Verify conversation exists and user is participant
-    const conversation = await Conversation.findById(conversationId);
-    if (!conversation) {
-      return socket.emit('message:error', { error: 'Conversation not found' });
-    }
-
-    if (!conversation.participants.some(p => p.toString() === userId.toString())) {
-      return socket.emit('message:error', { error: 'Not authorized for this conversation' });
-    }
-
-    // Check for blocking
-    const participantIds = conversation.participants.map(p => p.toString());
-    const otherUserId = participantIds.find(id => id !== userId.toString());
-
-    if (otherUserId) {
-      const connection = await Connection.findOne({
-        $or: [
-          { requester: userId, recipient: otherUserId },
-          { requester: otherUserId, recipient: userId }
-        ]
-      });
-
-      if (connection && connection.status === 'blocked') {
-        return socket.emit('message:error', { error: 'You cannot send messages to this user' });
+    let conversation = null;
+    if (conversationId) {
+      conversation = await Conversation.findById(conversationId);
+      if (!conversation) {
+        return socket.emit('message:error', { error: 'Conversation not found' });
       }
+
+      if (!conversation.participants.some(p => p.toString() === userId.toString())) {
+        return socket.emit('message:error', { error: 'Not authorized for this conversation' });
+      }
+
+      // Check for blocking
+      const participantIds = conversation.participants.map(p => p.toString());
+      const otherUserId = participantIds.find(id => id !== userId.toString());
+
+      if (otherUserId) {
+        const connection = await Connection.findOne({
+          $or: [
+            { requester: userId, recipient: otherUserId },
+            { requester: otherUserId, recipient: userId }
+          ]
+        });
+
+        if (connection && connection.status === 'blocked') {
+          return socket.emit('message:error', { error: 'You cannot send messages to this user' });
+        }
+      }
+    } else if (communityId) {
+      const community = await Community.findById(communityId);
+      if (!community) {
+        return socket.emit('message:error', { error: 'Community not found' });
+      }
+
+      const isMember = community.members.some(m => m.toString() === userId.toString());
+      const isAdmin = community.admins.some(a => a.toString() === userId.toString());
+
+      if (!isMember && !isAdmin) {
+        return socket.emit('message:error', { error: 'Not authorized for this community' });
+      }
+    } else {
+      return socket.emit('message:error', { error: 'Conversation or Community ID is required' });
     }
 
     // Create message
-    const message = new Message({
-      conversation: conversationId,
+    const messageData = {
       sender: userId,
       content: content.trim(),
-      messageType: 'text',
-      readBy: [{ user: userId, readAt: new Date() }]
-    });
+      messageType: 'text'
+    };
+
+    if (conversationId) {
+      messageData.conversation = conversationId;
+      messageData.readBy = [{ user: userId, readAt: new Date() }];
+    } else if (communityId) {
+      messageData.community = communityId;
+    }
+
+    const message = new Message(messageData);
 
     await message.save();
 
     // Update conversation last message
-    conversation.lastMessage = {
-      content: content.substring(0, 500),
-      sender: userId,
-      timestamp: new Date()
-    };
-    await conversation.save();
+    if (conversationId && conversation) {
+      conversation.lastMessage = {
+        content: content.substring(0, 500),
+        sender: userId,
+        timestamp: new Date()
+      };
+      await conversation.save();
+    } else if (communityId) {
+      const community = await Community.findById(communityId);
+      if (community) {
+        community.lastMessage = {
+          content: content.substring(0, 500),
+          sender: userId,
+          timestamp: new Date()
+        };
+        await community.save();
+      }
+    }
 
     // Update Redis recent conversations cache
-    if (redisClient && redisClient.isOpen) {
+    if (redisClient && redisClient.isOpen && conversationId) {
       try {
         const timestamp = Date.now();
         for (const participantId of conversation.participants) {
@@ -108,57 +145,70 @@ async function handleSendMessage(io, socket, data) {
     // Populate message for response
     await message.populate('sender', 'name email profilePicture');
 
-    // Notify all participants via their personal rooms (for chat list updates)
-    for (const participantId of conversation.participants) {
-      io.to(`user:${participantId}`).emit('conversation:update', {
-        conversationId,
-        lastMessage: message,
-        unreadCount: participantId.toString() === userId ? 0 : 1 // Simple increment hint, client should handle
-      });
-    }
-
-    // Emit to conversation room
-    io.to(`conversation:${conversationId}`).emit('message:new', {
-      conversationId,
-      message: message
-    });
-
-    // Emit to sender
-    socket.emit('message:sent', {
-      conversationId,
-      message: message,
-      tempId
-    });
-
-    // Create notification for new message
-    try {
-      const sender = await User.findById(userId).select('name');
-      const recipientId = conversation.participants.find(p => p.toString() !== userId.toString());
-      if (recipientId) {
-        await notificationService.createNotification({
-          recipientId: recipientId.toString(),
-          senderId: userId,
-          type: 'new_message',
-          title: 'New Message',
-          message: `${sender.name}: ${content.substring(0, 100)}${content.length > 100 ? '...' : ''}`,
-          actionUrl: `/dashboard/chat?conversation=${conversationId}`,
-          priority: 'high',
-          relatedEntity: {
-            entityType: 'message',
-            entityId: message._id.toString(),
-          },
-          metadata: {
-            senderId: userId,
-            senderName: sender.name,
-            conversationId: conversationId.toString(),
-            messageId: message._id.toString(),
-            messagePreview: content.substring(0, 100)
-          }
+    if (conversationId && conversation) {
+      // Notify all participants via their personal rooms (for chat list updates)
+      for (const participantId of conversation.participants) {
+        io.to(`user:${participantId}`).emit('conversation:update', {
+          conversationId,
+          lastMessage: message,
+          unreadCount: participantId.toString() === userId ? 0 : 1 // Simple increment hint, client should handle
         });
       }
-    } catch (notifError) {
-      console.error('Error creating message notification:', notifError);
-      // Don't fail the message send if notification fails
+
+      // Emit to conversation room
+      io.to(`conversation:${conversationId}`).emit('message:new', {
+        conversationId,
+        message: message
+      });
+
+      // Emit to sender
+      socket.emit('message:sent', {
+        conversationId,
+        message: message,
+        tempId
+      });
+
+      // Create notification for new message
+      try {
+        const sender = await User.findById(userId).select('name');
+        const recipientId = conversation.participants.find(p => p.toString() !== userId.toString());
+        if (recipientId) {
+          await notificationService.createNotification({
+            recipientId: recipientId.toString(),
+            senderId: userId,
+            type: 'new_message',
+            title: 'New Message',
+            message: `${sender.name}: ${content.substring(0, 100)}${content.length > 100 ? '...' : ''}`,
+            actionUrl: `/dashboard/chat?conversation=${conversationId}`,
+            priority: 'high',
+            relatedEntity: {
+              entityType: 'message',
+              entityId: message._id.toString(),
+            },
+            metadata: {
+              senderId: userId,
+              senderName: sender.name,
+              conversationId: conversationId.toString(),
+              messageId: message._id.toString(),
+              messagePreview: content.substring(0, 100)
+            }
+          });
+        }
+      } catch (notifError) {
+        console.error('Error creating message notification:', notifError);
+        // Don't fail the message send if notification fails
+      }
+    } else if (communityId) {
+      io.to(`community:${communityId}`).emit('message:new', {
+        communityId,
+        message: message
+      });
+
+      socket.emit('message:sent', {
+        communityId,
+        message: message,
+        tempId
+      });
     }
 
   } catch (error) {
@@ -169,8 +219,10 @@ async function handleSendMessage(io, socket, data) {
 
 async function handleMessageRead(io, socket, data) {
   try {
-    const { conversationId, messageId } = data;
+    const { conversationId, communityId, messageId } = data;
     const userId = socket.userId;
+
+    if (communityId) return;
 
     // Verify conversation access
     const conversation = await Conversation.findById(conversationId);
@@ -229,15 +281,21 @@ async function handleMessageRead(io, socket, data) {
 
 async function handleMessageDeleted(io, socket, data) {
   try {
-    const { messageId, conversationId } = data;
+    const { messageId, conversationId, communityId } = data;
     const userId = socket.userId;
 
     // Verify ownership or admin status (optional but recommended)
     const message = await Message.findById(messageId);
     if (!message) return;
 
-    if (message.sender.toString() !== userId) {
-      // Only sender can delete (or add admin check here)
+    const isSender = message.sender.toString() === userId.toString();
+    
+    // Check if community admin
+    const community = message.community ? await Community.findById(message.community) : null;
+    const isAdmin = community ? community.admins.some(a => a.toString() === userId.toString()) : false;
+
+    if (!isSender && !isAdmin) {
+      // Only sender or admin can delete
       return;
     }
 
@@ -304,11 +362,19 @@ async function handleMessageDeleted(io, socket, data) {
     // Perform deletion (or soft delete)
     await Message.deleteOne({ _id: messageId });
 
-    // Notify conversation participants
-    io.to(`conversation:${conversationId}`).emit('message:deleted', {
-      messageId,
-      conversationId
-    });
+    if (communityId || message.community) {
+      const targetCommunity = communityId || message.community;
+      io.to(`community:${targetCommunity}`).emit('message:deleted', {
+        messageId,
+        communityId: targetCommunity
+      });
+    } else {
+      // Notify conversation participants
+      io.to(`conversation:${conversationId}`).emit('message:deleted', {
+        messageId,
+        conversationId
+      });
+    }
 
   } catch (error) {
     console.error('Message delete error:', error);

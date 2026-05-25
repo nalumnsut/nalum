@@ -5,7 +5,13 @@ const messageSchema = new Schema({
   conversation : {
     type : mongoose.SchemaTypes.ObjectId,
     ref : 'Conversation',
-    required : true,
+    required : false,
+    index : true,
+  },
+  community : {
+    type : mongoose.SchemaTypes.ObjectId,
+    ref : 'Community',
+    required : false,
     index : true,
   },
   sender : {
@@ -24,6 +30,10 @@ const messageSchema = new Schema({
     type : String,
     enum : ['text', 'system'],
     default : 'text',
+  },
+  attachmentUrl : {
+    type : String,
+    default : null,
   },
 
   // read tracking 
@@ -48,5 +58,7 @@ const messageSchema = new Schema({
 // index to quickly retrieve messages in a conversation sorted by creation time 
 messageSchema.index({ conversation: 1, createdAt: -1 });
 messageSchema.index({ conversation: 1, deleted: 1, createdAt: -1 });
+messageSchema.index({ community: 1, createdAt: -1 });
+messageSchema.index({ community: 1, deleted: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Message', messageSchema);

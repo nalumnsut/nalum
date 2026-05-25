@@ -1,38 +1,56 @@
 const Message = require('../../models/chat/messages.model');
 const Conversation = require('../../models/chat/conversations.model');
+const Community = require('../../models/chat/communities.model');
 
-// Get messages for a conversation
+// Get messages for a conversation or community
 exports.getMessages = async (req, res) => {
   try {
     const userId = req.user.user_id;
     const { conversationId } = req.params;
     const { page = 1, limit = 50 } = req.query;
 
-    // Verify user is part of conversation
-    const conversation = await Conversation.findById(conversationId);
-    if (!conversation) {
-      return res.status(404).json({ error: 'Conversation not found' });
+    let target = await Conversation.findById(conversationId);
+    let isCommunity = false;
+
+    if (!target) {
+      target = await Community.findById(conversationId);
+      isCommunity = true;
     }
 
-    if (!conversation.participants.some(p => p.toString() === userId.toString())) {
-      return res.status(403).json({ error: 'Not authorized to view these messages' });
+    if (!target) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
+    if (isCommunity) {
+      if (!target.members.some(m => m.toString() === userId.toString()) && !target.admins.some(a => a.toString() === userId.toString())) {
+        return res.status(403).json({ error: 'Not authorized to view these messages' });
+      }
+    } else {
+      if (!target.participants.some(p => p.toString() === userId.toString())) {
+        return res.status(403).json({ error: 'Not authorized to view these messages' });
+      }
     }
 
     const skip = (page - 1) * limit;
 
-    const messages = await Message.find({
-      conversation: conversationId,
-      deleted: false
-    })
+    const query = { deleted: false };
+
+    if (isCommunity) {
+      query.community = conversationId;
+      if (target.clearedAt && target.clearedAt.get(userId.toString())) {
+        query.createdAt = { $gt: target.clearedAt.get(userId.toString()) };
+      }
+    } else {
+      query.conversation = conversationId;
+    }
+
+    const messages = await Message.find(query)
       .populate('sender', 'name email profilePicture')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
-    const total = await Message.countDocuments({
-      conversation: conversationId,
-      deleted: false
-    });
+    const total = await Message.countDocuments(query);
 
     res.json({
       success: true,
@@ -56,10 +74,10 @@ exports.getMessages = async (req, res) => {
 exports.sendMessage = async (req, res) => {
   try {
     const userId = req.user.user_id;
-    const { conversationId, content } = req.body;
+    const { conversationId, communityId, content } = req.body;
 
-    if (!conversationId || !content) {
-      return res.status(400).json({ error: 'Conversation ID and content are required' });
+    if ((!conversationId && !communityId) || !content) {
+      return res.status(400).json({ error: 'Conversation ID or Community ID and content are required' });
     }
 
     if (content.trim().length === 0) {
@@ -70,34 +88,58 @@ exports.sendMessage = async (req, res) => {
       return res.status(400).json({ error: 'Message too long (max 5000 characters)' });
     }
 
-    // Verify conversation exists and user is participant
-    const conversation = await Conversation.findById(conversationId);
-    if (!conversation) {
-      return res.status(404).json({ error: 'Conversation not found' });
+    let conversation = null;
+    let community = null;
+
+    if (conversationId) {
+      conversation = await Conversation.findById(conversationId);
+      if (!conversation) {
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+      if (!conversation.participants.some(p => p.toString() === userId.toString())) {
+        return res.status(403).json({ error: 'Not authorized to send messages in this conversation' });
+      }
+    } else if (communityId) {
+      community = await Community.findById(communityId);
+      if (!community) {
+        return res.status(404).json({ error: 'Community not found' });
+      }
+      const isMember = community.members.some(m => m.toString() === userId.toString());
+      const isAdmin = community.admins.some(a => a.toString() === userId.toString());
+      if (!isMember && !isAdmin) {
+        return res.status(403).json({ error: 'Not authorized to send messages in this community' });
+      }
     }
 
-    if (!conversation.participants.some(p => p.toString() === userId.toString())) {
-      return res.status(403).json({ error: 'Not authorized to send messages in this conversation' });
-    }
-
-    // Create message
-    const message = new Message({
-      conversation: conversationId,
+    const messageData = {
       sender: userId,
       content: content.trim(),
-      messageType: 'text',
-      readBy: [{ user: userId, readAt: new Date() }]
-    });
+      messageType: 'text'
+    };
 
+    if (conversationId) {
+      messageData.conversation = conversationId;
+      messageData.readBy = [{ user: userId, readAt: new Date() }];
+    } else if (communityId) {
+      messageData.community = communityId;
+    }
+
+    const message = new Message(messageData);
     await message.save();
 
-    // Update conversation last message
-    conversation.lastMessage = {
+    const lastMessageUpdate = {
       content: content.substring(0, 500),
       sender: userId,
       timestamp: new Date()
     };
-    await conversation.save();
+
+    if (conversation) {
+      conversation.lastMessage = lastMessageUpdate;
+      await conversation.save();
+    } else if (community) {
+      community.lastMessage = lastMessageUpdate;
+      await community.save();
+    }
 
     await message.populate('sender', 'name email profilePicture');
 
@@ -123,6 +165,10 @@ exports.markMessageRead = async (req, res) => {
 
     if (!message) {
       return res.status(404).json({ error: 'Message not found' });
+    }
+
+    if (message.community) {
+      return res.json({ message: 'Read receipts not required for community messages' });
     }
 
     // Verify user is part of conversation
@@ -158,21 +204,35 @@ exports.deleteMessage = async (req, res) => {
       return res.status(404).json({ error: 'Message not found' });
     }
 
-    // Only sender can delete their message
-    if (message.sender.toString() !== userId.toString()) {
+    let isAuthorized = message.sender.toString() === userId.toString();
+
+    if (!isAuthorized && message.community) {
+      const community = await Community.findById(message.community);
+      if (community && community.admins.some(a => a.toString() === userId.toString())) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
       return res.status(403).json({ error: 'Not authorized to delete this message' });
     }
 
     message.deleted = true;
     await message.save();
 
-    // Notify conversation participants via socket
     const io = req.app.get('io');
     if (io) {
-      io.to(`conversation:${message.conversation}`).emit('message:deleted', {
-        messageId: message._id,
-        conversationId: message.conversation
-      });
+      if (message.community) {
+        io.to(`community:${message.community}`).emit('message:deleted', {
+          messageId: message._id,
+          communityId: message.community
+        });
+      } else if (message.conversation) {
+        io.to(`conversation:${message.conversation}`).emit('message:deleted', {
+          messageId: message._id,
+          conversationId: message.conversation
+        });
+      }
     }
 
     res.json({ message: 'Message deleted successfully' });

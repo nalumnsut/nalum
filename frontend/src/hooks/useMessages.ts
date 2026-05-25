@@ -4,7 +4,7 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 
-export const useMessages = (conversationId: string | null, socket: any, initialMessage: any = null) => {
+export const useMessages = (conversationId: string | null, socket: any, initialMessage: any = null, isCommunity: boolean = false) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
@@ -62,12 +62,14 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     if (!socket || !conversationId) return;
 
     // Join the conversation room
-    socket.emit('conversation:join', conversationId);
-    console.log('Joined conversation room:', conversationId);
+    const roomType = isCommunity ? "community" : "conversation";
+    socket.emit(`${roomType}:join`, conversationId);
+    console.log(`Joined ${roomType} room:`, conversationId);
 
     const handleNewMessage = (data: any) => {
       console.log('Received message:new event:', data);
-      if (data.conversationId === conversationId) {
+      const targetId = isCommunity ? data.communityId : data.conversationId;
+      if (targetId === conversationId) {
         queryClient.setQueryData(["messages", conversationId], (old: any) => {
           if (!old) return { pages: [{ data: [data.message], hasMore: false, page: 1 }], pageParams: [1] };
 
@@ -89,7 +91,8 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     const handleMessageSent = (data: any) => {
       console.log('Received message:sent event:', data);
       // Add the confirmed message or replace optimistic message
-      if (data.conversationId === conversationId) {
+      const targetId = isCommunity ? data.communityId : data.conversationId;
+      if (targetId === conversationId) {
         queryClient.setQueryData(["messages", conversationId], (old: any) => {
           if (!old) return { pages: [{ data: [data.message], hasMore: false, page: 1 }], pageParams: [1] };
 
@@ -128,7 +131,8 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     };
 
     const handleMessageRead = (data: any) => {
-      if (data.conversationId === conversationId) {
+      const targetId = isCommunity ? data.communityId : data.conversationId;
+      if (targetId === conversationId) {
         queryClient.setQueryData(["messages", conversationId], (old: any) => {
           if (!old) return old;
           const newPages = old.pages.map((page: any) => ({
@@ -160,7 +164,8 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     };
 
     const handleMessageDeleted = (data: any) => {
-      if (data.conversationId === conversationId) {
+      const targetId = isCommunity ? data.communityId : data.conversationId;
+      if (targetId === conversationId) {
         queryClient.setQueryData(["messages", conversationId], (old: any) => {
           if (!old) return old;
           const newPages = old.pages.map((page: any) => ({
@@ -178,46 +183,52 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     socket.on("message:deleted", handleMessageDeleted);
 
     return () => {
-      socket.emit('conversation:leave', conversationId);
+      const roomType = isCommunity ? "community" : "conversation";
+      socket.emit(`${roomType}:leave`, conversationId);
       socket.off("message:new", handleNewMessage);
       socket.off("message:sent", handleMessageSent);
       socket.off("message:read", handleMessageRead);
       socket.off("message:deleted", handleMessageDeleted);
     };
-  }, [socket, conversationId, queryClient]);
+  }, [socket, conversationId, queryClient, isCommunity]);
 
   const sendMessage = useMutation({
-    mutationFn: async ({ content, conversationId, receiverId, tempId }: { content: string; conversationId: string; receiverId: string; tempId?: string }) => {
+    mutationFn: async ({ content, conversationId: argConversationId, receiverId, tempId }: { content: string; conversationId: string; receiverId: string; tempId?: string }) => {
       if (socket && socket.connected) {
-        // Send via socket with conversationId and tempId
-        socket.emit("message:send", { conversationId, content, tempId });
+        // Send via socket with conversationId or communityId and tempId
+        if (isCommunity) {
+          socket.emit("message:send", { communityId: argConversationId, content, tempId });
+        } else {
+          socket.emit("message:send", { conversationId: argConversationId, content, tempId });
+        }
         // Don't return anything - let message:sent handle it
         return null;
       } else {
         // HTTP fallback - needs conversationId too
         const { data } = await api.post("/chat/messages", {
-          conversationId,
+          conversationId: argConversationId,
           content,
         });
         return data;
       }
     },
-    onMutate: async ({ content, conversationId, tempId }) => {
+    onMutate: async ({ content, conversationId: argConversationId, tempId }) => {
       if (!tempId) return;
 
-      await queryClient.cancelQueries({ queryKey: ["messages", conversationId] });
-      const previousMessages = queryClient.getQueryData(["messages", conversationId]);
+      await queryClient.cancelQueries({ queryKey: ["messages", argConversationId] });
+      const previousMessages = queryClient.getQueryData(["messages", argConversationId]);
 
       const optimisticMessage = {
         _id: tempId,
         content,
         sender: user, // Assumes user object matches sender schema enough for UI
-        conversation: conversationId,
+        conversation: isCommunity ? undefined : argConversationId,
+        community: isCommunity ? argConversationId : undefined,
         createdAt: new Date().toISOString(),
         isOptimistic: true,
       };
 
-      queryClient.setQueryData(["messages", conversationId], (old: any) => {
+      queryClient.setQueryData(["messages", argConversationId], (old: any) => {
         if (!old) return { pages: [{ data: [optimisticMessage], hasMore: false, page: 1 }], pageParams: [1] };
         const newPages = [...old.pages];
         newPages[0] = {

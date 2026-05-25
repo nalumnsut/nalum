@@ -4,6 +4,7 @@ const { getRedisClient } = require('../config/redis.config');
 const { createAdapter } = require('@socket.io/redis-adapter');
 const messageHandlers = require('./handlers/messageHandlers');
 const typingHandlers = require('./handlers/typingHandlers');
+const Community = require('../models/chat/communities.model');
 
 async function initializeSocket(server) {
   const io = socketIo(server, {
@@ -72,6 +73,17 @@ async function initializeSocket(server) {
 
       // Join user to their personal room
       socket.join(`user:${userId}`);
+
+      // Auto-join all community rooms for real-time sidebar updates
+      try {
+        const userCommunities = await Community.find({
+          members: userId,
+          isArchived: false,
+        }).select('_id');
+        userCommunities.forEach((c) => socket.join(`community:${c._id}`));
+      } catch (err) {
+        console.warn('Failed to auto-join community rooms:', err.message);
+      }
 
       // Broadcast online status to connections
       socket.broadcast.emit('user:online', { userId });

@@ -44,9 +44,14 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
   }
 
   const filteredChats = useMemo(() =>
-    chats.filter((chat: any) =>
-      chat.otherParticipant?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    ),
+    chats.filter((chat: any) => {
+      const search = searchQuery.toLowerCase();
+      const name = chat.itemType === 'community'
+        ? chat.name?.toLowerCase()
+        : chat.otherParticipant?.name?.toLowerCase();
+      if (!search) return true;
+      return (name || '').includes(search);
+    }),
     [chats, searchQuery]);
 
   return (
@@ -121,8 +126,8 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
                   <div className="flex items-start gap-3 pl-2">
                     <div className="relative">
                       <UserAvatar
-                        name={chat.otherParticipant?.name || "Unknown"}
-                        src={chat.otherParticipant?.profile_picture || chat.otherParticipant?.profilePicture}
+                        name={chat.itemType === 'community' ? chat.name : (chat.otherParticipant?.name || "Unknown")}
+                        src={chat.itemType === 'community' ? chat.avatar : (chat.otherParticipant?.profile_picture || chat.otherParticipant?.profilePicture)}
                         size="md"
                         className={`border-opacity-20 ${isSelected ? 'border-indigo-400' : 'border-white'}`}
                       />
@@ -132,11 +137,11 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <p className={`font-medium text-sm truncate ${isSelected ? "text-white" : "text-gray-200"}`}>
-                          {chat.otherParticipant?.name || "Unknown User"}
+                          {chat.itemType === 'community' ? chat.name : (chat.otherParticipant?.name || "Unknown User")}
                         </p>
-                        {chat.lastMessage?.createdAt && (
+                        {(chat.lastMessage?.createdAt || chat.lastMessage?.timestamp) && (
                           <span className={`text-[10px] ${chat.unreadCount > 0 ? "text-indigo-400 font-medium" : "text-gray-500"}`}>
-                            {formatMessageDate(chat.lastMessage.createdAt)}
+                            {formatMessageDate(chat.lastMessage.createdAt || chat.lastMessage.timestamp)}
                           </span>
                         )}
                       </div>

@@ -313,6 +313,7 @@ export const useAlumniDirectory = () => {
       fetchAlumni(currentPage);
 
       toast.success("Connection request sent!", {
+        duration: 2000,
         style: {
           background: "#10b981",
           color: "white",

@@ -41,6 +41,12 @@ interface Profile {
   profile_picture?: string;
   connectionStatus?: string;
   blockedBy?: string;
+  location?: {
+    city?: string;
+    country?: string;
+    lat?: number;
+    lng?: number;
+  };
   social_media?: {
     linkedin?: string;
     github?: string;
@@ -91,6 +97,7 @@ const ViewProfile = () => {
       setProfile(response.data.profile);
 
       toast.success("Connection request sent!", {
+        duration: 2000,
         style: {
           background: "#10b981",
           color: "white",

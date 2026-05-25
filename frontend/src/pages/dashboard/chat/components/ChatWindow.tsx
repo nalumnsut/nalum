@@ -63,6 +63,8 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
   // Handle mobile viewport height changes
   useViewportHeight();
 
+  const isCommunity = conversation.itemType === 'community';
+
   // Track the real conversation ID locally to handle transitions from connection-only
   const [activeConversationId, setActiveConversationId] = useState<string | null>(
     conversation.isConnectionOnly ? null : conversation._id
@@ -84,7 +86,8 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
   const { messages, isLoading, sendMessage, deleteMessage } = useMessages(
     activeConversationId,
     socket,
-    conversation.isConnectionOnly ? null : conversation.lastMessage
+    conversation.isConnectionOnly ? null : conversation.lastMessage,
+    isCommunity
   );
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -200,6 +203,17 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
 
   const handleSendMessage = async (content: string) => {
     setFirstUnreadMessageId(null);
+
+    if (isCommunity) {
+      sendMessage.mutate({
+        content,
+        conversationId: conversation._id,
+        receiverId: conversation._id,
+        tempId: `temp-${Date.now()}`
+      });
+      return;
+    }
+
     let targetConversationId = activeConversationId;
 
     // If this is a connection-only (no conversation yet), create it on the backend first
@@ -313,17 +327,17 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
 
         <div
           className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:bg-white/5 p-1.5 -ml-1.5 rounded-lg transition-colors"
-          onClick={() => navigate(`/dashboard/alumni/${conversation.otherParticipant._id}`)}
+          onClick={() => !isCommunity && navigate(`/dashboard/alumni/${conversation.otherParticipant._id}`)}
         >
           <UserAvatar
-            name={conversation.otherParticipant?.name || "Unknown User"}
-            src={conversation.otherParticipant?.profile_picture || conversation.otherParticipant?.profilePicture}
+            name={isCommunity ? conversation.name : (conversation.otherParticipant?.name || "Unknown User")}
+            src={isCommunity ? conversation.avatar :(conversation.otherParticipant?.profile_picture || conversation.otherParticipant?.profilePicture)}
             className="h-9 w-9 border border-white/10"
             size="sm"
           />
 
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate text-gray-200">{conversation.otherParticipant?.name || "Unknown User"}</p>
+            <p className="font-semibold text-sm truncate text-gray-200">{isCommunity ? conversation.name : (conversation.otherParticipant?.name || "Unknown User")}</p>
           </div>
         </div>
 
@@ -334,26 +348,58 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 bg-slate-900 border-white/10 text-gray-200">
-            <DropdownMenuItem
-              className="focus:bg-white/10 cursor-pointer"
-              onClick={() => setShowDeleteDialog(true)}
-            >
-              Delete Chat
-            </DropdownMenuItem>
-            {isBlockedByMe ? (
-              <DropdownMenuItem
-                className="text-blue-400 focus:text-blue-400 focus:bg-blue-500/10 cursor-pointer"
-                onClick={() => setShowUnblockDialog(true)}
-              >
-                Unblock User
-              </DropdownMenuItem>
+            {isCommunity ? (
+              <>
+                <DropdownMenuItem
+                  className="focus:bg-white/10 cursor-pointer"
+                  onClick={async () => {
+                    try {
+                      await api.post(`/chat/communities/${conversation._id}/clear`);
+                      toast.success("Chat history cleared");
+                      queryClient.invalidateQueries({ queryKey: ["inbox"] });
+                    } catch (e) { toast.error("Failed to clear chat"); }
+                  }}
+                >
+                  Clear Chat
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer"
+                  onClick={async () => {
+                    try {
+                      await api.post(`/chat/communities/${conversation._id}/leave`);
+                      toast.success("Left community");
+                      queryClient.invalidateQueries({ queryKey: ["inbox"] });
+                      navigate("/dashboard/chat");
+                    } catch (e: any) { toast.error(e.response?.data?.error || "Failed to leave community"); }
+                  }}
+                >
+                  Leave Community
+                </DropdownMenuItem>
+              </>
             ) : (
-              <DropdownMenuItem
-                className="text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer"
-                onClick={() => setShowBlockDialog(true)}
-              >
-                Block User
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem
+                  className="focus:bg-white/10 cursor-pointer"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  Delete Chat
+                </DropdownMenuItem>
+                {isBlockedByMe ? (
+                  <DropdownMenuItem
+                    className="text-blue-400 focus:text-blue-400 focus:bg-blue-500/10 cursor-pointer"
+                    onClick={() => setShowUnblockDialog(true)}
+                  >
+                    Unblock User
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    className="text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer"
+                    onClick={() => setShowBlockDialog(true)}
+                  >
+                    Block User
+                  </DropdownMenuItem>
+                )}
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -436,10 +482,20 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
       </ScrollArea>
 
       {/* Typing Indicator */}
-      {activeConversationId && !isBlocked && <TypingIndicator conversationId={activeConversationId} />}
+      {activeConversationId && !isBlocked && !isCommunity && <TypingIndicator conversationId={activeConversationId} />}
 
       {/* Input or Blocked/Pending Message */}
-      {isBlocked ? (
+      {isCommunity ? (
+        <div className="shrink-0">
+          <MessageInput
+            onSendMessage={handleSendMessage}
+            disabled={sendMessage.isPending}
+            conversationId={activeConversationId || 'temp'}
+            receiverId={conversation._id}
+            onInputFocus={handleInputFocus}
+          />
+        </div>
+      ) : isBlocked ? (
         <div className="p-4 bg-black/20 backdrop-blur-sm border-t border-white/10 text-center shrink-0">
           {isBlockedByMe ? (
             <div className="text-gray-400 text-sm">

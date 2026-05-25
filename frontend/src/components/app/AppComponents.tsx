@@ -12,6 +12,7 @@ export function AuthErrorHandler() {
     const handleAuthError = () => {
       logout();
       toast.error("Session Expired", {
+        id: "session-expired",
         description: "Your session has expired. Please log in again.",
         style: {
           background: "#800000",
