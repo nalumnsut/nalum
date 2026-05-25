@@ -22,6 +22,7 @@ import api, { globalSearch } from "@/lib/api";
 import { useChatContext } from "@/context/ChatContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { useEffect, useState, useRef } from "react";
+import { useLocationGuard } from "@/hooks/useLocationGuard";
 
 const DashboardContent = () => {
   const location = useLocation();
@@ -56,6 +57,9 @@ const DashboardContent = () => {
   const { socket } = useChatContext();
   const { unreadCount: notificationUnreadCount } = useNotifications();
   const queryClient = useQueryClient();
+
+  // Enforce profile completion and location
+  useLocationGuard();
 
   // Auto-focus input when search opens
   useEffect(() => {

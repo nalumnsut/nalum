@@ -9,7 +9,18 @@ import { useToast } from "@/hooks/use-toast";
 interface EmailVerificationProps {
   email: string;
   onEmailChange: (email: string) => void;
-  onVerified: () => void;
+  onVerified: (authData?: {
+    access_token: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      email_verified: boolean;
+      profileCompleted: boolean;
+      verified_alumni: boolean;
+    };
+  }) => void;
 }
 
 const EmailVerification = ({ email, onEmailChange, onVerified }: EmailVerificationProps) => {
@@ -75,7 +86,8 @@ const EmailVerification = ({ email, onEmailChange, onVerified }: EmailVerificati
       const response = await api.post('/auth/verify-account-otp', { email, otp });
       if (!response.data.err) {
         toast({ title: "Email verified successfully!" });
-        onVerified();
+        // Pass auth data to parent if the backend returned tokens (auto-login)
+        onVerified(response.data.data);
       } else {
         toast({ title: response.data.message || "Invalid OTP", variant: "destructive" });
       }

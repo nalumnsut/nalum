@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import ProfilePictureUpload from "@/components/profile/ProfilePictureUpload";
-import LocationSelector from "@/components/profile/LocationSelector";
+import MapLocationPicker, { type LocationData } from "@/components/signup/MapLocationPicker";
 import { BRANCHES, CAMPUSES } from "@/constants/branches";
 import { POPULAR_COMPANIES, POPULAR_ROLES } from "@/lib/suggestions";
 import {
@@ -78,11 +78,13 @@ const ProfileForm = () => {
     personal_website: "",
   });
 
-  // Form state - Location (for alumni)
-  const [city, setCity] = useState("");
-  const [country, setCountry] = useState("");
-  const [lat, setLat] = useState<number | undefined>();
-  const [lng, setLng] = useState<number | undefined>();
+  // Form state - Location
+  const [locationData, setLocationData] = useState<LocationData>({
+    locality: "",
+    city: "",
+    state: "",
+    country: "",
+  });
 
   // Form state - Additional Info
   const [skills, setSkills] = useState<string[]>([]);
@@ -187,6 +189,13 @@ const ProfileForm = () => {
       });
       return;
     }
+    if (currentStep === 4 && (!locationData.city || !locationData.country)) {
+      toast({
+        title: "Please provide your City and Country",
+        variant: "destructive",
+      });
+      return;
+    }
     setCurrentStep(currentStep + 1);
   };
 
@@ -197,6 +206,14 @@ const ProfileForm = () => {
   const totalSteps = wantsAdditionalInfo ? 5 : 4;
 
   const handleSubmit = async () => {
+    if (!locationData.city || !locationData.country) {
+      toast({
+        title: "Please provide your City and Country",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     // Use FormData for file upload
@@ -210,8 +227,15 @@ const ProfileForm = () => {
     if (profilePicture) formData.append("profile_picture", profilePicture);
 
     formData.append("social_media", JSON.stringify(socialLinks));
-    if (city && country) {
-      formData.append("location", JSON.stringify({ city, country, lat, lng }));
+    if (locationData.city && locationData.country) {
+      formData.append("location", JSON.stringify({
+        locality: locationData.locality,
+        city: locationData.city,
+        state: locationData.state,
+        country: locationData.country,
+        lat: locationData.lat,
+        lng: locationData.lng,
+      }));
     }
     if (skills.length > 0) formData.append("skills", JSON.stringify(skills));
     if (experience.length > 0)
@@ -543,29 +567,20 @@ const ProfileForm = () => {
               </p>
             </div>
 
-            {isAlumni && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                    Your Location
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Help fellow alumni find you on our network map
-                  </p>
-                </div>
-                <LocationSelector
-                  city={city}
-                  country={country}
-                  onLocationChange={(newCity, newCountry, newLat, newLng) => {
-                    setCity(newCity);
-                    setCountry(newCountry);
-                    setLat(newLat);
-                    setLng(newLng);
-                  }}
-                  variant="light"
-                />
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                  Your Location
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Help fellow alumni find you on our network map
+                </p>
               </div>
-            )}
+              <MapLocationPicker
+                value={locationData}
+                onChange={setLocationData}
+              />
+            </div>
 
             <div className="flex items-start space-x-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <Checkbox

@@ -63,6 +63,35 @@ const userSchema = new mongoose.Schema(
         return this.role === "alumni" ? false : true;
       },
     },
+    // Location collected at sign-up
+    location: {
+      locality: {
+        type: String,
+        lowercase: true,
+        trim: true,
+      },
+      city: {
+        type: String,
+        lowercase: true,
+        trim: true,
+      },
+      state: {
+        type: String,
+        lowercase: true,
+        trim: true,
+      },
+      country: {
+        type: String,
+        lowercase: true,
+        trim: true,
+      },
+      lat: {
+        type: Number,
+      },
+      lng: {
+        type: Number,
+      },
+    },
     banned: {
       type: Boolean,
       default: false,

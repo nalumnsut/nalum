@@ -21,6 +21,11 @@ exports.create = async (userData) => {
       email_verified: userData.email_verified || false,
     };
 
+    // Add location if provided
+    if (userData.location) {
+      userPayload.location = userData.location;
+    }
+
     const user = await User.create(userPayload);
     return { error: false, data: user };
   } catch (err) {

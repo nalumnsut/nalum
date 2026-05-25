@@ -66,10 +66,7 @@ router.put("/", protect, async (req, res) => {
     if (skills !== undefined) profile.skills = skills;
     if (experience !== undefined) profile.experience = experience;
     if (location !== undefined) {
-      const userDoc = await User.findById(userId).select("role");
-      if (userDoc && userDoc.role === "alumni") {
-        profile.location = location;
-      }
+      profile.location = location;
     }
 
     await profile.save();

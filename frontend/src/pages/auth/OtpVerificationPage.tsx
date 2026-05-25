@@ -2,18 +2,48 @@ import EmailVerification from "@/components/signup/EmailVerification";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Loader2 } from "lucide-react";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
+import { useAuth } from "@/context/AuthContext";
 
 const OtpVerificationPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
   const [verified, setVerified] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const { setAuth } = useAuth();
 
-  const handleEmailVerified = () => {
+  const handleEmailVerified = (authData?: {
+    access_token: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      email_verified: boolean;
+      profileCompleted: boolean;
+      verified_alumni: boolean;
+    };
+  }) => {
     setVerified(true);
+
+    if (authData) {
+      // Auto-login: set auth context with the tokens from verification
+      setAuth(
+        authData.access_token,
+        authData.user.email,
+        authData.user.verified_alumni,
+        authData.user
+      );
+
+      // Auto-redirect to profile form after a brief success message
+      setIsRedirecting(true);
+      setTimeout(() => {
+        navigate("/profile-form", { replace: true });
+      }, 1500);
+    }
   };
 
   return (
@@ -79,9 +109,16 @@ const OtpVerificationPage = () => {
               <h2 className="text-3xl font-bold text-gray-900">
                 Email Verified Successfully!
               </h2>
-              <p className="text-gray-600">
-                You can now sign in to your account.
-              </p>
+              {isRedirecting ? (
+                <div className="mt-3 flex items-center justify-center gap-2 text-gray-600">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <p>Setting up your profile...</p>
+                </div>
+              ) : (
+                <p className="text-gray-600">
+                  You can now sign in to your account.
+                </p>
+              )}
             </div>
           ) : (
             <>
@@ -97,12 +134,14 @@ const OtpVerificationPage = () => {
 
           {/* Content */}
           {verified ? (
-            <Button
-              onClick={() => navigate("/login")}
-              className="w-full h-12 bg-nsut-maroon text-white font-semibold text-lg"
-            >
-              Go to Login
-            </Button>
+            !isRedirecting && (
+              <Button
+                onClick={() => navigate("/login")}
+                className="w-full h-12 bg-nsut-maroon text-white font-semibold text-lg"
+              >
+                Go to Login
+              </Button>
+            )
           ) : (
             <EmailVerification
               email={email || ""}

@@ -61,11 +61,11 @@ router.post(
         }
       }
 
-      // Only alumni can set location
-      if (location && Object.keys(location).length > 0) {
-        const userDoc = await User.findById(userId).select("role");
-        if (!userDoc || userDoc.role !== "alumni") {
-          location = {};
+      // If no location provided during profile creation, fall back to User's sign-up location
+      if (!location || Object.keys(location).length === 0) {
+        const userDoc = await User.findById(userId).select("location");
+        if (userDoc && userDoc.location && userDoc.location.city) {
+          location = userDoc.location;
         }
       }
 
@@ -77,6 +77,15 @@ router.post(
           .status(400)
           .json({
             error: "Missing required fields: batch, branch, or campus.",
+          });
+      }
+
+      // Validate location
+      if (!location || !location.city || !location.country) {
+        return res
+          .status(400)
+          .json({
+            error: "Location (City and Country) is required.",
           });
       }
 
