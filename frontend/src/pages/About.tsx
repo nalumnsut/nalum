@@ -20,16 +20,8 @@ interface TeamMember {
   linkedinUrl: string;  // Add LinkedIn profile URL here
 }
 
-// FACULTY TEAM (4 members)
+// FACULTY TEAM (3 members)
 const facultyMembers: TeamMember[] = [
-  {
-    name: 'Prof. Anand Srivastava',
-    branch: '',  // Leave empty for faculty
-    year: '',    // Leave empty for faculty
-    designation: 'Vice Chancellor',  // ADD DESIGNATION HERE
-    image: '/about/team/faculty/anandsrivastava.webp',  // ADD IMAGE PATH HERE
-    linkedinUrl: null  // ADD LINKEDIN URL HERE
-  },
   {
     name: 'Prof. MPS Bhatia',
     branch: '',  // Leave empty for faculty
