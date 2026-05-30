@@ -9,6 +9,7 @@ import { useLocation } from 'react-router-dom';
 // For Faculty: /about/team/faculty/[name].jpg
 // For Developers: /about/team/developers/[name].jpg
 // For Operations: /about/team/operations/[name].jpg
+// For 2026 Team: /about/team/2026/[name].jpg
 
 interface TeamMember {
   name: string;
@@ -19,16 +20,8 @@ interface TeamMember {
   linkedinUrl: string;  // Add LinkedIn profile URL here
 }
 
-// FACULTY TEAM (2 members)
+// FACULTY TEAM (3 members)
 const facultyMembers: TeamMember[] = [
-  {
-    name: 'Prof. Anand Srivastava',
-    branch: '',  // Leave empty for faculty
-    year: '',    // Leave empty for faculty
-    designation: 'Vice Chancellor',  // ADD DESIGNATION HERE
-    image: '/about/team/faculty/anandsrivastava.webp',  // ADD IMAGE PATH HERE
-    linkedinUrl: null  // ADD LINKEDIN URL HERE
-  },
   {
     name: 'Prof. MPS Bhatia',
     branch: '',  // Leave empty for faculty
@@ -46,7 +39,7 @@ const facultyMembers: TeamMember[] = [
     linkedinUrl: null  // ADD LINKEDIN URL HERE
   },
   {
-    name: 'Prof. Rajesh Rawat',
+    name: 'Mr. Rajesh Rawat',
     branch: '',  // Leave empty for faculty
     year: '',    // Leave empty for faculty
     designation: 'Coordinator, TnP',  // ADD DESIGNATION HERE
@@ -55,47 +48,40 @@ const facultyMembers: TeamMember[] = [
   }
 ];
 
-// CORE TEAM (5 members)
+// CORE TEAM (4 members)
 const coreTeamMembers: TeamMember[] = [
-  {
-    name: 'Aditi Gupta',
-    branch: 'Mech',  // ADD BRANCH HERE
-    year: '2026',   // ADD YEAR HERE
-    image: '/about/team/core/aditigupta.webp',  // ADD IMAGE PATH HERE
-    linkedinUrl: 'https://www.linkedin.com/mwlite/profile/me?trk=p_mwlite_profile_view-secondary_nav'  // ADD LINKEDIN URL HERE
-  },
-  {
-    name: 'Shivam Narula',
-    branch: 'Mech',  // ADD BRANCH HERE
-    year: '2026',   // ADD YEAR HERE
-    image: '/about/team/core/shivamnarula.webp',  // ADD IMAGE PATH HERE
-    linkedinUrl: 'https://www.linkedin.com/in/shivam-narula-b37b5b256?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app'  // ADD LINKEDIN URL HERE
-  },
-  {
-    name: 'Vatsal Maskara',
-    branch: 'Mech',  // ADD BRANCH HERE
-    year: '2026',   // ADD YEAR HERE
-    image: '/about/team/core/vatsalmaskara.webp',  // ADD IMAGE PATH HERE
-    linkedinUrl: 'https://www.linkedin.com/in/vatsal-maskara?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app'  // ADD LINKEDIN URL HERE
-  },
-  {
-    name: 'Ahaan Singh',
-    branch: 'Mechanical Engineering',  // ADD BRANCH HERE
-    year: '2026',   // ADD YEAR HERE
-    image: '/about/team/core/ahaansingh.webp',  // ADD IMAGE PATH HERE
-    linkedinUrl: 'https://www.linkedin.com/in/ahaan-singh-07b7a9255'  // ADD LINKEDIN URL HERE
-  }
-];
-
-// DEVELOPERS TEAM (7 members)
-const developerMembers: TeamMember[] = [
   {
     name: 'Manik Gaur',
     branch: 'IT',  // ADD BRANCH HERE
     year: '2027',   // ADD YEAR HERE
-    image: '/about/team/developers/manikgaur.webp',  // ADD IMAGE PATH HERE
+    image: '/about/team/core/manikgaur.webp',  // ADD IMAGE PATH HERE
     linkedinUrl: 'https://www.linkedin.com/in/manik-gaur-083922285/'  // ADD LINKEDIN URL HERE
   },
+  {
+    name: 'Sarthak Verma',
+    branch: 'IT',  // ADD BRANCH HERE
+    year: '2027',   // ADD YEAR HERE
+    image: '/about/team/core/sarthakverma.webp',  // ADD IMAGE PATH HERE
+    linkedinUrl: 'https://linkedin.com/in/rn-vrma'  // ADD LINKEDIN URL HERE
+  },
+  {
+    name: 'Vansh Bhardwaj',
+    branch: 'ITNS',  // ADD BRANCH HERE
+    year: '2027',   // ADD YEAR HERE
+    image: '/about/team/core/vanshbhardwaj.webp',  // ADD IMAGE PATH HERE
+    linkedinUrl: 'https://www.linkedin.com/in/vansh-bhardwaj-b9734a285/'  // ADD LINKEDIN URL HERE
+  },
+  {
+    name: 'Shabdagya Jha',
+    branch: 'ECE',  // ADD BRANCH HERE
+    year: '2027',   // ADD YEAR HERE
+    image: '/about/team/core/shabdagyajha.webp',  // ADD IMAGE PATH HERE
+    linkedinUrl: 'https://www.linkedin.com/in/shabdagya/'  // ADD LINKEDIN URL HERE
+  }
+];
+
+// DEVELOPERS TEAM (3 members)
+const developerMembers: TeamMember[] = [
   {
     name: 'Anant Mathur',
     branch: 'IT',  // ADD BRANCH HERE
@@ -116,37 +102,48 @@ const developerMembers: TeamMember[] = [
     year: '2028',   // ADD YEAR HERE
     image: '/about/team/developers/nischaybagari.webp',  // ADD IMAGE PATH HERE
     linkedinUrl: 'https://in.linkedin.com/in/nischay-bagari-a56013324'  // ADD LINKEDIN URL HERE
-  },
-  {
-    name: 'Daivik Awasthi',
-    branch: 'IT',  // ADD BRANCH HERE
-    year: '2027',   // ADD YEAR HERE
-    image: '/about/team/developers/daivikawasthi.webp',  // ADD IMAGE PATH HERE
-    linkedinUrl: 'https://www.linkedin.com/in/daivik-awasthi/'  // ADD LINKEDIN URL HERE
   }
 ];
 
-// OPERATIONS TEAM (10 members)
-const operationsMembers: TeamMember[] = [
+// OPERATIONS TEAM (0 members)
+const operationsMembers: TeamMember[] = [];
+
+// 2026 TEAM (4 members)
+const team2026Members: TeamMember[] = [
   {
-    name: 'Sarthak Verma',
-    branch: 'IT',  // ADD BRANCH HERE
-    year: '2027',   // ADD YEAR HERE
-    image: '/about/team/operations/sarthakverma.webp',  // ADD IMAGE PATH HERE
-    linkedinUrl: 'https://linkedin.com/in/rn-vrma'  // ADD LINKEDIN URL HERE
+    name: 'Aditi Gupta',
+    branch: 'Mech',  // ADD BRANCH HERE
+    year: '2026',   // ADD YEAR HERE
+    image: '/about/team/2026/aditigupta.webp',  // ADD IMAGE PATH HERE
+    linkedinUrl: 'https://www.linkedin.com/mwlite/profile/me?trk=p_mwlite_profile_view-secondary_nav'  // ADD LINKEDIN URL HERE
   },
   {
-    name: 'Vansh Bhardwaj',
-    branch: 'ITNS',  // ADD BRANCH HERE
-    year: '2027',   // ADD YEAR HERE
-    image: '/about/team/operations/vanshbhardwaj.webp',  // ADD IMAGE PATH HERE
-    linkedinUrl: 'https://www.linkedin.com/in/vansh-bhardwaj-b9734a285/'  // ADD LINKEDIN URL HERE
+    name: 'Shivam Narula',
+    branch: 'Mech',  // ADD BRANCH HERE
+    year: '2026',   // ADD YEAR HERE
+    image: '/about/team/2026/shivamnarula.webp',  // ADD IMAGE PATH HERE
+    linkedinUrl: 'https://www.linkedin.com/in/shivam-narula-b37b5b256?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app'  // ADD LINKEDIN URL HERE
+  },
+  {
+    name: 'Vatsal Maskara',
+    branch: 'Mech',  // ADD BRANCH HERE
+    year: '2026',   // ADD YEAR HERE
+    image: '/about/team/2026/vatsalmaskara.webp',  // ADD IMAGE PATH HERE
+    linkedinUrl: 'https://www.linkedin.com/in/vatsal-maskara?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app'  // ADD LINKEDIN URL HERE
+  },
+  {
+    name: 'Ahaan Singh',
+    branch: 'Mech',  // ADD BRANCH HERE
+    year: '2026',   // ADD YEAR HERE
+    image: '/about/team/2026/ahaansingh.webp',  // ADD IMAGE PATH HERE
+    linkedinUrl: 'https://www.linkedin.com/in/ahaan-singh-07b7a9255'  // ADD LINKEDIN URL HERE
   }
 ];
 // ============================================
 
 const AboutPage = () => {
   const [activeTab, setActiveTab] = useState<'about' | 'team'>('about');
+  const [show2026Team, setShow2026Team] = useState(false);
   const location = useLocation();
 
   // Scroll to hash anchor when component mounts or hash changes
@@ -561,7 +558,8 @@ const AboutPage = () => {
               </div>
             </div>
 
-            {/* Operations Section */}
+            {/* Operations Section (disabled for now) */}
+            {false && (
             <div className="mb-16">
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full shadow-lg">
@@ -614,6 +612,69 @@ const AboutPage = () => {
                 ))}
               </div>
             </div>
+            )}
+
+            {/* 2026 Team Section */}
+            <div className="mb-16">
+              <div className="mb-8 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShow2026Team((prev) => !prev)}
+                  className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-full shadow-lg"
+                  aria-expanded={show2026Team}
+                >
+                  <Users className="w-6 h-6" />
+                  <h3 className="font-serif text-2xl font-bold">2026 Team</h3>
+                </button>
+              </div>
+
+              {show2026Team && (
+                <div className="flex flex-wrap justify-center gap-8 max-w-6xl mx-auto">
+                  {team2026Members.map((member, index) => (
+                    <div
+                      key={index}
+                      className="group bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-500 p-6 border border-gray-100 hover:border-amber-300 animate-fade-in hover:-translate-y-2 flex flex-col items-center w-44"
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      {/* Profile Picture */}
+                      <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-amber-500 to-amber-700 flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-300 border-4 border-white mb-4">
+                        <img
+                          src={member.image}
+                          alt={member.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white text-2xl font-bold bg-gradient-to-br from-amber-500 to-amber-700">${member.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}</div>`;
+                          }}
+                        />
+                      </div>
+
+                      {/* Member Name */}
+                      <h4 className="font-serif text-lg font-bold text-nsut-maroon mb-1 text-center group-hover:text-amber-700 transition-colors">
+                        {member.name}
+                      </h4>
+
+                      {/* Branch - Year */}
+                      <p className="text-gray-600 text-sm mb-3 text-center">
+                        {member.branch} - {member.year}
+                      </p>
+
+                      {/* LinkedIn Icon */}
+                      <a
+                        href={member.linkedinUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-auto w-10 h-10 rounded-full bg-[#0077B5] hover:bg-[#005582] flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
+                        aria-label={`LinkedIn profile of ${member.name}`}
+                      >
+                        <Linkedin className="w-5 h-5 text-white" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
         )}
       </div>
