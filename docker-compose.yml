@@ -52,8 +52,8 @@ services:
     image: mongo:7
     container_name: alumni-mongo
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:27017:27017"
+    expose:
+      - "27017"
     volumes:
       - mongo_data:/data/db
 
