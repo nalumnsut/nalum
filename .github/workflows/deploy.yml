@@ -64,8 +64,4 @@ jobs:
               sleep 5
             done
 
-            # Clear host nginx proxy cache and reload to serve fresh assets
-            sudo rm -rf /var/cache/nginx/* 2>/dev/null || true
-            sudo nginx -s reload
-
             docker image prune -f
