@@ -55,6 +55,26 @@ exports.createReply = async (req, res) => {
     const { postId, commentId } = req.params;
     const { content } = req.body;
 
+    const parentComment = await require("../models/posts/comment.model").findOne({
+      _id: commentId,
+      postId,
+      status: { $ne: "deleted" },
+    }).select("_id parentCommentId").lean();
+
+    if (!parentComment) {
+      return res.status(404).json({
+        success: false,
+        message: "Parent comment not found",
+      });
+    }
+
+    if (parentComment.parentCommentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Replies are limited to one level",
+      });
+    }
+
     const comment = await commentService.createComment({
       postId,
       authorId: req.user.user_id,

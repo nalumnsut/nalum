@@ -31,6 +31,18 @@ interface CommentSectionProps {
   postId: string;
 }
 
+function normalizeCommentThread(comments: CommentItem[]): CommentItem[] {
+  return comments.map((comment) => ({
+    ...comment,
+    replies: Array.isArray(comment.replies)
+      ? comment.replies.map((reply) => ({
+          ...reply,
+          replies: [],
+        }))
+      : [],
+  }));
+}
+
 function CommentComposer({
   value,
   onChange,
@@ -47,18 +59,18 @@ function CommentComposer({
   placeholder: string;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       <MentionTextarea
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="min-h-[110px] bg-slate-950/60 border-white/10 rounded-xl"
+        className="min-h-[92px] sm:min-h-[110px] bg-slate-950/60 border-white/10 rounded-[20px] px-3.5 py-3 text-[15px] leading-6 shadow-inner shadow-black/10"
       />
       <div className="flex justify-end">
         <Button
           onClick={onSubmit}
           disabled={isSubmitting || !value.trim()}
-          className="bg-[#800000] hover:bg-[#600000] text-white"
+          className="w-full sm:w-auto rounded-full bg-[#800000] px-5 text-white shadow-[0_10px_24px_rgba(128,0,0,0.22)] hover:bg-[#600000]"
         >
           {isSubmitting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -156,30 +168,37 @@ function CommentCard({
   };
 
   return (
-    <div className={cn("space-y-3", depth > 0 && "pl-4 sm:pl-6 border-l border-white/10")}>
-      <div className="flex gap-3">
+    <div className={cn("space-y-3", depth > 0 && "pl-0 sm:pl-6")}> 
+      <div className="flex gap-2.5 sm:gap-3">
         <Link
           to={`/dashboard/alumni/${comment.author?._id || comment.authorId}`}
-          className="shrink-0 mt-1"
+          className="shrink-0"
         >
           <UserAvatar src={undefined} name={comment.author?.name || "User"} size="sm" />
         </Link>
 
         <div className="flex-1 min-w-0">
-          <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
-            <div className="flex items-start justify-between gap-3">
+          <div
+            className={cn(
+              "border border-white/10 px-3 py-2.5 sm:px-4 sm:py-3",
+              depth > 0
+                ? "rounded-2xl bg-white/[0.035] sm:bg-white/5"
+                : "rounded-[22px] bg-white/5 shadow-[0_12px_36px_rgba(0,0,0,0.16)]"
+            )}
+          >
+            <div className="flex items-start justify-between gap-2 sm:gap-3">
               <div>
                 <Link
                   to={`/dashboard/alumni/${comment.author?._id || comment.authorId}`}
-                  className="font-semibold text-white hover:text-blue-300 transition-colors"
+                  className="text-[15px] font-semibold text-white transition-colors hover:text-blue-300"
                 >
                   {comment.author?.name || "Unknown user"}
                 </Link>
-                <div className="text-xs text-gray-400 mt-1">
+                <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-400">
                   {formatDistanceToNow(new Date(comment.createdAt), {
                     addSuffix: true,
                   })}
-                  {comment.editedAt ? " · edited" : ""}
+                  {comment.editedAt ? <span>edited</span> : null}
                 </div>
               </div>
 
@@ -209,13 +228,13 @@ function CommentCard({
               )}
             </div>
 
-            <div className="mt-3 text-sm text-gray-200 whitespace-pre-wrap break-words">
+            <div className={cn("mt-2.5 text-sm text-gray-200 whitespace-pre-wrap break-words", depth > 0 && "text-[14px] leading-6")}>
               {isEditing ? (
                 <div className="space-y-3">
                   <MentionTextarea
                     value={editValue}
                     onChange={setEditValue}
-                    className="min-h-[96px] bg-slate-950/70 border-white/10 rounded-xl"
+                    className="min-h-[92px] bg-slate-950/70 border-white/10 rounded-[18px]"
                   />
                   <div className="flex justify-end gap-2">
                     <Button
@@ -228,7 +247,7 @@ function CommentCard({
                     <Button
                       onClick={handleUpdate}
                       disabled={isSaving || !editValue.trim()}
-                      className="bg-[#800000] hover:bg-[#600000] text-white"
+                      className="bg-[#800000] text-white hover:bg-[#600000]"
                     >
                       {isSaving ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -245,19 +264,21 @@ function CommentCard({
             </div>
 
             {!comment.isDeleted && (
-              <div className="mt-3 flex items-center gap-3 text-xs text-gray-400">
-                <button
-                  type="button"
-                  onClick={handleOpenReply}
-                  className="hover:text-blue-300 transition-colors font-medium"
-                >
-                  Reply
-                </button>
-                {comment.replies.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-2.5 text-[11px] text-gray-400">
+                {depth === 0 && (
+                  <button
+                    type="button"
+                    onClick={handleOpenReply}
+                    className="rounded-full bg-white/5 px-3 py-1.5 font-medium text-gray-200 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    Reply
+                  </button>
+                )}
+                {depth === 0 && comment.replies.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setShowReplies((value) => !value)}
-                    className="hover:text-blue-300 transition-colors font-medium flex items-center gap-1"
+                    className="flex items-center gap-1 rounded-full bg-white/5 px-3 py-1.5 font-medium text-gray-200 transition-colors hover:bg-white/10 hover:text-white"
                   >
                     {showReplies ? (
                       <ChevronUp className="h-3 w-3" />
@@ -274,11 +295,11 @@ function CommentCard({
           </div>
 
           {replyOpen && (
-            <div className="mt-3">
+            <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 sm:p-4">
               <div className="space-y-2">
-                <div className="text-xs text-gray-400 flex items-center gap-2">
+                <div className="flex items-center gap-2 text-[11px] text-gray-400">
                   <span>Replying to</span>
-                  <span className="text-blue-300 font-medium">@{comment.author?.name || "user"}</span>
+                  <span className="font-medium text-white">@{comment.author?.name || "user"}</span>
                 </div>
                 <CommentComposer
                   value={replyValue}
@@ -292,8 +313,8 @@ function CommentCard({
             </div>
           )}
 
-          {showReplies && comment.replies.length > 0 && (
-            <div className="mt-4 space-y-4">
+          {depth === 0 && showReplies && comment.replies.length > 0 && (
+            <div className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
               {comment.replies.map((reply) => (
                 <CommentCard
                   key={reply._id}
@@ -321,7 +342,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
     try {
       setIsLoading(true);
       const data = await fetchPostComments(postId);
-      setComments(data.comments || []);
+      setComments(normalizeCommentThread(data.comments || []));
     } catch (error) {
       console.error("Failed to load comments:", error);
       toast.error("Failed to load comments");
@@ -352,16 +373,19 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   };
 
   return (
-    <Card className="mt-5 sm:mt-6 bg-slate-900/50 border-white/10 backdrop-blur-sm">
-      <CardContent className="p-4 sm:p-6 space-y-6">
-        <div className="flex items-center gap-2">
+    <Card className="mt-5 sm:mt-6 overflow-hidden border-white/10 bg-slate-900/50 backdrop-blur-sm">
+      <CardContent className="space-y-4 p-3 sm:space-y-6 sm:p-6">
+        <div className="flex items-center gap-2.5">
           <MessageSquare className="h-5 w-5 text-[#a33]" />
           <h2 className="text-lg font-semibold text-white">Comments</h2>
-          <span className="text-sm text-gray-400">{comments.length}</span>
+          <span className="rounded-full bg-white/5 px-2.5 py-1 text-xs text-gray-300">{comments.length}</span>
         </div>
 
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-gray-300">Add a comment</p>
+        <div className="space-y-3 rounded-[24px] border border-white/10 bg-black/10 p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium text-gray-200">Add a comment</p>
+            <span className="text-[11px] text-gray-500">Instagram-style thread</span>
+          </div>
           <CommentComposer
             value={commentValue}
             onChange={setCommentValue}
@@ -372,7 +396,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
           />
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           {isLoading ? (
             <div className="flex items-center justify-center py-8 text-gray-400">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />

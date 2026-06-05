@@ -67,10 +67,14 @@ async function createComment({ postId, authorId, content, parentCommentId = null
       _id: parentCommentId,
       postId,
       status: { $ne: "deleted" },
-    }).select("_id authorId rootCommentId status");
+    }).select("_id authorId parentCommentId rootCommentId status");
 
     if (!parentComment) {
       throw createHttpError("Parent comment not found", 404);
+    }
+
+    if (parentComment.parentCommentId) {
+      throw createHttpError("Replies are limited to one level", 400);
     }
 
     rootCommentId = parentComment.rootCommentId || parentComment._id;
@@ -204,10 +208,7 @@ async function getPostCommentThread({ postId, page = 1, limit = 20 }) {
   const threadComments = topLevelIds.length
     ? await Comment.find({
         postId,
-        $or: [
-          { _id: { $in: topLevelIds } },
-          { rootCommentId: { $in: topLevelIds } },
-        ],
+        rootCommentId: { $in: topLevelIds },
       })
         .sort({ createdAt: 1 })
         .populate("authorId", "name role")
@@ -226,6 +227,11 @@ async function getPostCommentThread({ postId, page = 1, limit = 20 }) {
 
 function buildCommentTree(topLevelComments, threadComments) {
   const nodes = new Map();
+  const topLevelIds = new Set(topLevelComments.map((comment) => comment._id.toString()));
+
+  topLevelComments.forEach((comment) => {
+    nodes.set(comment._id.toString(), normalizeComment(comment));
+  });
 
   const orderedComments = [...threadComments];
 
@@ -237,7 +243,7 @@ function buildCommentTree(topLevelComments, threadComments) {
     const node = nodes.get(comment._id.toString());
     const parentId = comment.parentCommentId ? comment.parentCommentId.toString() : null;
 
-    if (parentId && nodes.has(parentId)) {
+    if (parentId && nodes.has(parentId) && topLevelIds.has(parentId)) {
       nodes.get(parentId).replies.push(node);
       return;
     }

@@ -213,7 +213,7 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
         {showDropdown && suggestions.length > 0 && (
           <div
             ref={dropdownRef}
-            className="absolute z-50 left-0 mt-1 w-72 max-h-56 overflow-y-auto bg-slate-900 border border-white/10 rounded-xl shadow-2xl backdrop-blur-md"
+            className="absolute z-50 left-0 mt-1 w-[calc(100vw-2rem)] sm:w-72 max-h-56 overflow-y-auto bg-slate-900 border border-white/10 rounded-xl shadow-2xl backdrop-blur-md"
           >
             {suggestions.map((user, i) => (
               <button
