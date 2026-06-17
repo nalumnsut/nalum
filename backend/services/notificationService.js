@@ -340,6 +340,32 @@ class NotificationService {
     // Create default preferences if not exists
     if (!preferences) {
       preferences = await NotificationPreferences.create({ user: userId });
+      return preferences;
+    }
+
+    let needsSave = false;
+
+    const ensureNestedDefaults = (target, defaults) => {
+      for (const [key, value] of Object.entries(defaults)) {
+        if (target[key] === undefined) {
+          target[key] = value;
+          needsSave = true;
+        }
+      }
+    };
+
+    ensureNestedDefaults(preferences.email, {
+      comment_reply: false,
+      comment_mention: true,
+    });
+
+    ensureNestedDefaults(preferences.push, {
+      comment_reply: true,
+      comment_mention: true,
+    });
+
+    if (needsSave) {
+      await preferences.save();
     }
 
     return preferences;
@@ -376,6 +402,8 @@ class NotificationService {
       connection_accepted: 7,
       post_like: 7,
       post_comment: 14,
+      comment_reply: 14,
+      comment_mention: 14,
       new_message: 30,
       event_reminder: 1,
       system_announcement: 90,

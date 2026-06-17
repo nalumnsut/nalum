@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import UserAvatar from "@/components/UserAvatar";
-import { ArrowLeft, Calendar, MessageSquare, Share2, Loader2, AlertCircle, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ArrowLeft, Calendar, Share2, Loader2, AlertCircle, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { BASE_URL } from "@/lib/constants";
 import { toast } from "sonner";
 import { parseFormattedText } from "@/lib/textFormatting";
+import CommentSection from "@/components/comments/CommentSection";
 
 interface Post {
   _id: string;
@@ -327,17 +328,8 @@ const ViewPost = () => {
                 <span>Share</span>
               </Button>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Comments Section - Coming Soon */}
-        <Card className="mt-4 sm:mt-6 bg-slate-900/50 border-white/10 backdrop-blur-sm">
-          <CardContent className="p-4 sm:p-6 text-center">
-            <MessageSquare className="h-10 w-10 sm:h-12 sm:w-12 text-gray-600 mx-auto mb-3 sm:mb-4" />
-            <h3 className="text-base sm:text-lg font-semibold text-white mb-1 sm:mb-2">Comments Coming Soon</h3>
-            <p className="text-gray-400 text-xs sm:text-sm">
-              The comment feature will be available in a future update. Stay tuned!
-            </p>
+            <CommentSection postId={post._id} />
           </CardContent>
         </Card>
       </div>

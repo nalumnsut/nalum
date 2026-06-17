@@ -25,6 +25,8 @@ const notificationSchema = new Schema({
       'connection_accepted',
       'post_like',
       'post_comment',
+      'comment_reply',
+      'comment_mention',
       'post_mention',
       'new_message',
       'event_reminder',

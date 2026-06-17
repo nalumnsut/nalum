@@ -14,13 +14,15 @@ const User = require('../models/user/user.model');
 // Database connection
 const connectDB = async () => {
   try {
-    // Use the same logic as database.config.js
-    const mongoUri = process.env.NODE_ENV !== 'production'
-      ? process.env.MONGODB_URI_DEV
-      : process.env.MONGODB_URI_PROD;
+    // Prefer the same env used by the app runtime, then fall back to the older split envs.
+    const mongoUri =
+      process.env.MONGODB_URI ||
+      (process.env.NODE_ENV !== 'production'
+        ? process.env.MONGODB_URI_DEV
+        : process.env.MONGODB_URI_PROD);
 
     if (!mongoUri) {
-      throw new Error('MongoDB URI not found. Check MONGODB_URI_DEV or MONGODB_URI_PROD in .env');
+      throw new Error('MongoDB URI not found. Set MONGODB_URI, MONGODB_URI_DEV, or MONGODB_URI_PROD in .env');
     }
 
     await mongoose.connect(mongoUri, {

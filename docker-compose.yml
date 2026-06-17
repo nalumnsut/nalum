@@ -27,6 +27,13 @@ services:
 
     restart: unless-stopped
 
+    environment:
+      PORT: 2478
+      HOST: 0.0.0.0
+      MONGODB_URI: mongodb://mongo:27017/nalum
+      REDIS_URL: redis://redis:6379
+      FRONTEND_URL: http://127.0.0.1:3000
+
     env_file:
       - ./backend/.env
 

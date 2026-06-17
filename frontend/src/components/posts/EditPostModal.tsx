@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Image, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,8 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import UserAvatar from "@/components/UserAvatar";
 import MentionTextarea from "@/components/MentionTextarea";
+import api from "@/lib/api";
+import { BASE_URL } from "@/lib/constants";
+import { toast } from "sonner";
 import { useProfile } from "@/context/ProfileContext";
+import type { PostFormPost } from "./PostFormModal";
 
 interface EditPostModalProps {
   open: boolean;
