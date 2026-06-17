@@ -30,13 +30,13 @@ services:
       HOST: 0.0.0.0
       MONGODB_URI: mongodb://mongo:27017/nalum
       REDIS_URL: redis://redis:6379
-      FRONTEND_URL: http://127.0.0.1:3000
+      FRONTEND_URL: https://alumni.nsut.ac.in
 
     env_file:
       - ./backend/.env
 
-    expose:
-      - "2478"
+    ports:
+      - "127.0.0.1:2478:2478"
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
