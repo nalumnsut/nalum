@@ -30,6 +30,17 @@ const redisConfig = require("./config/redis.config.js");
 const { initializeSocket } = require("./sockets/chatSocket.js");
 const { initPostgres } = require("./config/postgres.js");
 
+const allowedOrigins = [
+  "https://alumni.nsut.ac.in",
+  "https://www.alumni.nsut.ac.in",
+  "http://localhost:5173",
+  "http://localhost",
+].filter(Boolean);
+
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 const logStartupStep = (message) => {
   console.log(`[startup] ${message}`);
 };
@@ -53,11 +64,7 @@ app.use((req, res, next) => {
 });
 app.use(
   cors({
-    origin: [
-      "https://alumni.nsut.ac.in",
-      "http://localhost:5173",
-      "http://localhost",
-    ],
+    origin: [...new Set(allowedOrigins)],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: [

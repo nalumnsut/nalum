@@ -4,6 +4,7 @@ const router = express.Router();
 
 const users = require("../../controllers/user.controller.js");
 const sessions = require("../../controllers/session.controller.js");
+const { refreshCookieOptions } = require("../../utils/authCookies.js");
 
 router.post("/", async (req, res) => {
   if (!req.body.email || !req.body.password) {
@@ -89,13 +90,7 @@ router.post("/", async (req, res) => {
   const { refresh_token, ...rest } = sessionData.data;
   
   // Set refresh token in httpOnly cookie
-  res.cookie("refresh_token", refresh_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: "lax",
-    path: "/",
-    maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
-  });
+  res.cookie("refresh_token", refresh_token, refreshCookieOptions());
   
   const access_token = sessionData.data.access_token;
 

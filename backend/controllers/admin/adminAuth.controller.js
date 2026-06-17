@@ -2,6 +2,10 @@ const User = require("../../models/user/user.model.js");
 const bcrypt = require("bcrypt");
 const sessions = require("../../controllers/session.controller.js");
 const { logAdminActivity } = require("../../middleware/adminAuth");
+const {
+  refreshCookieOptions,
+  clearCookieOptions,
+} = require("../../utils/authCookies.js");
 
 // Admin login
 exports.login = async (req, res) => {
@@ -73,11 +77,8 @@ exports.login = async (req, res) => {
     // Extract refresh token and set it in cookie
     const { refresh_token, ...rest } = sessionData.data;
     res.cookie("refresh_token", refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite:"lax",
-      path: "/",
-      maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+      ...refreshCookieOptions(),
+      maxAge: 365 * 24 * 60 * 60 * 1000,
     });
     const access_token = sessionData.data.access_token;
 
@@ -113,19 +114,9 @@ exports.logout = async (req, res) => {
     // You could implement session deletion here if needed
     // For now, just clear the refresh token cookie
 
-    res.clearCookie("refresh_token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite:"lax",
-      path: "/",
-    });
+    res.clearCookie("refresh_token", clearCookieOptions());
 
-    res.clearCookie("access_token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite:"lax",
-      path: "/",
-    });
+    res.clearCookie("access_token", clearCookieOptions());
 
     // Log activity
     await logAdminActivity(email, "logout", "system", null, {}, req.ip);

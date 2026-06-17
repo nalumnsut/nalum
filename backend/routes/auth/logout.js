@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const sessions = require('../../controllers/session.controller');
+const { clearCookieOptions } = require('../../utils/authCookies.js');
 
 router.post('/', async (req, res) => {
     try {
@@ -17,12 +18,8 @@ router.post('/', async (req, res) => {
         }
 
         // Clear the refresh token and access token cookies
-        res.clearCookie('refresh_token', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/'
-        });
+        res.clearCookie('refresh_token', clearCookieOptions());
+        res.clearCookie('access_token', clearCookieOptions());
         
         
         
@@ -34,12 +31,8 @@ router.post('/', async (req, res) => {
         console.error('Logout error:', error);
         
         // Even if there's an error, clear the cookies
-        res.clearCookie('refresh_token', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/'
-        });
+        res.clearCookie('refresh_token', clearCookieOptions());
+        res.clearCookie('access_token', clearCookieOptions());
         
         res.status(200).json({
             error: false,

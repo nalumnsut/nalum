@@ -73,6 +73,18 @@ export const AuthProvider = ({
   };
   useEffect(() => {
     const restoreSession = async () => {
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) {
+        return;
+      }
+
+      try {
+        JSON.parse(storedUser);
+      } catch {
+        clearAuth();
+        return;
+      }
+
       try {
         setIsLoading(true);
 
@@ -91,7 +103,7 @@ export const AuthProvider = ({
 
         setAuth(access_token, user);
 
-      } catch (err) {
+      } catch {
         clearAuth();
       } finally {
         setIsLoading(false);

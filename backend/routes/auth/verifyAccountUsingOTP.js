@@ -3,6 +3,10 @@ const router = express.Router();
 const otpController = require("../../controllers/otp.controller.js");
 const userController = require("../../controllers/user.controller.js");
 const sessions = require("../../controllers/session.controller.js");
+const {
+  refreshCookieOptions,
+  accessCookieOptions,
+} = require("../../utils/authCookies.js");
 
 router.post("/", async (req, res) => {
   const { email, otp } = req.body;
@@ -44,22 +48,10 @@ router.post("/", async (req, res) => {
   const { refresh_token, access_token, ...rest } = sessionData.data;
 
   // Set refresh token in httpOnly cookie
-  res.cookie("refresh_token", refresh_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    path: "/",
-    maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
-  });
+  res.cookie("refresh_token", refresh_token, refreshCookieOptions());
 
   // Set access token in httpOnly cookie
-  res.cookie("access_token", access_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    path: "/",
-    maxAge: 30 * 60 * 1000, // 30 minutes
-  });
+  res.cookie("access_token", access_token, accessCookieOptions());
 
   return res.status(200).json({
     error: false,
