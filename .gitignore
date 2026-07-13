@@ -136,6 +136,9 @@ dist
 .env
 .env.copy
 
+# local dev-only Docker override, never shipped to the server
+docker-compose.override.yml
+
 # Mac FIles
 .DS_store
 */.DS_Store
@@ -147,3 +150,8 @@ NOTIFICATION_IMPLEMENTATION_GUIDE.md
 DEPLOYMENT_CHECKLIST.md
 NOTIFICATION_IMPLEMENTATION_SUMMARY.md
 docs/
+
+# AI agents
+.agent/*
+CLAUDE.md
+.claude/*

@@ -3,16 +3,18 @@ require('dotenv').config();
 
 const connectionString = process.env.POSTGRESQL_DATABASE_URL;
 
-if (!connectionString) {
+if (!connectionString && process.env.NODE_ENV === 'production') {
 	throw new Error('POSTGRESQL_DATABASE_URL is not set');
 }
 
-const pool = new Pool({
-	connectionString,
-	ssl: process.env.PGSSLMODE === 'require' || process.env.NODE_ENV === 'production'
-		? { rejectUnauthorized: false }
-		: false,
-});
+const pool = connectionString
+	? new Pool({
+		connectionString,
+		ssl: process.env.PGSSLMODE === 'require' || process.env.NODE_ENV === 'production'
+			? { rejectUnauthorized: false }
+			: false,
+	})
+	: null;
 
 function describeConnection() {
 	try {
@@ -26,13 +28,21 @@ function describeConnection() {
 	}
 }
 
-console.log(`Postgres pool initialized for ${describeConnection()}`);
+if (pool) {
+	console.log(`Postgres pool initialized for ${describeConnection()}`);
 
-pool.on('error', (err) => {
-	console.error('Postgres pool error (idle client):', err.message);
-});
+	pool.on('error', (err) => {
+		console.error('Postgres pool error (idle client):', err.message);
+	});
+} else {
+	console.warn('POSTGRESQL_DATABASE_URL not set — Postgres disabled for this run. Postgres-backed features (alumni database admin tools, some image uploads) will not work until a connection string is provided.');
+}
 
 async function initPostgres() {
+	if (!pool) {
+		return true;
+	}
+
 	const start = Date.now();
 	console.log('Checking Postgres connection...');
 	let client;
