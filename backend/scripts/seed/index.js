@@ -14,6 +14,7 @@ const { seedProfiles } = require('./profiles');
 const { seedEvents } = require('./events');
 const { seedPosts } = require('./posts');
 const { seedConnections } = require('./connections');
+const { seedAlumniPg } = require('./alumni_pg');
 
 async function main() {
   await connectDB();
@@ -32,6 +33,9 @@ async function main() {
 
   console.log('\n🌱 Seeding connections...\n');
   await seedConnections();
+
+  console.log('\n🌱 Seeding alumni (Postgres)...\n');
+  await seedAlumniPg();
 
   console.log('\n✨ Seeding complete.');
   await mongoose.connection.close();
