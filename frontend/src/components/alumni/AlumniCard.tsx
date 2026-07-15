@@ -14,6 +14,7 @@ export const AlumniCard = ({ alumni, onConnect, onClick }: AlumniCardProps) => {
   return (
     <div
       onClick={onClick}
+      // the overall container is flex-col,so in a row by h-full the height of all cards will be equal to height of largest sibling
       className="group rounded-xl border border-white/10 bg-white/5 backdrop-blur-md hover:bg-white/10 transition-all duration-300 cursor-pointer p-6 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-500/30 flex flex-col h-full"
     >
       <div className="flex flex-col items-center text-center space-y-4 mb-6">
