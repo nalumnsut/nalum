@@ -164,12 +164,6 @@ const Signup = () => {
             </span>
           </div>
         </Link>
-        <Link
-          to="/"
-          className="absolute top-6 right-6 z-20 rounded-full bg-white p-3 shadow-md border border-gray-200 hover:bg-gray-100 transition"
-        >
-          <House className="h-6 w-6 text-nsut-maroon" />
-        </Link>
         <div className="relative z-10 text-white">
           <h1 className="text-4xl font-serif font-bold">
             Begin Your Journey.
@@ -182,6 +176,12 @@ const Signup = () => {
 
       {/* Right Column: Form */}
       <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
+        <Link
+          to="/"
+          className="absolute top-8 right-6 z-20 rounded-full p-2  transition"
+        >
+          <House className="h-6 w-6 text-nsut-maroon" />
+        </Link>
         {/* Subtle Pattern Background */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
