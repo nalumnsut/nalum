@@ -128,7 +128,8 @@ const AlumniMap = () => {
   const getClusterPopupContent = (clusterId: number) => {
     if (!supercluster) return null;
     const leaves = supercluster.getLeaves(clusterId, Infinity);
-    const currentZoom = mapInstance ? mapInstance.getZoom() : zoom;
+    // Use React zoom state — always consistent with the current render
+    const currentZoom = zoom;
 
     if (currentZoom <= 4) {
       // Fully zoomed out: show country name(s)
@@ -342,16 +343,14 @@ const AlumniMap = () => {
                       // never triggered on desktop.
                       eventHandlers={{
                         click: (e) => {
-                          // Stop Leaflet from also running its default
-                          // "open popup on click" path.
-                          L.DomEvent.stopPropagation(e);
-
                           if (!mapInstance) return;
                           const activeZoom = mapInstance.getZoom();
 
                           if (activeZoom > 8 && supercluster) {
-                            // High zoom → fly to expansion zoom to reveal
-                            // individual city markers.
+                            // High zoom → stop propagation to prevent the popup
+                            // from auto-opening, then fly to the expansion zoom
+                            // level to reveal individual city markers.
+                            L.DomEvent.stopPropagation(e);
                             const expansionZoom = Math.min(
                               supercluster.getClusterExpansionZoom(cluster.id as number),
                               18
@@ -360,16 +359,14 @@ const AlumniMap = () => {
                               animate: true,
                               duration: 1.2,
                             });
-                          } else {
-                            // Low / intermediate zoom → open the info popup
-                            // programmatically via the marker ref.
-                            const marker = e.target as L.Marker;
-                            if (marker.isPopupOpen()) {
-                              marker.closePopup();
-                            } else {
-                              marker.openPopup();
-                            }
                           }
+                          // Low / intermediate zoom (≤ 8): do NOT stop
+                          // propagation — let Leaflet's native click→popup
+                          // pipeline open the <Popup> naturally. Calling
+                          // stopPropagation here (even unconditionally before
+                          // the if-check) poisons the Leaflet event and silently
+                          // prevents the popup from ever opening on both mouse
+                          // AND touch, which was the supercluster popup bug.
                         },
                       }}
                     >
@@ -402,29 +399,21 @@ const AlumniMap = () => {
                     icon={icon}
                     eventHandlers={{
                       click: (e) => {
-                        L.DomEvent.stopPropagation(e);
                         if (!mapInstance) return;
-
                         const currentZoom = mapInstance.getZoom();
-                        const targetZoom = Math.min(currentZoom + 2, 17);
 
                         if (currentZoom < 13) {
-                          // Zoom in first; popup opens automatically after
-                          // flyTo completes (via the marker's openPopup call
-                          // in the 'zoomend' handler below).
+                          // Not yet at city level: prevent popup from
+                          // auto-opening and zoom in by 2 levels instead.
+                          L.DomEvent.stopPropagation(e);
+                          const targetZoom = Math.min(currentZoom + 2, 17);
                           mapInstance.flyTo([lat, lng], targetZoom, {
                             animate: true,
                             duration: 1.2,
                           });
-                        } else {
-                          // Already at city level — toggle popup
-                          const marker = e.target as L.Marker;
-                          if (marker.isPopupOpen()) {
-                            marker.closePopup();
-                          } else {
-                            marker.openPopup();
-                          }
                         }
+                        // At city level (≥ 13): let Leaflet naturally open
+                        // the popup via its own click→popup pipeline.
                       },
                     }}
                   >
