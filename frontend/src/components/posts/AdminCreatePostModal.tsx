@@ -1,5 +1,5 @@
-/** Thin wrapper — all logic lives in PostFormModal */
-import PostFormModal from "@/components/posts/PostFormModal";
+/** Now wrapping the correct CreatePostModal */
+import CreatePostModal from "@/components/posts/CreatePostModal";
 
 interface AdminCreatePostModalProps {
   open: boolean;
@@ -12,7 +12,11 @@ const AdminCreatePostModal = ({
   onClose,
   onPostCreated,
 }: AdminCreatePostModalProps) => (
-  <PostFormModal open={open} onClose={onClose} onSuccess={onPostCreated} />
+  <CreatePostModal 
+    open={open} 
+    onClose={onClose} 
+    onPostCreated={onPostCreated} 
+  />
 );
 
 export default AdminCreatePostModal;

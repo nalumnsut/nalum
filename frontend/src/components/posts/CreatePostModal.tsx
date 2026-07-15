@@ -1,19 +1,11 @@
 import { useState, useRef } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Image } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import MentionTextarea from "@/components/MentionTextarea";
-import { useProfile } from "@/context/ProfileContext";
-import UserAvatar from "@/components/UserAvatar";
 
 interface CreatePostModalProps {
   open: boolean;
@@ -26,7 +18,6 @@ const CreatePostModal = ({
   onClose,
   onPostCreated,
 }: CreatePostModalProps) => {
-  const { profile } = useProfile();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -68,9 +59,7 @@ const CreatePostModal = ({
       });
 
       await api.post("/posts", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       toast.success("Post created!");
@@ -84,30 +73,14 @@ const CreatePostModal = ({
     }
   };
 
-  if (!profile?.user) return null;
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] bg-slate-950 border-white/10 text-white">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            Create a post
-          </DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Create a post</DialogTitle>
         </DialogHeader>
 
-        <div className="flex items-center gap-3 py-4">
-          <UserAvatar
-            src={profile.profile_picture}
-            name={profile.user.name}
-            size="md"
-          />
-          <div>
-            <h3 className="font-semibold text-lg">{profile.user.name}</h3>
-            <p className="text-sm text-gray-400">Posting to Alumni Network</p>
-          </div>
-        </div>
-
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-4">
           <Input
             placeholder="Post title"
             value={title}
@@ -123,7 +96,6 @@ const CreatePostModal = ({
             className="focus-visible:ring-blue-500/50"
           />
 
-          {/* Image Previews */}
           {selectedImages.length > 0 && (
             <div className="grid grid-cols-2 gap-2">
               {selectedImages.map((file, index) => (
@@ -144,7 +116,6 @@ const CreatePostModal = ({
             </div>
           )}
 
-          {/* File Input Trigger */}
           <div>
             <input
               type="file"
@@ -168,19 +139,10 @@ const CreatePostModal = ({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="ghost"
-            onClick={handleClose}
-            disabled={isLoading}
-            className="text-gray-400 hover:text-white hover:bg-white/10"
-          >
+          <Button variant="ghost" onClick={handleClose} disabled={isLoading} className="text-gray-400 hover:text-white hover:bg-white/10">
             Cancel
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isLoading || !title.trim() || !content.trim()}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
+          <Button onClick={handleSubmit} disabled={isLoading || !title.trim() || !content.trim()} className="bg-blue-600 hover:bg-white/10">
             {isLoading ? "Creating..." : "Create Post"}
           </Button>
         </DialogFooter>
