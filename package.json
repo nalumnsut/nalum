@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "dev:up": "docker compose -f docker-compose.yml -f docker-compose.override.yml up -d --build backend redis mongo",
+    "dev:up": "docker compose -f docker-compose.yml -f docker-compose.override.yml up -d --build backend redis mongo postgres",
     "dev:up:all": "docker compose -f docker-compose.yml -f docker-compose.override.yml up -d --build",
     "dev:down": "docker compose -f docker-compose.yml -f docker-compose.override.yml down",
     "dev:seed": "docker compose exec backend node scripts/seed/index.js"
