@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Mail, Lock, User, Briefcase, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, Briefcase, Eye, EyeOff, House } from "lucide-react";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
 import { useAuth } from "@/context/AuthContext";
@@ -163,6 +163,12 @@ const Signup = () => {
               ASSOCIATION
             </span>
           </div>
+        </Link>
+        <Link
+          to="/"
+          className="absolute top-6 right-6 z-20 rounded-full bg-white p-3 shadow-md border border-gray-200 hover:bg-gray-100 transition"
+        >
+          <House className="h-6 w-6 text-nsut-maroon" />
         </Link>
         <div className="relative z-10 text-white">
           <h1 className="text-4xl font-serif font-bold">
