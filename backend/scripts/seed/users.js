@@ -57,6 +57,17 @@ const alumniData = [
   { name: 'Manish Dubey', email: 'alumni23@gmail.com', batch: '2019', branch: 'Mechanical Engineering', campus: 'Main Campus' },
 ];
 
+// Generate 100 extra alumni for stress-testing clustering performance and bounds constraints
+for (let i = 1; i <= 100; i++) {
+  alumniData.push({
+    name: `Stress Tester ${i}`,
+    email: `stressalumni${i}@gmail.com`,
+    batch: (2010 + (i % 14)).toString(),
+    branch: ['Computer Science Engineering', 'Information Technology', 'Electrical Engineering', 'Mechanical Engineering'][i % 4],
+    campus: 'Main Campus'
+  });
+}
+
 const studentData = [
   { name: 'Aarav Sharma', email: 's1@nsut.ac.in', batch: '2026', branch: 'Computer Science Engineering', campus: 'Main Campus' },
   { name: 'Ishita Verma', email: 's2@nsut.ac.in', batch: '2026', branch: 'Electronics and Communication Engineering', campus: 'Main Campus' },
