@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
   ChevronDown,
-  ChevronUp,
   Loader2,
   MessageSquare,
   PencilLine,
@@ -50,6 +49,7 @@ function CommentComposer({
   submitLabel,
   isSubmitting,
   placeholder,
+  autoFocus = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -57,20 +57,21 @@ function CommentComposer({
   submitLabel: string;
   isSubmitting: boolean;
   placeholder: string;
+  autoFocus?: boolean;
 }) {
   return (
-    <div className="space-y-2.5">
+    <div className="relative group">
       <MentionTextarea
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="min-h-[92px] sm:min-h-[110px] bg-slate-950/60 border-white/10 rounded-[20px] px-3.5 py-3 text-[15px] leading-6 shadow-inner shadow-black/10"
+        className="min-h-[100px] w-full bg-white/[0.03] border border-white/10 group-focus-within:bg-white/[0.06] group-focus-within:border-white/20 transition-all duration-300 rounded-[24px] px-4 py-3.5 text-[15px] leading-relaxed text-gray-100 outline-none resize-none placeholder:text-gray-500 shadow-inner"
       />
-      <div className="flex justify-end">
+      <div className="absolute bottom-2 right-2">
         <Button
           onClick={onSubmit}
           disabled={isSubmitting || !value.trim()}
-          className="w-full sm:w-auto rounded-full bg-[#800000] px-5 text-white shadow-[0_10px_24px_rgba(128,0,0,0.22)] hover:bg-[#600000]"
+          className="rounded-full bg-gradient-to-r from-[#800000] to-[#a33] px-5 py-2 h-auto text-[14px] font-semibold text-white shadow-lg hover:shadow-[#800000]/25 transition-all duration-300 disabled:opacity-40"
         >
           {isSubmitting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -114,12 +115,12 @@ function CommentCard({
 
   const handleReply = async () => {
     if (!replyValue.trim()) return;
-
     try {
       setIsReplying(true);
       await createCommentReply(postId, comment._id, replyValue.trim());
       setReplyValue("");
       setReplyOpen(false);
+      setShowReplies(true);
       await onChanged();
     } catch (error) {
       console.error("Failed to reply:", error);
@@ -131,7 +132,6 @@ function CommentCard({
 
   const handleUpdate = async () => {
     if (!editValue.trim()) return;
-
     try {
       setIsSaving(true);
       await updatePostComment(postId, comment._id, editValue.trim());
@@ -160,7 +160,6 @@ function CommentCard({
 
   const handleOpenReply = () => {
     setReplyOpen((value) => !value);
-
     if (!replyOpen && !replyValue.trim()) {
       const authorName = comment.author?.name || "";
       if (authorName) {
@@ -170,166 +169,144 @@ function CommentCard({
   };
 
   return (
-    <div className={cn("space-y-3", depth > 0 && "pl-0 sm:pl-6")}> 
-      <div className="flex gap-2.5 sm:gap-3">
+    <div className={cn("flex flex-col gap-2", depth > 0 && "mt-4")}>
+      <div className="flex gap-3">
         <Link
           to={`/dashboard/alumni/${comment.author?._id || comment.authorId}`}
-          className="shrink-0"
+          className="shrink-0 relative z-10"
         >
-          <UserAvatar src={undefined} name={comment.author?.name || "User"} size="sm" />
+          <div className="rounded-full ring-2 ring-slate-900 shadow-sm">
+            <UserAvatar src={undefined} name={comment.author?.name || "User"} size="sm" />
+          </div>
         </Link>
 
-        <div className="flex-1 min-w-0">
-          <div
-            className={cn(
-              "border border-white/10 px-3 py-2.5 sm:px-4 sm:py-3",
-              depth > 0
-                ? "rounded-2xl bg-white/[0.035] sm:bg-white/5"
-                : "rounded-[22px] bg-white/5 shadow-[0_12px_36px_rgba(0,0,0,0.16)]"
-            )}
-          >
-            <div className="flex items-start justify-between gap-2 sm:gap-3">
-              <div>
+        <div className="flex-1 min-w-0 group">
+          <div className="bg-white/[0.04] border border-white/[0.05] hover:bg-white/[0.06] transition-colors rounded-[22px] rounded-tl-sm px-4 py-3 relative">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
                 <Link
                   to={`/dashboard/alumni/${comment.author?._id || comment.authorId}`}
-                  className="text-[15px] font-semibold text-white transition-colors hover:text-blue-300"
+                  className="text-[14px] font-semibold text-gray-100 hover:text-white transition-colors"
                 >
                   {comment.author?.name || "Unknown user"}
                 </Link>
-                <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-400">
+                <span className="text-[12px] text-gray-500 font-medium">
                   {formatDistanceToNow(new Date(comment.createdAt), {
                     addSuffix: true,
                   })}
-                  {comment.editedAt ? <span>edited</span> : null}
-                </div>
+                  {comment.editedAt ? " • edited" : ""}
+                </span>
               </div>
 
               {canManage && !comment.isDeleted && (
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-gray-400 hover:text-blue-300"
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-3 top-3 bg-slate-900/80 backdrop-blur-sm rounded-full p-0.5">
+                  <button
                     onClick={() => {
                       setEditValue(comment.content || "");
                       setIsEditing((value) => !value);
                     }}
+                    className="p-1.5 text-gray-400 hover:text-blue-300 rounded-full transition-colors"
                   >
-                    <PencilLine className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-gray-400 hover:text-red-300"
+                    <PencilLine className="h-3.5 w-3.5" />
+                  </button>
+                  <button
                     onClick={handleDelete}
                     disabled={isSaving}
+                    className="p-1.5 text-gray-400 hover:text-red-400 rounded-full transition-colors"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               )}
             </div>
 
-            <div className={cn("mt-2.5 text-sm text-gray-200 whitespace-pre-wrap break-words", depth > 0 && "text-[14px] leading-6")}>
+            <div className="mt-1">
               {isEditing ? (
-                <div className="space-y-3">
+                <div className="space-y-3 mt-2">
                   <MentionTextarea
                     value={editValue}
                     onChange={setEditValue}
-                    className="min-h-[92px] bg-slate-950/70 border-white/10 rounded-[18px]"
+                    className="min-h-[60px] bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-[14px] leading-relaxed outline-none"
                   />
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="ghost"
                       onClick={() => setIsEditing(false)}
-                      className="text-gray-300 hover:text-white"
+                      className="text-[12px] h-7 px-3 text-gray-400 hover:text-white hover:bg-white/10 rounded-full"
                     >
                       Cancel
                     </Button>
                     <Button
                       onClick={handleUpdate}
                       disabled={isSaving || !editValue.trim()}
-                      className="bg-[#800000] text-white hover:bg-[#600000]"
+                      className="text-[12px] h-7 px-4 bg-[#800000] text-white hover:bg-[#600000] rounded-full"
                     >
-                      {isSaving ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : null}
+                      {isSaving ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
                       Save
                     </Button>
                   </div>
                 </div>
               ) : comment.isDeleted ? (
-                <span className="italic text-gray-500">{displayContent}</span>
+                <span className="text-[14px] italic text-gray-500">{displayContent}</span>
               ) : (
-                <div>{parseFormattedText(displayContent)}</div>
+                <div className="text-[14.5px] text-gray-200 whitespace-pre-wrap break-words leading-relaxed">
+                  {parseFormattedText(displayContent)}
+                </div>
               )}
             </div>
-
-            {!comment.isDeleted && (
-              <div className="mt-3 flex flex-wrap items-center gap-2.5 text-[11px] text-gray-400">
-                {depth === 0 && (
-                  <button
-                    type="button"
-                    onClick={handleOpenReply}
-                    className="rounded-full bg-white/5 px-3 py-1.5 font-medium text-gray-200 transition-colors hover:bg-white/10 hover:text-white"
-                  >
-                    Reply
-                  </button>
-                )}
-                {depth === 0 && comment.replies.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowReplies((value) => !value)}
-                    className="flex items-center gap-1 rounded-full bg-white/5 px-3 py-1.5 font-medium text-gray-200 transition-colors hover:bg-white/10 hover:text-white"
-                  >
-                    {showReplies ? (
-                      <ChevronUp className="h-3 w-3" />
-                    ) : (
-                      <ChevronDown className="h-3 w-3" />
-                    )}
-                    {showReplies
-                      ? "Hide replies"
-                      : `View replies (${comment.replies.length})`}
-                  </button>
-                )}
-              </div>
-            )}
           </div>
 
-          {replyOpen && (
-            <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 sm:p-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[11px] text-gray-400">
-                  <span>Replying to</span>
-                  <span className="font-medium text-white">@{comment.author?.name || "user"}</span>
-                </div>
-                <CommentComposer
-                  value={replyValue}
-                  onChange={setReplyValue}
-                  onSubmit={handleReply}
-                  submitLabel="Reply"
-                  isSubmitting={isReplying}
-                  placeholder={`Reply to ${comment.author?.name || "this comment"}...`}
-                />
-              </div>
-            </div>
-          )}
-
-          {depth === 0 && showReplies && comment.replies.length > 0 && (
-            <div className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
-              {comment.replies.map((reply) => (
-                <CommentCard
-                  key={reply._id}
-                  comment={reply}
-                  postId={postId}
-                  onChanged={onChanged}
-                  depth={depth + 1}
-                />
-              ))}
+          {!comment.isDeleted && (
+            <div className="mt-2 ml-2 flex flex-wrap items-center gap-4 text-[12px] font-semibold text-gray-400">
+              {depth === 0 && (
+                <button
+                  onClick={handleOpenReply}
+                  className="hover:text-gray-100 transition-colors"
+                >
+                  Reply
+                </button>
+              )}
+              {depth === 0 && comment.replies.length > 0 && (
+                <button
+                  onClick={() => setShowReplies((value) => !value)}
+                  className="flex items-center gap-1 hover:text-gray-100 transition-colors"
+                >
+                  {showReplies ? "Hide replies" : `View ${comment.replies.length} replies`}
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", showReplies && "rotate-180")} />
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {replyOpen && (
+        <div className="ml-10 sm:ml-12 mt-2">
+          <CommentComposer
+            value={replyValue}
+            onChange={setReplyValue}
+            onSubmit={handleReply}
+            submitLabel="Reply"
+            isSubmitting={isReplying}
+            placeholder={`Replying to @${comment.author?.name || "user"}...`}
+            autoFocus
+          />
+        </div>
+      )}
+
+      {depth === 0 && showReplies && comment.replies.length > 0 && (
+        <div className="ml-5 sm:ml-6 pl-5 sm:pl-6 mt-2 border-l-2 border-white/5 space-y-4">
+          {comment.replies.map((reply) => (
+            <CommentCard
+              key={reply._id}
+              comment={reply}
+              postId={postId}
+              onChanged={onChanged}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -375,38 +352,45 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   };
 
   return (
-    <Card className="mt-5 sm:mt-6 overflow-hidden border-white/10 bg-slate-900/50 backdrop-blur-sm">
-      <CardContent className="space-y-4 p-3 sm:space-y-6 sm:p-6">
-        <div className="flex items-center gap-2.5">
-          <MessageSquare className="h-5 w-5 text-[#a33]" />
-          <h2 className="text-lg font-semibold text-white">Comments</h2>
-          <span className="rounded-full bg-white/5 px-2.5 py-1 text-xs text-gray-300">{comments.length}</span>
+    <Card className="mt-5 sm:mt-8 overflow-hidden border border-white/10 bg-slate-900/70 backdrop-blur-xl shadow-2xl rounded-3xl">
+      <CardContent className="p-5 sm:p-7 space-y-7">
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-[#800000]/20 p-2 rounded-xl">
+              <MessageSquare className="h-5 w-5 text-[#a33]" />
+            </div>
+            <h2 className="text-[18px] font-bold text-white tracking-wide">Discussion</h2>
+          </div>
+          <span className="bg-white/5 text-gray-300 px-3 py-1 rounded-full text-[13px] font-semibold">
+            {comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}
+          </span>
         </div>
 
-        <div className="space-y-3 rounded-[24px] border border-white/10 bg-black/10 p-3 sm:p-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium text-gray-200">Add a comment</p>
-            <span className="text-[11px] text-gray-500">Instagram-style thread</span>
-          </div>
+        <div className="bg-black/20 rounded-[28px] p-2">
           <CommentComposer
             value={commentValue}
             onChange={setCommentValue}
             onSubmit={handleCreateComment}
-            submitLabel="Comment"
+            submitLabel="Post Comment"
             isSubmitting={isSubmitting}
-            placeholder="Write a comment. Use @name to mention someone."
+            placeholder="Share your thoughts or ask a question..."
           />
         </div>
 
-        <div className="space-y-4 sm:space-y-5">
+        <div className="space-y-6 pt-2">
           {isLoading ? (
-            <div className="flex items-center justify-center py-8 text-gray-400">
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Loading comments...
+            <div className="flex flex-col items-center justify-center py-12 text-gray-500 gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-[#a33]" />
+              <span className="text-sm font-medium">Loading conversation...</span>
             </div>
           ) : comments.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-gray-400">
-              No comments yet. Be the first to start the conversation.
+            <div className="py-16 text-center flex flex-col items-center gap-3">
+              <div className="bg-white/5 p-4 rounded-full">
+                <MessageSquare className="h-8 w-8 text-gray-600" />
+              </div>
+              <p className="text-[15px] font-medium text-gray-400">No comments yet</p>
+              <p className="text-[13px] text-gray-500">Be the first to share your thoughts!</p>
             </div>
           ) : (
             comments.map((comment) => (
