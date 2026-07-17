@@ -3,6 +3,8 @@ const { nanoid } = require("nanoid");
 const VerificationCode = require("../models/verificationCode.model.js");
 const User = require("../models/user/user.model.js");
 const VerificationQueue = require("../models/verificationQueue.model.js");
+const { sendEmail } = require("../mail/notificationMailer");
+
 exports.getVerificationStatus = async (req, res) => {
   try {
     const { user_id } = req.user;
@@ -196,6 +198,8 @@ exports.checkManualVerification = async (req, res) => {
     
     console.log(`Added user ${user_id} to manual verification queue`);
 
+    // Send acknowledgment email to user is disabled per request
+
     return res.status(200).json({
       success: true,
       message: "Verification request submitted to admin for review",
@@ -288,6 +292,20 @@ exports.approveFromQueue = async (req, res) => {
     // Remove from queue
     await VerificationQueue.deleteOne({ user: userId });
 
+    // Send approval email
+    if (user && user.email) {
+      await sendEmail({
+        to: user.email,
+        subject: "Verification Approved",
+        template: "notification",
+        data: {
+          title: "Verification Approved",
+          name: user.name,
+          message: "Congratulations! Your alumni verification request has been approved. You now have full access to the alumni network."
+        }
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "User verification approved successfully",
@@ -312,6 +330,21 @@ exports.denyFromQueue = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Verification request not found in queue",
+      });
+    }
+
+    // Send rejection email
+    const user = await User.findById(userId);
+    if (user && user.email) {
+      await sendEmail({
+        to: user.email,
+        subject: "Verification Request Rejected",
+        template: "notification",
+        data: {
+          title: "Verification Request Rejected",
+          name: user.name,
+          message: "Unfortunately, your alumni verification request has been rejected as we couldn't verify the details provided. Please submit a new request with correct information."
+        }
       });
     }
 
