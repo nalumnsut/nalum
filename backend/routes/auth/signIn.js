@@ -94,7 +94,7 @@ router.post("/", async (req, res) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
+    maxAge: 24 * 60 * 60 * 1000, //24hrs
     ...(rememberMe && {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     }),
