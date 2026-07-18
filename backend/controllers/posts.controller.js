@@ -92,10 +92,22 @@ exports.getPosts = async (req, res) => {
 
     // Populate profile pictures
     const Profile = require("../models/user/profile.model");
+
     for (let post of posts) {
-      const profile = await Profile.findOne({ user: post.userId._id }).select(
-        "profile_picture"
-      );
+      if (!post.userId) {
+        post.userId = {
+          name: "Deleted User",
+          email: null,
+          role: null,
+          profile_picture: null,
+        };
+        continue;
+      }
+
+      const profile = await Profile.findOne({
+        user: post.userId._id,
+      }).select("profile_picture");
+
       post.userId.profile_picture = profile?.profile_picture || null;
     }
 
