@@ -75,18 +75,44 @@ const Signup = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.name) newErrors.name = "Full name is required";
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email) {
       newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!emailRegex.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
-    } else if (formData.role === "student" && !formData.email.endsWith("@nsut.ac.in")) {
-      newErrors.email = "Students must use their @nsut.ac.in email address";
+    } else if (formData.role === "student") {
+      const studentEmailRegex = /^[a-z]+(?:\.[a-z]+)*\.[a-z]{2,5}\d{2}@nsut\.ac\.in$/i;
+      if (!studentEmailRegex.test(formData.email)) {
+        newErrors.email = "Students must use their NSUT email (e.g., name.ug25@nsut.ac.in or name.lastname.ug25@nsut.ac.in)";
+      }
     }
+
+    // Strong Password validation
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters long";
+    } else {
+      const password = formData.password;
+      const minLength = 8;
+      const hasUppercase = /[A-Z]/.test(password);
+      const hasLowercase = /[a-z]/.test(password);
+      const hasDigit = /[0-9]/.test(password);
+      const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+      if (password.length < minLength) {
+        newErrors.password = "Password must be at least 8 characters long";
+      } else if (!hasUppercase) {
+        newErrors.password = "Password must contain at least one uppercase letter (A-Z)";
+      } else if (!hasLowercase) {
+        newErrors.password = "Password must contain at least one lowercase letter (a-z)";
+      } else if (!hasDigit) {
+        newErrors.password = "Password must contain at least one number (0-9)";
+      } else if (!hasSpecial) {
+        newErrors.password = "Password must contain at least one special character (e.g. !@#$%)";
+      }
     }
+
     if (!confirmPassword) {
       newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.password !== confirmPassword) {
