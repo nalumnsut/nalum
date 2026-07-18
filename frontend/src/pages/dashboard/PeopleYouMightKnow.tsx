@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Loader2,
@@ -10,9 +10,7 @@ import {
 import api from "@/lib/api";
 import UserAvatar from "@/components/UserAvatar";
 import { ConnectionButton } from "@/components/ui/ConnectionButton";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { useProfile } from "@/context/ProfileContext";
 import { cn } from "@/lib/utils";
 import { ConnectionMessageDialog } from "@/components/ConnectionMessageDialog";
 
@@ -43,7 +41,6 @@ const PeopleYouMightKnow = ({
   fullHeight,
 }: PeopleYouMightKnowProps) => {
   const navigate = useNavigate();
-  const { profile } = useProfile();
   const [suggestions, setSuggestions] = useState<SuggestionProfile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{ id: string; name: string } | null>(null);
@@ -67,41 +64,8 @@ const PeopleYouMightKnow = ({
     fetchSuggestions();
   }, [fetchSuggestions]);
 
-  // Prioritized filtering based on user's batch and branch
-  const filteredSuggestions = useMemo(() => {
-    if (!profile?.batch || !suggestions.length) {
-      return suggestions.slice(0, 6);
-    }
-
-    const userBatch = profile.batch;
-    const userBranch = profile.branch;
-    const userBatchNum = parseInt(userBatch);
-
-    // Priority 1: Same year AND same branch
-    const priority1 = suggestions.filter(
-      (s) => s.batch === userBatch && s.branch === userBranch
-    );
-
-    // Priority 2: Same year but different branch
-    const priority2 = suggestions.filter(
-      (s) => s.batch === userBatch && s.branch !== userBranch
-    );
-
-    // Priority 3: Year is ±1 from user's year
-    const priority3 = suggestions.filter((s) => {
-      if (!s.batch) return false;
-      const suggestionBatchNum = parseInt(s.batch);
-      return (
-        Math.abs(suggestionBatchNum - userBatchNum) === 1 &&
-        !priority1.includes(s) &&
-        !priority2.includes(s)
-      );
-    });
-
-    // Combine in priority order and limit to 6
-    const combined = [...priority1, ...priority2, ...priority3];
-    return combined.slice(0, 6);
-  }, [suggestions, profile]);
+  // The suggestions are already prioritized and limited to 5 by the backend
+  const filteredSuggestions = suggestions;
 
   const handleConnectClick = (user: { _id: string; name: string }) => {
     setSelectedUser({ id: user._id, name: user.name });
