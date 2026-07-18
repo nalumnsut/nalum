@@ -14,7 +14,6 @@ import MentionTextarea from "@/components/MentionTextarea";
 import api from "@/lib/api";
 import { BASE_URL } from "@/lib/constants";
 import { toast } from "sonner";
-import { useProfile } from "@/context/ProfileContext";
 import type { PostFormPost } from "./PostFormModal";
 
 interface EditPostModalProps {
@@ -22,6 +21,9 @@ interface EditPostModalProps {
   post: PostFormPost | null;
   onClose: () => void;
   onPostUpdated?: () => void;
+  // NEW: Props for user info instead of using useProfile()
+  userName?: string;
+  userAvatar?: string;
 }
 
 const EditPostModal = ({
@@ -29,8 +31,9 @@ const EditPostModal = ({
   post,
   onClose,
   onPostUpdated,
+  userName,
+  userAvatar,
 }: EditPostModalProps) => {
-  const { profile } = useProfile();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [existingImages, setExistingImages] = useState<string[]>([]);
@@ -93,9 +96,7 @@ const EditPostModal = ({
       });
 
       await api.put(`/posts/${post._id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       toast.success("Post updated successfully!");
@@ -109,7 +110,7 @@ const EditPostModal = ({
     }
   };
 
-  if (!profile?.user || !post) return null;
+  if (!post) return null;
 
   const totalImages = existingImages.length + newImages.length;
 
@@ -120,14 +121,11 @@ const EditPostModal = ({
           <DialogTitle className="text-xl font-semibold">Edit post</DialogTitle>
         </DialogHeader>
 
+        {/* User Info Section: Now takes props instead of Context */}
         <div className="flex items-center gap-3 py-4">
-          <UserAvatar
-            src={profile.profile_picture}
-            name={profile.user.name}
-            size="md"
-          />
+          <UserAvatar src={userAvatar} name={userName || "User"} size="md" />
           <div>
-            <h3 className="font-semibold text-lg">{profile.user.name}</h3>
+            <h3 className="font-semibold text-lg">{userName || "User"}</h3>
             <p className="text-sm text-gray-400">Editing post</p>
           </div>
         </div>
@@ -184,7 +182,6 @@ const EditPostModal = ({
             </div>
           )}
 
-          {/* File Input Trigger */}
           <div>
             <input
               type="file"
@@ -208,19 +205,10 @@ const EditPostModal = ({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="ghost"
-            onClick={handleClose}
-            disabled={isLoading}
-            className="text-gray-400 hover:text-white hover:bg-white/10"
-          >
+          <Button variant="ghost" onClick={handleClose} disabled={isLoading} className="text-gray-400 hover:text-white hover:bg-white/10">
             Cancel
           </Button>
-          <Button
-            onClick={handleUpdate}
-            disabled={isLoading || !title.trim() || !content.trim()}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
+          <Button onClick={handleUpdate} disabled={isLoading || !title.trim() || !content.trim()} className="bg-blue-600 hover:bg-blue-700 text-white">
             {isLoading ? "Updating..." : "Update Post"}
           </Button>
         </DialogFooter>

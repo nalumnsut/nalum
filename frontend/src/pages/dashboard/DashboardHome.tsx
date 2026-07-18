@@ -5,6 +5,7 @@ import PeopleYouMightKnow from "@/pages/dashboard/PeopleYouMightKnow";
 import UpcomingEvents from "@/pages/dashboard/UpcomingEvents";
 import NotificationsPopover from "@/components/NotificationsPopover";
 import PostsFeed from "@/components/posts/PostsFeed";
+import CreatePostModal from "@/components/posts/CreatePostModal";
 import { PenSquare, Search, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ const DashboardHome = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     if (searchQuery !== debouncedQuery) {
@@ -34,7 +36,7 @@ const DashboardHome = () => {
     const isAlumni = (profile?.user as any)?.role === "alumni";
 
     if (isAlumni) {
-      navigate("/dashboard/posts");
+      setIsCreateModalOpen(true);
     } else {
       toast.info(
         "Post creation will be available for students soon. Stay tuned!"
@@ -100,6 +102,12 @@ const DashboardHome = () => {
           </div>
         </div>
       </div>
+
+      <CreatePostModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onPostCreated={() => setRefreshTrigger((prev) => prev + 1)}
+      />
     </div>
   );
 };
