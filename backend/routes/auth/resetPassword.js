@@ -10,6 +10,31 @@ const Session = require("../../models/auth/session.model.js");
 
 
 
+const validatePassword = (password) => {
+  const minLength = 8;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasDigit = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  if (password.length < minLength) {
+    return "Password must be at least 8 characters long";
+  }
+  if (!hasUppercase) {
+    return "Password must contain at least one uppercase letter (A-Z)";
+  }
+  if (!hasLowercase) {
+    return "Password must contain at least one lowercase letter (a-z)";
+  }
+  if (!hasDigit) {
+    return "Password must contain at least one number (0-9)";
+  }
+  if (!hasSpecial) {
+    return "Password must contain at least one special character";
+  }
+  return null;
+};
+
 router.post("/", async (req, res) => {
   const { token, password } = req.body;
 
@@ -32,6 +57,9 @@ router.post("/", async (req, res) => {
   }
   
   const { email } = decoded;
+  // Strong password validation  
+  const passwordError = validatePassword(password);
+  if (passwordError) {
 
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
   const resetRecord = await PasswordResetToken.findOne({ email, token_hash: tokenHash });
@@ -47,7 +75,7 @@ router.post("/", async (req, res) => {
   if (password.length < 8) {
     return res.status(400).json({
       error: true,
-      message: "Password must be at least 8 characters long",
+      message: passwordError,
     });
   }
 
