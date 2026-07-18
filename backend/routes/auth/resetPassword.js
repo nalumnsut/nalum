@@ -4,6 +4,11 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const users = require("../../controllers/user.controller.js");
 const { JWT_SECRET } = require("../../config/jwt.config.js");
+const crypto = require("crypto");
+const PasswordResetToken = require("../../models/auth/passwordResetToken.model.js");
+const Session = require("../../models/auth/session.model.js");
+
+
 
 router.post("/", async (req, res) => {
   const { token, password } = req.body;
@@ -27,6 +32,17 @@ router.post("/", async (req, res) => {
   }
   
   const { email } = decoded;
+
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  const resetRecord = await PasswordResetToken.findOne({ email, token_hash: tokenHash });
+
+  if (!resetRecord) {
+    return res.status(400).json({
+      error: true,
+      message: "This reset link has already been used or is invalid.",
+    });
+  }
+
   // Basic password validation  
   if (password.length < 8) {
     return res.status(400).json({
@@ -43,6 +59,8 @@ router.post("/", async (req, res) => {
   if (userResponse.error) {
     return res.status(500).json(userResponse);
   }
+  await PasswordResetToken.deleteOne({ _id: resetRecord._id });
+  await Session.deleteMany({ email });
 
   return res.json({ error: false, message: "Password reset successfully" });
 });

@@ -4,6 +4,9 @@ const jwt = require("jsonwebtoken");
 const users = require("../../controllers/user.controller.js");
 const mailer = require("../../mail/transporter.js");
 const JWT_SECRET = require("../../config/jwt.config.js").JWT_SECRET;
+const crypto = require("crypto");
+const PasswordResetToken = require("../../models/auth/passwordResetToken.model.js");
+
 router.post("/", async (req, res) => {
   try {
   const { email } = req.body;
@@ -40,6 +43,15 @@ router.post("/", async (req, res) => {
     JWT_SECRET,
     { expiresIn: "5m" }
   );
+
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  await PasswordResetToken.findOneAndDelete({ email: sanitizedEmail });
+  
+  await PasswordResetToken.create({
+    email: sanitizedEmail,
+    token_hash: tokenHash,
+  });
 
   const frontendUrl = process.env.FRONTEND_URL || "https://alumni.nsut.ac.in";
   const verificationLink = `${frontendUrl}/reset-password?token=${token}`;
