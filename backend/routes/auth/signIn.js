@@ -27,7 +27,7 @@ router.post("/", async (req, res) => {
     return res.status(401).json({
       err: true,
       code: 401,
-      message: "No User",
+      message: "Incorrect credentials. Please try again.",
     });
   }
   if (data.data.email_verified === false) {
