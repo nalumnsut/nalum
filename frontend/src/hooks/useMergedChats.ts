@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 export const useMergedChats = () => {
+    const { user } = useAuth();
     const { data: allChats = [], isLoading } = useQuery({
-        queryKey: ["inbox"],
+        queryKey: ["inbox", user?.id],
+        enabled: !!user?.id,
         queryFn: async () => {
             const normalizeChat = (chat: any) => {
                 const normalized = {

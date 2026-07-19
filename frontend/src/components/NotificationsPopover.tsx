@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useNotifications } from "@/context/NotificationContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { NotificationItem } from "./NotificationItem";
+import { useSocket } from "@/hooks/useSocket";
 
 interface ConnectionRequest {
   _id: string;
@@ -51,6 +52,7 @@ interface ConnectionRequest {
 
 const NotificationsPopover = () => {
   const navigate = useNavigate();
+  const { socket } = useSocket();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
   const [connectionTab, setConnectionTab] = useState("alumni");
@@ -92,6 +94,17 @@ const NotificationsPopover = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!socket) return;
+    const handleCancelled = ({ connectionId }: { connectionId?: string }) => {
+      setReceivedRequests(current => current.filter(request => request._id !== connectionId));
+      setSentRequests(current => current.filter(request => request._id !== connectionId));
+    };
+    socket.on("connection:cancelled", handleCancelled);
+    return () => {
+      socket.off("connection:cancelled", handleCancelled);
+    };
+  }, [socket]);
   useEffect(() => {
     if (isOpen) {
       fetchReceivedRequests();
@@ -147,10 +160,10 @@ const NotificationsPopover = () => {
     }
   };
 
-  const handleCancelRequest = async (connectionId: string, e: React.MouseEvent) => {
+  const handleCancelRequest = async (recipientId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await api.delete(`/chat/connections/${connectionId}`);
+      await api.delete(`/chat/connections/cancel/${recipientId}`);
       toast.success("Connection request cancelled");
       fetchSentRequests();
     } catch (error: any) {
@@ -495,7 +508,7 @@ const NotificationsPopover = () => {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={(e) => handleCancelRequest(request._id, e)}
+                                  onClick={(e) => handleCancelRequest(request.recipient._id, e)}
                                   className="mt-2 w-full border-white/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20"
                                 >
                                   <UserX className="h-4 w-4 mr-1" />

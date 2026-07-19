@@ -94,7 +94,7 @@ async function notifyMentions({
           message: `${senderName} mentioned you in "${contextTitle}"`,
           actionUrl,
           relatedEntity: entityId
-            ? { type: contextType, id: entityId }
+            ? { entityType: contextType, entityId }
             : undefined,
           priority: "medium",
           metadata: {

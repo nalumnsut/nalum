@@ -38,32 +38,32 @@ const ConnectionsPage = () => {
 
     // Fetch Connections (Accepted)
     const { data: connections = [], isLoading: isLoadingConnections } = useQuery({
-        queryKey: ["connections", "accepted"],
+        queryKey: ["connections", user?.id, "accepted"],
         queryFn: async () => {
             const { data } = await api.get("/chat/connections?status=accepted");
             return data.data;
         },
-        enabled: activeTab === "connections"
+        enabled: !!user?.id && activeTab === "connections"
     });
 
     // Fetch Pending Received Requests
     const { data: receivedRequests = [], isLoading: isLoadingReceived } = useQuery({
-        queryKey: ["connections", "received"],
+        queryKey: ["connections", user?.id, "received"],
         queryFn: async () => {
             const { data } = await api.get("/chat/connections/pending");
             return data.data;
         },
-        enabled: activeTab === "received"
+        enabled: !!user?.id && activeTab === "received"
     });
 
     // Fetch Sent Requests
     const { data: sentRequests = [], isLoading: isLoadingSent } = useQuery({
-        queryKey: ["connections", "sent"],
+        queryKey: ["connections", user?.id, "sent"],
         queryFn: async () => {
             const { data } = await api.get("/chat/connections/sent");
             return data.data;
         },
-        enabled: activeTab === "sent"
+        enabled: !!user?.id && activeTab === "sent"
     });
 
     // Combine loading state based on active tab

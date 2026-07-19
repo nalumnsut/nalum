@@ -83,6 +83,8 @@ class NotificationService {
 
           // Update the existing notification with new message
           existingNotification.message = message;
+          existingNotification.actionUrl = actionUrl;
+          existingNotification.relatedEntity = relatedEntity;
           existingNotification.metadata = metadata;
           existingNotification.createdAt = new Date(); // Update timestamp to move to top
           existingNotification.priority = priority;
@@ -303,7 +305,7 @@ class NotificationService {
    */
   async sendEmailNotification(notification) {
     try {
-      const User = require('./user/user.model');
+      const User = require('../models/user/user.model');
       const user = await User.findById(notification.recipient, 'email name');
 
       if (!user || !user.email) {
@@ -465,6 +467,38 @@ class NotificationService {
     }
 
     return true;
+  }
+
+  /**
+   * Delete all connection/message notifications associated with a conversation.
+   * Safe to repeat and synchronized to every active session for the recipient.
+   */
+  async clearConversationNotifications(userId, conversationId) {
+    const escapedConversationId = conversationId;
+    const notifications = await Notification.find({
+      recipient: userId,
+      type: { $in: ['connection_request', 'connection_accepted', 'new_message'] },
+      $or: [
+        { 'metadata.conversationId': conversationId },
+        { actionUrl: { $regex: `^/dashboard/chat/${escapedConversationId}(?:\\?|$)` } },
+      ],
+    }).select('_id');
+
+    if (notifications.length > 0) {
+      await Notification.deleteMany({ _id: { $in: notifications.map(item => item._id) } });
+    }
+
+    const notificationIds = notifications.map(item => item._id.toString());
+    const unreadCount = await this.getUnreadCount(userId);
+    const io = global.io;
+    if (io) {
+      for (const notificationId of notificationIds) {
+        io.to(`user:${userId}`).emit('notification:removed', { notificationId });
+      }
+      io.to(`user:${userId}`).emit('notification:badge', { count: unreadCount });
+    }
+
+    return { deletedCount: notificationIds.length, notificationIds, unreadCount };
   }
 
   /**

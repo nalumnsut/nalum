@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { useSocket } from "@/hooks/useSocket";
 
 interface ConnectionRequest {
   _id: string;
@@ -42,6 +43,7 @@ interface UserProfile {
 
 const ConnectionsPopover = () => {
   const navigate = useNavigate();
+  const { socket } = useSocket();
   const [receivedRequests, setReceivedRequests] = useState<ConnectionRequest[]>(
     []
   );
@@ -113,6 +115,17 @@ const ConnectionsPopover = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!socket) return;
+    const handleCancelled = ({ connectionId }: { connectionId?: string }) => {
+      setReceivedRequests(current => current.filter(request => request._id !== connectionId));
+      setSentRequests(current => current.filter(request => request._id !== connectionId));
+    };
+    socket.on("connection:cancelled", handleCancelled);
+    return () => {
+      socket.off("connection:cancelled", handleCancelled);
+    };
+  }, [socket]);
   useEffect(() => {
     if (isOpen) {
       fetchReceivedRequests();
