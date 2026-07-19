@@ -6,17 +6,22 @@ import { X, Image } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import MentionTextarea from "@/components/MentionTextarea";
+import UserAvatar from "@/components/UserAvatar"; // <-- Naya Import add kiya
 
 interface CreatePostModalProps {
   open: boolean;
   onClose: () => void;
   onPostCreated?: () => void;
+  userName?: string; // <-- Prop add kiya
+  userAvatar?: string; // <-- Prop add kiya
 }
 
 const CreatePostModal = ({
   open,
   onClose,
   onPostCreated,
+  userName,
+  userAvatar,
 }: CreatePostModalProps) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -80,6 +85,17 @@ const CreatePostModal = ({
           <DialogTitle className="text-xl font-semibold">Create a post</DialogTitle>
         </DialogHeader>
 
+        {/* User Info UI - Wapas add kar diya */}
+        {userName && (
+          <div className="flex items-center gap-3 pt-1 pb-2">
+            <UserAvatar src={userAvatar} name={userName} size="md" />
+            <div>
+              <h3 className="font-semibold text-lg text-white">{userName}</h3>
+              <p className="text-sm text-gray-400">Posting to Alumni Network</p>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4 py-4">
           <Input
             placeholder="Post title"
@@ -142,7 +158,8 @@ const CreatePostModal = ({
           <Button variant="ghost" onClick={handleClose} disabled={isLoading} className="text-gray-400 hover:text-white hover:bg-white/10">
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading || !title.trim() || !content.trim()} className="bg-blue-600 hover:bg-white/10">
+          {/* Submit Button Hover Fix kiya */}
+          <Button onClick={handleSubmit} disabled={isLoading || !title.trim() || !content.trim()} className="bg-blue-600 hover:bg-blue-700 text-white">
             {isLoading ? "Creating..." : "Create Post"}
           </Button>
         </DialogFooter>

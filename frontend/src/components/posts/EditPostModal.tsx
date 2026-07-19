@@ -21,9 +21,10 @@ interface EditPostModalProps {
   post: PostFormPost | null;
   onClose: () => void;
   onPostUpdated?: () => void;
-  // NEW: Props for user info instead of using useProfile()
   userName?: string;
   userAvatar?: string;
+  // NEW: customSubmit prop add kiya for Admin routing
+  customSubmit?: (formData: FormData) => Promise<void>; 
 }
 
 const EditPostModal = ({
@@ -33,6 +34,7 @@ const EditPostModal = ({
   onPostUpdated,
   userName,
   userAvatar,
+  customSubmit, // <-- Destructure kiya
 }: EditPostModalProps) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -95,9 +97,14 @@ const EditPostModal = ({
         formData.append("images", file);
       });
 
-      await api.put(`/posts/${post._id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // SMART ROUTING: Agar admin (customSubmit) hai toh wo chalao, nahi toh normal route
+      if (customSubmit) {
+        await customSubmit(formData);
+      } else {
+        await api.put(`/posts/${post._id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
 
       toast.success("Post updated successfully!");
       if (onPostUpdated) onPostUpdated();
@@ -121,7 +128,6 @@ const EditPostModal = ({
           <DialogTitle className="text-xl font-semibold">Edit post</DialogTitle>
         </DialogHeader>
 
-        {/* User Info Section: Now takes props instead of Context */}
         <div className="flex items-center gap-3 py-4">
           <UserAvatar src={userAvatar} name={userName || "User"} size="md" />
           <div>
@@ -146,7 +152,6 @@ const EditPostModal = ({
             className="focus-visible:ring-blue-500/50"
           />
 
-          {/* Image Previews */}
           {(existingImages.length > 0 || newImages.length > 0) && (
             <div className="grid grid-cols-2 gap-2">
               {existingImages.map((image, index) => (
