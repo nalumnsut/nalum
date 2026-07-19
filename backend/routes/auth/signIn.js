@@ -76,7 +76,7 @@ router.post("/", async (req, res) => {
     return res.status(401).json({
       err: true,
       code: 401,
-      message: "Incorrect password. Please try again.",
+      message: "Incorrect credentials. Please try again.",
     });
   }
 
