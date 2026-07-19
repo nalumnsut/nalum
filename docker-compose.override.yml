@@ -1,0 +1,21 @@
+services:
+  backend:
+    environment:
+      FRONTEND_URL: http://localhost:5173
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev"
+
+  mongo:
+    ports:
+      - "127.0.0.1:27018:27017"
+    volumes:
+      - mongo_dev_data:/data/db
+
+  redis:
+    ports:
+      - "127.0.0.1:6380:6379"
+
+volumes:
+  mongo_dev_data:

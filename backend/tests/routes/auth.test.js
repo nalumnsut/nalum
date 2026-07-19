@@ -707,6 +707,10 @@ describe("auth routes", () => {
 
   describe("POST /api/auth/send-otp", () => {
     it("sends an OTP email", async () => {
+      users.findOne.mockResolvedValue({
+        error: false,
+        data: { email: "test@example.com", email_verified: false },
+      });
       otpController.create.mockResolvedValue({
         error: false,
         data: { otp: "123456" },
@@ -743,7 +747,42 @@ describe("auth routes", () => {
       });
     });
 
+    it("rejects send-otp when no account exists for the email", async () => {
+      users.findOne.mockResolvedValue({ error: false, data: null });
+
+      const response = await request(app).post("/api/auth/send-otp").send({
+        email: "ghost@example.com",
+      });
+
+      expect(response.status).toBe(404);
+      expect(otpController.create).not.toHaveBeenCalled();
+      expect(response.body).toEqual({
+        error: true,
+        code: 404,
+        message: "No account found for this email",
+      });
+    });
+
+    it("returns a server error when the user lookup fails", async () => {
+      users.findOne.mockResolvedValue({ error: true, message: "DB down" });
+
+      const response = await request(app).post("/api/auth/send-otp").send({
+        email: "test@example.com",
+      });
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({
+        error: true,
+        code: 500,
+        message: "Internal server error",
+      });
+    });
+
     it("returns a server error when OTP creation fails", async () => {
+      users.findOne.mockResolvedValue({
+        error: false,
+        data: { email: "test@example.com", email_verified: false },
+      });
       otpController.create.mockResolvedValue({
         error: true,
         message: "Please wait before requesting another OTP",

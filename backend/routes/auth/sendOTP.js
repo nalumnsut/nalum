@@ -13,6 +13,25 @@ router.post("/", async (req, res) => {
       message: "Email is required",
     });
   }
+
+  // Make sure this email actually belongs to a registered account before
+  // generating a code and sending an email for it.
+  const existingUser = await user.findOne(email);
+  if (existingUser.error) {
+    return res.status(500).json({
+      error: true,
+      code: 500,
+      message: "Internal server error",
+    });
+  }
+  if (!existingUser.data) {
+    return res.status(404).json({
+      error: true,
+      code: 404,
+      message: "No account found for this email",
+    });
+  }
+
   const otpData = await otpController.create(email);
   if (otpData.error) {
     return res.status(500).json({
