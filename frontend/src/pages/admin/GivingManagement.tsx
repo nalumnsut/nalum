@@ -140,12 +140,12 @@ const GivingManagement = () => {
             <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
           </div>
         ) : givings.length === 0 ? (
-          <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-xl p-12 text-center">
+          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 backdrop-blur-md rounded-xl p-12 text-center shadow-sm">
             <Heart className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               No givings found
             </h3>
-            <p className="text-gray-400">
+            <p className="text-gray-500 dark:text-gray-400">
               {searchTerm || statusFilter !== "all"
                 ? "Try adjusting your filters"
                 : "No giving submissions have been made yet"}

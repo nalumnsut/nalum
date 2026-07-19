@@ -11,6 +11,7 @@ import { LoadingAnimation } from "@/components/LoadingAnimation";
 import { useLocation } from "react-router-dom";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { AxiosError } from "axios";
+import { useTheme } from "next-themes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,8 +32,22 @@ function AppContent() {
   const { isLoading } = useAuth();
   const location = useLocation();
   const [showIntro, setShowIntro] = useState(location.pathname === "/");
+  const { theme } = useTheme();
 
   usePageTracking();
+
+  useEffect(() => {
+    const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/admin-panel');
+    if (isAdminPath) {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [location.pathname, theme]);
 
   // 1. If loading, stop the render tree dead in its tracks.
   if (isLoading) {

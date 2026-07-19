@@ -74,19 +74,50 @@ const Login = () => {
 
       trackLogin(formData.role);
 
-      toast.success("Login Successful!", {
-        description: "Welcome back to the NSUT Alumni Portal 🎉",
-        style: {
-          background: "#800000",
-          color: "white",
-          border: "2px solid #FFD700",
-          fontSize: "16px",
-        },
-        classNames: {
-          title: "text-xl font-bold text-white",
-          description: "text-base text-white",
-        },
-      });
+      if (user.role === "admin") {
+        let toastId: string | number;
+        toastId = toast.success(
+          <div className="relative w-full flex flex-col pr-4">
+            <button
+              onClick={() => {
+                if (toastId) toast.dismiss(toastId);
+              }}
+              className="absolute -top-1 -right-1 text-white/80 hover:text-white font-bold text-xl leading-none p-1 focus:outline-none"
+              aria-label="Close notification"
+            >
+              &times;
+            </button>
+            <div className="text-xl font-bold text-white pr-4">Login Successful!</div>
+            <div className="text-base text-white/90 mt-1 pr-4">
+              Welcome back to the NSUT Alumni Portal 🎉
+            </div>
+          </div>,
+          {
+            style: {
+              background: "#15803d",
+              color: "white",
+              border: "2px solid #22c55e",
+              fontSize: "16px",
+              padding: "16px",
+            },
+            duration: 4000,
+          }
+        );
+      } else {
+        toast.success("Login Successful!", {
+          description: "Welcome back to the NSUT Alumni Portal 🎉",
+          style: {
+            background: "#800000",
+            color: "white",
+            border: "2px solid #FFD700",
+            fontSize: "16px",
+          },
+          classNames: {
+            title: "text-xl font-bold text-white",
+            description: "text-base text-white",
+          },
+        });
+      }
 
       const path = await resolvePostLoginPath(user.role, access_token);
       navigate(path);
