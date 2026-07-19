@@ -10,6 +10,7 @@ const DashboardLayout = lazy(() => import("@/pages/dashboard/DashboardLayout"));
 const DashboardHome = lazy(() => import("@/pages/dashboard/DashboardHome"));
 const ShowProfile = lazy(() => import("@/pages/dashboard/showProfile"));
 const UpdateProfile = lazy(() => import("@/pages/dashboard/updateProfile"));
+const ChangePassword = lazy(() => import("@/pages/dashboard/ChangePassword"));
 const AlumniDirectory = lazy(() => import("@/pages/dashboard/alumniDirectory"));
 const ViewProfile = lazy(() => import("@/pages/dashboard/viewProfile"));
 const ConnectionsPage = lazy(() => import("@/pages/dashboard/ConnectionsPage"));
@@ -54,6 +55,7 @@ export function DashboardRoutes() {
         <Route path="/dashboard" element={<DashboardHome />} />
         <Route path="/dashboard/profile" element={<ShowProfile />} />
         <Route path="/dashboard/update-profile" element={<UpdateProfile />} />
+        <Route path="/dashboard/change-password" element={<ChangePassword />} />
         <Route path="/dashboard/alumni" element={<AlumniDirectory />} />
         <Route path="/dashboard/alumni/:userId" element={<ViewProfile />} />
         <Route path="/dashboard/connections" element={<ConnectionsPage />} />

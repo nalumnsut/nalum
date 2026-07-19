@@ -25,9 +25,10 @@ const ResetPassword = () => {
   const navigate = useNavigate();
 
   const token = searchParams.get("token");
+  const email = searchParams.get("email");
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !email) {
       setTokenError(true);
       toast.error("Invalid Reset Link", {
         description: "This password reset link is invalid or has expired.",
@@ -39,7 +40,7 @@ const ResetPassword = () => {
         },
       });
     }
-  }, [token]);
+  }, [token, email]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -70,11 +71,12 @@ const ResetPassword = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm() || !token) return;
+    if (!validateForm() || !token || !email) return;
 
     setIsLoading(true);
     try {
       await apiClient.post("/auth/reset-password", {
+        email,
         token,
         password: formData.password,
       });

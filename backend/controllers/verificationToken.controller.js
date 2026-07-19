@@ -2,12 +2,12 @@ const VerificationToken = require("../models/auth/verificationToken.model.js");
 const crypto = require("crypto");
 
 // Create or update verification token
-exports.create = async (email) => {
+exports.create = async (email,purpose = "email_verification",expiresInMs = 1000 * 60 * 60 * 24) => {
   try {
     const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
+    const expiresAt = new Date(Date.now() + expiresInMs); // 24 hours
     const doc = await VerificationToken.findOneAndUpdate(
-      { email: email.toLowerCase() },
+      { email: email.toLowerCase(), purpose },
       { token: token, expires_at: expiresAt },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
@@ -23,11 +23,12 @@ exports.create = async (email) => {
 };
 
 // Find verification token
-exports.find = async (email, token) => {
+exports.find = async (email, token, purpose = "email_verification") => {
   try {
     const data = await VerificationToken.findOne({
       email: email.toLowerCase(),
       token: token,
+      purpose
     });
     if (!data) {
       return { error: true, message: "Verification token not found" };
@@ -45,11 +46,12 @@ exports.find = async (email, token) => {
 };
 
 // Remove verification token
-exports.remove = async (email, token) => {
+exports.remove = async (email, token, purpose = "email_verification") => {
   try {
     await VerificationToken.deleteOne({
       email: email.toLowerCase(),
       token: token,
+      purpose
     });
     return { error: false, message: "Token deleted successfully" };
   } catch (err) {

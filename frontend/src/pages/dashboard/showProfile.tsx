@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Loader2,
   LogOut,
+  KeyRound,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
@@ -212,6 +213,13 @@ const ShowProfile = () => {
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Profile
+                </Button>
+                <Button
+                onClick={() => navigate("/dashboard/change-password")}
+                variant="outline"
+                className="bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:text-white hover:border-white/20">
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Change Password
                 </Button>
               </div>
 

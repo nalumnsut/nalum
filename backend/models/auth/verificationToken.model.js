@@ -5,13 +5,18 @@ const verificationTokenSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
       trim: true,
       validate: {
         validator: (v) => /^\S+@\S+\.\S+$/.test(v),
         message: "Invalid email format",
       },
+    },
+    purpose: {
+      type: String,
+      required: true,
+      enum: ["email_verification", "password_reset"],
+      default: "email_verification",
     },
     token: {
       type: String,
@@ -26,5 +31,7 @@ const verificationTokenSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+verificationTokenSchema.index({ email: 1, purpose: 1 }, { unique: true });
 
 module.exports = mongoose.model("VerificationToken", verificationTokenSchema);
