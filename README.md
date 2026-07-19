@@ -1,4 +1,4 @@
-# Contributing Guidelines
+# Contributing Guidelinesd
 
 Welcome to the project. This document outlines the development workflow, role responsibilities, and strict rules for contributing.
 
