@@ -21,7 +21,6 @@ if (!MONGODB_URI) {
 
 // Sample locations with proper coordinates
 const sampleLocations = [
-  // Indian cities
   { city: "delhi", country: "india", lat: 28.6139, lng: 77.209 },
   { city: "mumbai", country: "india", lat: 19.076, lng: 72.8777 },
   { city: "bangalore", country: "india", lat: 12.9716, lng: 77.5946 },
@@ -29,18 +28,11 @@ const sampleLocations = [
   { city: "hyderabad", country: "india", lat: 17.385, lng: 78.4867 },
   { city: "chennai", country: "india", lat: 13.0827, lng: 80.2707 },
   { city: "kolkata", country: "india", lat: 22.5726, lng: 88.3639 },
-  // International cities
+  { city: "ahmedabad", country: "india", lat: 23.0225, lng: 72.5714 },
   { city: "new york", country: "united states", lat: 40.7128, lng: -74.006 },
   { city: "london", country: "united kingdom", lat: 51.5074, lng: -0.1278 },
   { city: "singapore", country: "singapore", lat: 1.3521, lng: 103.8198 },
   { city: "dubai", country: "united arab emirates", lat: 25.2048, lng: 55.2708 },
-  { city: "san francisco", country: "united states", lat: 37.7749, lng: -122.4194 },
-  { city: "toronto", country: "canada", lat: 43.6532, lng: -79.3832 },
-  { city: "sydney", country: "australia", lat: -33.8688, lng: 151.2093 },
-  { city: "berlin", country: "germany", lat: 52.52, lng: 13.405 },
-  // More Indian cities
-  { city: "ahmedabad", country: "india", lat: 23.0225, lng: 72.5714 },
-  { city: "jaipur", country: "india", lat: 26.9124, lng: 75.7873 },
 ];
 
 async function addSampleLocations() {
