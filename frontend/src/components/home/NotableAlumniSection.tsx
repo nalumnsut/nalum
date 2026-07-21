@@ -1,7 +1,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef, useState } from 'react';
 import { Award } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { PreloadLink } from "@/components/PreloadLink";
 
 interface AlumniProfile {
     id: number;
@@ -193,13 +193,13 @@ const NotableAlumniSection = () => {
 
             {/* View All Link */}
             <div className="text-center mt-8">
-                <Link
+                <PreloadLink
                     to="/stories/notable-alumni"
                     className="inline-flex items-center gap-2 text-nsut-maroon font-semibold hover:text-[#600000] transition-colors"
                 >
                     View All Notable Alumni
                     <span className="text-xl">→</span>
-                </Link>
+                </PreloadLink>
             </div>
         </section>
     );

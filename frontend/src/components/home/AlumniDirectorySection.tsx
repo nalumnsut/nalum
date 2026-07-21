@@ -1,5 +1,5 @@
 import { Users, ArrowRight, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { PreloadLink } from "@/components/PreloadLink";
 
 const AlumniDirectorySection = () => {
     const stats = [
@@ -53,21 +53,21 @@ const AlumniDirectorySection = () => {
 
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 mt-12">
-                    <Link
+                    <PreloadLink
                         to="/login"
                         className="group bg-nsut-yellow hover:bg-nsut-yellow/90 text-nsut-maroon px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
                     >
                         <Lock className="w-5 h-5" />
                         Login to Access Directory
                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                    <Link
+                    </PreloadLink>
+                    <PreloadLink
                         to="/signup"
                         className="group bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-2 border-white/30 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105"
                     >
                         Create Account
                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Link>
+                    </PreloadLink>
                 </div>
             </div>
         </section>

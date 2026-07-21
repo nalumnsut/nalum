@@ -17,6 +17,7 @@ import nsutCampusHero from "@/assets/hero.webp";
 import apiClient from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { resolvePostLoginPath } from "@/lib/roleConfig";
+import { preloadDashboard, preloadPath } from "@/lib/preloadRoutes";
 import axios from "axios";
 import { trackLogin, trackEvent } from "@/lib/analytics";
 
@@ -63,6 +64,11 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+
+    // Immediately start preloading dashboard and common post-login chunks in parallel with API request
+    preloadDashboard();
+    preloadPath("/profile-form");
+    preloadPath("/admin-panel/dashboard");
 
     setIsLoading(true);
     try {

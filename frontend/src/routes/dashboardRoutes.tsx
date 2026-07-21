@@ -4,25 +4,43 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedVerificationRoute from "@/components/ProtectedVerificationRoute";
 import { ChatProvider } from "@/context/ChatContext";
 import { ProfileProvider } from "@/context/ProfileContext";
+import {
+  loadDashboardLayout,
+  loadDashboardHome,
+  loadShowProfile,
+  loadUpdateProfile,
+  loadAlumniDirectory,
+  loadViewProfile,
+  loadConnectionsPage,
+  loadVerifyAlumni,
+  loadChatPage,
+  loadEvents,
+  loadHostEvent,
+  loadMyPosts,
+  loadCreatePost,
+  loadViewPost,
+  loadQueries,
+  loadGiving,
+  loadMobileNotifications,
+} from "./loaders";
 
-// Lazy loaded dashboard components
-const DashboardLayout = lazy(() => import("@/pages/dashboard/DashboardLayout"));
-const DashboardHome = lazy(() => import("@/pages/dashboard/DashboardHome"));
-const ShowProfile = lazy(() => import("@/pages/dashboard/showProfile"));
-const UpdateProfile = lazy(() => import("@/pages/dashboard/updateProfile"));
-const AlumniDirectory = lazy(() => import("@/pages/dashboard/alumniDirectory"));
-const ViewProfile = lazy(() => import("@/pages/dashboard/viewProfile"));
-const ConnectionsPage = lazy(() => import("@/pages/dashboard/ConnectionsPage"));
-const VerifyAlumni = lazy(() => import("@/pages/dashboard/verifyAlumni"));
-const ChatPage = lazy(() => import("@/pages/dashboard/chat/ChatPage").then(module => ({ default: module.ChatPage })));
-const Events = lazy(() => import("@/pages/dashboard/Events"));
-const HostEvent = lazy(() => import("@/pages/dashboard/HostEvent"));
-const MyPosts = lazy(() => import("@/pages/dashboard/MyPosts"));
-const CreatePost = lazy(() => import("@/pages/dashboard/CreatePost"));
-const ViewPost = lazy(() => import("@/pages/dashboard/ViewPost"));
-const Queries = lazy(() => import("@/pages/dashboard/Queries"));
-const Giving = lazy(() => import("@/pages/dashboard/Giving"));
-const MobileNotifications = lazy(() => import("@/pages/dashboard/MobileNotifications"));
+const DashboardLayout = lazy(loadDashboardLayout);
+const DashboardHome = lazy(loadDashboardHome);
+const ShowProfile = lazy(loadShowProfile);
+const UpdateProfile = lazy(loadUpdateProfile);
+const AlumniDirectory = lazy(loadAlumniDirectory);
+const ViewProfile = lazy(loadViewProfile);
+const ConnectionsPage = lazy(loadConnectionsPage);
+const VerifyAlumni = lazy(loadVerifyAlumni);
+const ChatPage = lazy(loadChatPage);
+const Events = lazy(loadEvents);
+const HostEvent = lazy(loadHostEvent);
+const MyPosts = lazy(loadMyPosts);
+const CreatePost = lazy(loadCreatePost);
+const ViewPost = lazy(loadViewPost);
+const Queries = lazy(loadQueries);
+const Giving = lazy(loadGiving);
+const MobileNotifications = lazy(loadMobileNotifications);
 
 export function DashboardRoutes() {
   return (
@@ -58,7 +76,7 @@ export function DashboardRoutes() {
         <Route path="/dashboard/alumni/:userId" element={<ViewProfile />} />
         <Route path="/dashboard/connections" element={<ConnectionsPage />} />
         <Route path="/dashboard/notifications" element={<MobileNotifications />} />
-        
+
         {/* Chat routes */}
         <Route
           path="/dashboard/chat/*"
@@ -69,7 +87,7 @@ export function DashboardRoutes() {
             </Routes>
           }
         />
-        
+
         <Route path="/dashboard/events" element={<Events />} />
         <Route path="/dashboard/posts" element={<CreatePost />} />
         <Route path="/dashboard/posts/:postId" element={<ViewPost />} />

@@ -1,9 +1,10 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { PreloadLink } from "@/components/PreloadLink";
 import { LayoutDashboard, Users, CheckCircle, Calendar, CalendarCheck, FileText, Ban, LogOut, Key, Database, AlertTriangle, MessageSquare, Heart } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 /**
- * Simplified AdminSidebar - uses main AuthContext
+ * Simplified AdminSidebar - uses main AuthContext & PreloadLink
  */
 const AdminSidebar = () => {
   const location = useLocation();
@@ -108,7 +109,7 @@ const AdminSidebar = () => {
 
             return (
               <li key={item.path}>
-                <Link
+                <PreloadLink
                   to={item.path}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
@@ -118,7 +119,7 @@ const AdminSidebar = () => {
                 >
                   <Icon size={20} />
                   <span>{item.name}</span>
-                </Link>
+                </PreloadLink>
               </li>
             );
           })}
