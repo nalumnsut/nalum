@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { PreloadLink } from "@/components/PreloadLink";
 import { ArrowRight } from 'lucide-react';
 
 const IconCtaSection = () => {
@@ -64,13 +64,13 @@ const IconCtaSection = () => {
                 <p className="text-gray-600 mb-8 leading-relaxed">
                   {item.description}
                 </p>
-                <Link
+                <PreloadLink
                   to={item.link}
                   className="inline-flex items-center text-nsut-maroon font-semibold hover:text-red-700 transition-colors group/link"
                 >
                   Learn more
                   <ArrowRight className="ml-1 h-5 w-5 transform group-hover/link:translate-x-1 transition-transform" />
-                </Link>
+                </PreloadLink>
               </div>
             </div>
           ))}

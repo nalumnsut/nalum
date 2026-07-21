@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { PreloadLink } from "@/components/PreloadLink";
 import { LogIn, ArrowRight, Sparkles, Users, Network, Briefcase } from 'lucide-react';
 
 const ExploreLoginCta = () => {
@@ -47,7 +47,7 @@ const ExploreLoginCta = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animation-delay-800 animate-fade-in">
-            <Link
+            <PreloadLink
               to="/login"
               className="group/btn relative inline-flex items-center gap-2 md:gap-3 bg-gradient-to-r from-nsut-maroon to-[#800000] hover:from-[#800000] hover:to-nsut-maroon text-white px-6 md:px-10 py-3 md:py-5 rounded-xl font-bold text-base md:text-xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden hover:scale-105"
             >
@@ -57,15 +57,15 @@ const ExploreLoginCta = () => {
               <LogIn className="w-6 h-6 group-hover/btn:rotate-12 transition-transform duration-300" />
               <span className="relative">Login to Explore</span>
               <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform duration-300" />
-            </Link>
+            </PreloadLink>
 
-            <Link
+            <PreloadLink
               to="/signup"
               className="group/btn inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-nsut-maroon border-2 border-nsut-maroon hover:border-[#800000] px-6 md:px-10 py-3 md:py-5 rounded-xl font-bold text-base md:text-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
               <span>Create Account</span>
               <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform duration-300" />
-            </Link>
+            </PreloadLink>
           </div>
 
           {/* Bottom text */}

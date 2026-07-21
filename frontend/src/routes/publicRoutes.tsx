@@ -1,25 +1,44 @@
 import { lazy } from "react";
 import { Route } from "react-router-dom";
+import {
+  loadRoot,
+  loadHomePage,
+  loadNotableAlumni,
+  loadAlumniStories,
+  loadGivingStories,
+  loadCampusNews,
+  loadClubsPage,
+  loadIndustriesPage,
+  loadRecentGradsPage,
+  loadLearningPage,
+  loadCareerPage,
+  loadAlumniDirectoryHome,
+  loadGivingHome,
+  loadAttendAnEvent,
+  loadEventsHome,
+  loadExploreCommunities,
+  loadAboutPage,
+  loadAlumniMapPage,
+} from "./loaders";
 
-// Lazy loaded public pages
-const Root = lazy(() => import("@/pages/Root"));
-const HomePage = lazy(() => import("@/pages/HomePage"));
-const NotableAlumni = lazy(() => import("@/pages/stories/notableAlumni"));
-const AlumniStories = lazy(() => import("@/pages/stories/alumniStories"));
-const GivingStories = lazy(() => import("@/pages/stories/givingStories"));
-const CampusNews = lazy(() => import("@/pages/stories/campusNews"));
-const ClubsPage = lazy(() => import("@/pages/communities/clubs"));
-const IndustriesPage = lazy(() => import("@/pages/communities/industries"));
-const RecentGradsPage = lazy(() => import("@/pages/communities/recentGrads"));
-const LearningPage = lazy(() => import("@/pages/benefits/learning"));
-const CareerPage = lazy(() => import("@/pages/benefits/career"));
-const AlumniDirectoryHome = lazy(() => import("@/pages/benefits/alumniDirectoryHome"));
-const GivingHome = lazy(() => import("@/pages/benefits/givingHome"));
-const AttendAnEvent = lazy(() => import("@/pages/events/attendAnEvent"));
-const EventsHome = lazy(() => import("@/pages/events/EventsHome"));
-const ExploreCommunities = lazy(() => import("@/pages/communities/exploreCommunities"));
-const AboutPage = lazy(() => import("@/pages/About"));
-const AlumniMapPage = lazy(() => import("@/pages/AlumniMapPage"));
+const Root = lazy(loadRoot);
+const HomePage = lazy(loadHomePage);
+const NotableAlumni = lazy(loadNotableAlumni);
+const AlumniStories = lazy(loadAlumniStories);
+const GivingStories = lazy(loadGivingStories);
+const CampusNews = lazy(loadCampusNews);
+const ClubsPage = lazy(loadClubsPage);
+const IndustriesPage = lazy(loadIndustriesPage);
+const RecentGradsPage = lazy(loadRecentGradsPage);
+const LearningPage = lazy(loadLearningPage);
+const CareerPage = lazy(loadCareerPage);
+const AlumniDirectoryHome = lazy(loadAlumniDirectoryHome);
+const GivingHome = lazy(loadGivingHome);
+const AttendAnEvent = lazy(loadAttendAnEvent);
+const EventsHome = lazy(loadEventsHome);
+const ExploreCommunities = lazy(loadExploreCommunities);
+const AboutPage = lazy(loadAboutPage);
+const AlumniMapPage = lazy(loadAlumniMapPage);
 
 export function PublicRoutes() {
   return (

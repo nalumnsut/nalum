@@ -1,4 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { PreloadLink } from "@/components/PreloadLink";
 import { Home, Users, LogOut, MessageSquare, Calendar, Sparkles, FileText, Heart } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
@@ -37,7 +38,7 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        <Link
+        <PreloadLink
           to="/dashboard"
           onClick={onNavigate}
           className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border ${
@@ -48,9 +49,9 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
         >
           <Home className="h-5 w-5" />
           <span className="font-medium">Dashboard</span>
-        </Link>
+        </PreloadLink>
 
-        <Link
+        <PreloadLink
           to="/dashboard/alumni"
           onClick={onNavigate}
           className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border ${
@@ -61,9 +62,9 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
         >
           <Users className="h-5 w-5" />
           <span className="font-medium">Directory</span>
-        </Link>
+        </PreloadLink>
 
-        <Link
+        <PreloadLink
           to="/dashboard/chat"
           onClick={onNavigate}
           className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border ${
@@ -79,9 +80,9 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
             )}
           </div>
           <span className="font-medium">Messages</span>
-        </Link>
+        </PreloadLink>
 
-        <Link
+        <PreloadLink
           to="/dashboard/events"
           onClick={onNavigate}
           className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border ${
@@ -92,9 +93,9 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
         >
           <Calendar className="h-5 w-5" />
           <span className="font-medium">Events</span>
-        </Link>
+        </PreloadLink>
 
-        <Link
+        <PreloadLink
           to="/dashboard/queries"
           onClick={onNavigate}
           className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border ${
@@ -105,11 +106,11 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
         >
           <MessageSquare className="h-5 w-5" />
           <span className="font-medium">Queries</span>
-        </Link>
+        </PreloadLink>
 
         {user?.role === "alumni" && (
           <>
-            <Link
+            <PreloadLink
               to="/dashboard/my-posts"
               onClick={onNavigate}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border ${
@@ -120,9 +121,9 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
             >
               <FileText className="h-5 w-5" />
               <span className="font-medium">My Posts</span>
-            </Link>
+            </PreloadLink>
 
-            <Link
+            <PreloadLink
               to="/dashboard/host-event"
               onClick={onNavigate}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border ${
@@ -133,9 +134,9 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
             >
               <Sparkles className="h-5 w-5" />
               <span className="font-medium">Host Event</span>
-            </Link>
+            </PreloadLink>
 
-            <Link
+            <PreloadLink
               to="/dashboard/giving"
               onClick={onNavigate}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border ${
@@ -146,7 +147,7 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
             >
               <Heart className="h-5 w-5" />
               <span className="font-medium">Giving</span>
-            </Link>
+            </PreloadLink>
           </>
         )}
       </nav>
@@ -154,7 +155,7 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
       {/* Footer */}
       <div className="p-4 border-t border-white/10 space-y-3">
         {profile && (
-          <Link
+          <PreloadLink
             to="/dashboard/profile"
             onClick={onNavigate}
             className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
@@ -169,7 +170,7 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
               <span className="text-sm font-medium text-gray-200 truncate">{profile.user.name}</span>
               <span className="text-xs text-gray-500 truncate">View Profile</span>
             </div>
-          </Link>
+          </PreloadLink>
         )}
 
         <button

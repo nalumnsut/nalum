@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { PreloadLink } from "@/components/PreloadLink";
 import { X, FileText, Calendar, HelpCircle, Heart, LogOut, Settings } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import { useProfile } from "@/context/ProfileContext";
@@ -92,7 +93,7 @@ const ProfileMenu = ({ isOpen, onClose }: ProfileMenuProps) => {
           {/* Profile Actions */}
           <div className="py-4 border-b border-white/10 space-y-2">
             {/* View Profile */}
-            <Link
+            <PreloadLink
               to="/dashboard/profile"
               onClick={onClose}
               className="flex items-center gap-4 py-3 hover:bg-white/5 -mx-2 px-2 rounded-lg transition-colors group"
@@ -118,17 +119,17 @@ const ProfileMenu = ({ isOpen, onClose }: ProfileMenuProps) => {
                   </div>
                 )}
               </div>
-            </Link>
+            </PreloadLink>
             
             {/* Edit Profile Button */}
-            <Link
+            <PreloadLink
               to="/dashboard/update-profile"
               onClick={onClose}
               className="flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all group border border-white/10"
             >
               <Settings className="h-4 w-4 text-gray-400 group-hover:text-blue-400 transition-colors flex-shrink-0" />
               <span className="text-sm font-medium">Edit Profile</span>
-            </Link>
+            </PreloadLink>
           </div>
 
           {/* Menu Items */}
@@ -137,7 +138,7 @@ const ProfileMenu = ({ isOpen, onClose }: ProfileMenuProps) => {
               if (!item.show) return null;
               
               return (
-                <Link
+                <PreloadLink
                   key={item.href}
                   to={item.href}
                   onClick={onClose}
@@ -150,7 +151,7 @@ const ProfileMenu = ({ isOpen, onClose }: ProfileMenuProps) => {
                       <div className="text-xs text-gray-500">{item.description}</div>
                     )}
                   </div>
-                </Link>
+                </PreloadLink>
               );
             })}
           </nav>
