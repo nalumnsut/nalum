@@ -60,6 +60,11 @@ router.post("/", async (req, res) => {
   // Strong password validation  
   const passwordError = validatePassword(password);
   if (passwordError) {
+    return res.status(400).json({
+      error: true,
+      message: passwordError,
+    });
+  }
 
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
   const resetRecord = await PasswordResetToken.findOne({ email, token_hash: tokenHash });
@@ -68,14 +73,6 @@ router.post("/", async (req, res) => {
     return res.status(400).json({
       error: true,
       message: "This reset link has already been used or is invalid.",
-    });
-  }
-
-  // Basic password validation  
-  if (password.length < 8) {
-    return res.status(400).json({
-      error: true,
-      message: passwordError,
     });
   }
 
