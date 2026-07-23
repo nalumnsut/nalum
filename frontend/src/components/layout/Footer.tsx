@@ -215,15 +215,7 @@ const Footer = () => {
               <p className="text-center md:text-left">
                 &copy; {new Date().getFullYear()} NSUT University / Netaji Subhas University of Technology
               </p>
-              <div className="flex items-center gap-4">
-                <PreloadLink to="/accessibility" className="footer-link">
-                  Accessibility
-                </PreloadLink>
-                <span className="text-gray-500">|</span>
-                <PreloadLink to="/privacy" className="footer-link">
-                  Privacy
-                </PreloadLink>
-              </div>
+              
             </div>
           </div>
         </div>
