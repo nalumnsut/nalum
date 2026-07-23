@@ -90,12 +90,13 @@ const AdminSidebar = () => {
   };
 
   return (
-    <div className="w-64 bg-gray-900 text-white h-screen flex flex-col fixed left-0 top-0">
+    <div className="w-64 bg-slate-50 dark:bg-gray-900 text-gray-900 dark:text-white h-screen flex flex-col fixed left-0 top-0 border-r border-gray-200 dark:border-gray-800/80 transition-all duration-300">
       {/* Logo/Brand */}
-      <div className="p-6 border-b border-gray-800 flex-shrink-0">
-        <h1 className="text-2xl font-bold">Nalum Admin</h1>
-        <p className="text-sm text-gray-400 mt-1">{user?.name}</p>
-        <span className="inline-block mt-2 px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-800/80 flex-shrink-0 transition-colors duration-300">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">Nalum Admin</h1>
+        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mt-1.5 transition-colors duration-300">{user?.name}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 transition-colors duration-300">{user?.email}</p>
+        <span className="inline-block mt-2.5 px-2.5 py-1 bg-blue-600 text-white text-xs font-semibold rounded">
           ADMIN
         </span>
       </div>
@@ -111,13 +112,12 @@ const AdminSidebar = () => {
               <li key={item.path}>
                 <PreloadLink
                   to={item.path}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-300 hover:bg-gray-800"
-                  }`}
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+                    }`}
                 >
-                  <Icon size={20} />
+                  <Icon size={20} className="shrink-0" />
                   <span>{item.name}</span>
                 </PreloadLink>
               </li>
@@ -127,12 +127,12 @@ const AdminSidebar = () => {
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t border-gray-800 flex-shrink-0">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-800/80 flex-shrink-0 transition-colors duration-300">
         <button
           onClick={handleLogout}
-          className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 w-full transition-colors"
+          className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-semibold text-sm shadow-sm w-full transition-all duration-200"
         >
-          <LogOut size={20} />
+          <LogOut size={18} className="shrink-0" />
           <span>Logout</span>
         </button>
       </div>
