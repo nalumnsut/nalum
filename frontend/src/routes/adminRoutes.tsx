@@ -1,22 +1,39 @@
 import { lazy } from "react";
 import { Navigate, Route } from "react-router-dom";
+import {
+  loadAdminProtectedRoute,
+  loadAdminDashboard,
+  loadVerificationQueue,
+  loadUserManagement,
+  loadEventApprovals,
+  loadCurrentEvents,
+  loadPostsApproval,
+  loadCurrentPosts,
+  loadNewsletters,
+  loadBannedUsers,
+  loadCodeManagement,
+  loadAlumniDatabase,
+  loadReports,
+  loadQueryManagement,
+  loadGivingManagement,
+} from "./loaders";
 
-// Lazy loaded admin components
-const AdminProtectedRoute = lazy(() => import("@/components/admin/AdminProtectedRoute"));
-const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
-const VerificationQueue = lazy(() => import("@/pages/admin/VerificationQueue"));
-const UserManagement = lazy(() => import("@/pages/admin/UserManagement"));
-const EventApprovals = lazy(() => import("@/pages/admin/EventApprovals"));
-const CurrentEvents = lazy(() => import("@/pages/admin/CurrentEvents"));
-const PostsApproval = lazy(() => import("@/pages/admin/PostsApproval"));
-const CurrentPosts = lazy(() => import("@/pages/admin/CurrentPosts"));
-const Newsletters = lazy(() => import("@/pages/admin/Newsletters"));
-const BannedUsers = lazy(() => import("@/pages/admin/BannedUsers"));
-const CodeManagement = lazy(() => import("@/pages/admin/CodeManagement"));
-const AlumniDatabase = lazy(() => import("@/pages/admin/AlumniDatabase"));
-const Reports = lazy(() => import("@/pages/admin/Reports"));
-const QueryManagement = lazy(() => import("@/pages/admin/QueryManagement"));
-const GivingManagement = lazy(() => import("@/pages/admin/GivingManagement"));
+// Lazy loaded admin components with shared loaders
+const AdminProtectedRoute = lazy(loadAdminProtectedRoute);
+const AdminDashboard = lazy(loadAdminDashboard);
+const VerificationQueue = lazy(loadVerificationQueue);
+const UserManagement = lazy(loadUserManagement);
+const EventApprovals = lazy(loadEventApprovals);
+const CurrentEvents = lazy(loadCurrentEvents);
+const PostsApproval = lazy(loadPostsApproval);
+const CurrentPosts = lazy(loadCurrentPosts);
+const Newsletters = lazy(loadNewsletters);
+const BannedUsers = lazy(loadBannedUsers);
+const CodeManagement = lazy(loadCodeManagement);
+const AlumniDatabase = lazy(loadAlumniDatabase);
+const Reports = lazy(loadReports);
+const QueryManagement = lazy(loadQueryManagement);
+const GivingManagement = lazy(loadGivingManagement);
 
 export function AdminRoutes() {
   return (

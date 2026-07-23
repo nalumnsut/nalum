@@ -1,5 +1,5 @@
 
-import { Link } from 'react-router-dom';
+import { PreloadLink } from "@/components/PreloadLink";
 import { Facebook, Twitter, Instagram, Youtube, Linkedin } from 'lucide-react';
 
 const Footer = () => {
@@ -8,7 +8,7 @@ const Footer = () => {
     { text: "Events", link: "/events/attend" }, // UPDATE THIS LINK
     { text: "Benefits", link: "/benefits/learning" }, // UPDATE THIS LINK
     { text: "Giving", link: "/giving" }, // ✓ Already configured
-    { text: "Stories", link: "/stories" }, // UPDATE THIS LINK
+    { text: "Stories", link: "/stories/notable-alumni" },
   ];
   const secondaryNav = [
     { text: "About", link: "/about", external: false }, // ✓ Already configured
@@ -137,13 +137,13 @@ const Footer = () => {
                   <ul className="space-y-3">
                     {quickNav.map(item => (
                       <li key={item.text}>
-                        <Link 
+                        <PreloadLink 
                           to={item.link} 
                           className="footer-link text-gray-200"
                           onClick={() => window.scrollTo(0, 0)}
                         >
                           {item.text}
-                        </Link>
+                        </PreloadLink>
                       </li>
                     ))}
                   </ul>
@@ -163,7 +163,7 @@ const Footer = () => {
                             {item.text}
                           </a>
                         ) : (
-                          <Link 
+                          <PreloadLink 
                             to={item.link} 
                             className="footer-link text-gray-200"
                             onClick={() => {
@@ -174,7 +174,7 @@ const Footer = () => {
                             }}
                           >
                             {item.text}
-                          </Link>
+                          </PreloadLink>
                         )}
                       </li>
                     ))}
@@ -185,12 +185,12 @@ const Footer = () => {
 
             {/* Call to Action & Social */}
             <div className="space-y-6">
-              <a 
-                href="/giving" 
+              <PreloadLink
+                to="/giving"
                 className="gift-button-footer block w-full text-center bg-nsut-yellow text-nsut-maroon font-bold py-3 px-6 rounded-lg relative z-10"
               >
                 Make a Gift
-              </a>
+              </PreloadLink>
               <div>
                 <h3 className="font-serif text-lg font-semibold mb-4 text-center footer-heading">Connect With Us</h3>
                 <div className="flex justify-center space-x-3">

@@ -4,9 +4,9 @@ import { PublicRoutes } from "./publicRoutes";
 import { AuthRoutes } from "./authRoutes";
 import { DashboardRoutes } from "./dashboardRoutes";
 import { AdminRoutes } from "./adminRoutes";
+import { loadNotFound } from "./loaders";
 
-// Lazy loaded 404 page
-const NotFound = lazy(() => import("@/pages/NotFound"));
+const NotFound = lazy(loadNotFound);
 
 // Fallback loading component
 const RouteLoadingFallback = () => (

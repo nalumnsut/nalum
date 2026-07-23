@@ -18,11 +18,13 @@ import nsutLogo from "@/assets/nsut-logo.svg";
 import { useConversations } from "@/hooks/useConversations"; // Restored import
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api, { globalSearch } from "@/lib/api";
+import { Suspense } from "react";
 
 import { useChatContext } from "@/context/ChatContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { useEffect, useState, useRef } from "react";
 import { useLocationGuard } from "@/hooks/useLocationGuard";
+import { PreloadLink } from "@/components/PreloadLink";
 
 const DashboardContent = () => {
   const location = useLocation();
@@ -569,11 +571,10 @@ const DashboardContent = () => {
           </Link>
         </div>
       )}
-
       {/* Mobile Bottom Navigation Bar */}
       {!isChatPage && !isNotificationsPage && (
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-lg border-t border-white/10 flex items-center justify-around px-2 py-2 shadow-2xl md:hidden h-16">
-          <Link
+          <PreloadLink
             to="/dashboard"
             className={cn(
               "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300",
@@ -584,9 +585,9 @@ const DashboardContent = () => {
           >
             <Home className="h-5 w-5" />
             <span className="text-[10px] font-medium">Home</span>
-          </Link>
+          </PreloadLink>
 
-          <Link
+          <PreloadLink
             to="/dashboard/connections"
             className={cn(
               "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300 relative",
@@ -600,9 +601,9 @@ const DashboardContent = () => {
             {hasPendingRequests && (
               <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-slate-950" />
             )}
-          </Link>
+          </PreloadLink>
 
-          <Link
+          <PreloadLink
             to="/dashboard/posts"
             className={cn(
               "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300",
@@ -617,9 +618,9 @@ const DashboardContent = () => {
               </svg>
             </div>
             <span className="text-[10px] font-medium">Post</span>
-          </Link>
+          </PreloadLink>
 
-          <Link
+          <PreloadLink
             to="/dashboard/events"
             className={cn(
               "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300",
@@ -630,7 +631,7 @@ const DashboardContent = () => {
           >
             <Calendar className="h-5 w-5" />
             <span className="text-[10px] font-medium">Events</span>
-          </Link>
+          </PreloadLink>
 
           <button
             onClick={() => setIsProfileMenuOpen(true)}
@@ -670,17 +671,27 @@ const DashboardContent = () => {
         "flex-1 h-full relative z-10 scrollbar-hide",
         isChatPage || isNotificationsPage ? "overflow-hidden" : "overflow-y-auto"
       )}>
-        <div className={cn(
-          "relative mx-auto transition-all duration-300 min-h-full flex flex-col",
-          isChatPage
-            ? location.pathname.match(/\/dashboard\/chat\/.+/) ? "pt-0 pb-0 px-0 max-w-full h-full" : "pt-16 pb-0 px-0 max-w-full h-full"
-            : isNotificationsPage
-              ? "pt-0 pb-0 px-0 max-w-full h-full"
-              : isConnectionsPage
-                ? "pt-16 pb-0 px-0 max-w-full"
-                : "px-4 pt-28 pb-20 md:p-8 max-w-7xl"
-        )}>
-          <Outlet />
+        <div
+          className={cn(
+            "relative mx-auto transition-all duration-300 min-h-full flex flex-col",
+            isChatPage
+              ? location.pathname.match(/\/dashboard\/chat\/.+/) ? "pt-0 pb-0 px-0 max-w-full h-full" : "pt-16 pb-0 px-0 max-w-full h-full"
+              : isNotificationsPage
+                ? "pt-0 pb-0 px-0 max-w-full h-full"
+                : isConnectionsPage
+                  ? "pt-16 pb-0 px-0 max-w-full"
+                  : "px-4 pt-28 pb-20 md:p-8 max-w-7xl"
+          )}
+        >
+          <Suspense
+            fallback={
+              <div className="p-8 text-slate-400">
+                Loading page...
+              </div>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </div>
       </main>
     </div>

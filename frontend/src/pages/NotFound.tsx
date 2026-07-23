@@ -1,4 +1,5 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { PreloadLink } from "@/components/PreloadLink";
 import { useEffect } from "react";
 import { Construction, Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,12 +66,12 @@ const NotFound = () => {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link to="/">
+          <PreloadLink to="/">
             <Button className="bg-[#800000] hover:bg-[#600000] text-white px-8 py-6 text-lg gap-2 shadow-lg">
               <Home className="w-5 h-5" />
               Back to Home
             </Button>
-          </Link>
+          </PreloadLink>
           
           <Button 
             variant="outline" 

@@ -7,11 +7,12 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../../components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import { toast } from "sonner";
 import PostCardAdmin, { Post } from "../../components/posts/PostCardAdmin";
 import AdminCreatePostModal from "../../components/posts/AdminCreatePostModal";
-import PostFormModal, { PostFormPost } from "../../components/posts/PostFormModal";
+// NEW: Ab hum proper EditPostModal import kar rahe hain
+import EditPostModal from "../../components/posts/EditPostModal";
 
 const CurrentPosts = () => {
   const location = useLocation();
@@ -20,18 +21,16 @@ const CurrentPosts = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [approvalMode, setApprovalMode] = useState(0); // 0=Manual, 1=Auto
+  const [approvalMode, setApprovalMode] = useState(0);
   const [togglingApproval, setTogglingApproval] = useState(false);
   const [highlightPostId, setHighlightPostId] = useState<string | null>(null);
 
-  // Create Post Modal
   const [createPostModalOpen, setCreatePostModalOpen] = useState(false);
 
-  // Edit Modal
+  // Edit Modal State (Updated Type)
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedPost, setSelectedPost] = useState<PostFormPost | null>(null);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
-  // Delete Dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -40,31 +39,24 @@ const CurrentPosts = () => {
     fetchPosts();
     fetchApprovalMode();
 
-    // Check if we have a highlightPostId from navigation state
     if (location.state?.highlightPostId) {
       setHighlightPostId(location.state.highlightPostId);
     }
   }, []);
 
   useEffect(() => {
-    // Debounce search
     const timer = setTimeout(() => {
       filterPosts();
     }, 500);
-
     return () => clearTimeout(timer);
   }, [posts, searchTerm, statusFilter]);
 
-  // Scroll to highlighted post when it's available
   useEffect(() => {
     if (highlightPostId && filteredPosts.length > 0) {
-      // Wait a bit for the DOM to render
       setTimeout(() => {
         const element = document.getElementById(`post-${highlightPostId}`);
         if (element) {
           element.scrollIntoView({ behavior: "smooth", block: "center" });
-
-          // Clear highlight after 3 seconds
           setTimeout(() => {
             setHighlightPostId(null);
           }, 3000);
@@ -107,10 +99,7 @@ const CurrentPosts = () => {
     setIsLoading(true);
     try {
       const response = await api.get("/admin/posts/all", {
-        params: {
-          page: 1,
-          limit: 100,
-        },
+        params: { page: 1, limit: 100 },
       });
       if (response.data.success) {
         setPosts(response.data.data);
@@ -125,8 +114,6 @@ const CurrentPosts = () => {
 
   const filterPosts = () => {
     let filtered = [...posts];
-
-    // Filter by search term (title or author)
     if (searchTerm) {
       filtered = filtered.filter(
         (post) =>
@@ -135,28 +122,16 @@ const CurrentPosts = () => {
           post.userId.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
-    // Filter by status
     if (statusFilter !== "all") {
       filtered = filtered.filter((post) => post.status === statusFilter);
     }
-
     setFilteredPosts(filtered);
   };
 
+  // Cleaned up Edit click handler
   const handleEditClick = (post: Post) => {
-    setSelectedPost(post as unknown as PostFormPost);
+    setSelectedPost(post);
     setEditModalOpen(true);
-  };
-
-  const handleAdminEditSubmit = async (formData: FormData) => {
-    if (!selectedPost) return;
-    await api.put(`/admin/posts/${selectedPost._id}`, {
-      title: formData.get("title") as string,
-      content: formData.get("content") as string,
-    });
-    toast.success("Post updated successfully!");
-    fetchPosts();
   };
 
   const handleDeleteClick = (post: Post) => {
@@ -166,7 +141,6 @@ const CurrentPosts = () => {
 
   const confirmDelete = async () => {
     if (!postToDelete) return;
-
     setDeleting(true);
     try {
       const response = await api.delete(`/admin/posts/${postToDelete._id}`);
@@ -176,7 +150,7 @@ const CurrentPosts = () => {
         setPostToDelete(null);
         fetchPosts();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete post:", err);
       toast.error(err.response?.data?.message || "Failed to delete post");
     } finally {
@@ -192,8 +166,7 @@ const CurrentPosts = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Current Posts</h1>
             <p className="text-gray-600 mt-2">
-              {filteredPosts.length} post{filteredPosts.length !== 1 && "s"}{" "}
-              found
+              {filteredPosts.length} post{filteredPosts.length !== 1 && "s"} found
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -207,9 +180,7 @@ const CurrentPosts = () => {
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                   approvalMode === 1 ? "bg-green-600" : "bg-orange-500"
                 } ${
-                  togglingApproval
-                    ? "opacity-50 cursor-not-allowed"
-                    : "cursor-pointer"
+                  togglingApproval ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                 }`}
               >
                 <span
@@ -226,7 +197,6 @@ const CurrentPosts = () => {
                 {approvalMode === 1 ? "Auto" : "Manual"}
               </span>
             </div>
-
             <Button
               onClick={() => setCreatePostModalOpen(true)}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
@@ -234,16 +204,12 @@ const CurrentPosts = () => {
               <PlusCircle size={18} />
               Create Post
             </Button>
-
             <Button
               onClick={fetchPosts}
               disabled={isLoading}
               className="flex items-center gap-2"
             >
-              <RefreshCw
-                size={18}
-                className={isLoading ? "animate-spin" : ""}
-              />
+              <RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
               Refresh
             </Button>
           </div>
@@ -265,10 +231,7 @@ const CurrentPosts = () => {
               />
             </div>
             <div>
-              <Label
-                htmlFor="status-filter"
-                className="flex items-center gap-2 mb-2"
-              >
+              <Label htmlFor="status-filter" className="flex items-center gap-2 mb-2">
                 <Filter size={16} />
                 Status
               </Label>
@@ -290,20 +253,13 @@ const CurrentPosts = () => {
         {/* Posts List */}
         {isLoading ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <RefreshCw
-              className="mx-auto text-gray-400 mb-4 animate-spin"
-              size={48}
-            />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Loading posts...
-            </h3>
+            <RefreshCw className="mx-auto text-gray-400 mb-4 animate-spin" size={48} />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Loading posts...</h3>
           </div>
         ) : filteredPosts.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
             <FileText className="mx-auto text-gray-400 mb-4" size={48} />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No posts found
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No posts found</h3>
             <p className="text-gray-600">Try adjusting your filters</p>
           </div>
         ) : (
@@ -324,20 +280,17 @@ const CurrentPosts = () => {
           </div>
         )}
 
-        {/* Edit Post Modal */}
-        <PostFormModal
+        {/* NEW: Cleaned up Edit Post Modal Integration */}
+        <EditPostModal
           open={editModalOpen}
           post={selectedPost}
+          userName={selectedPost?.userId?.name}
+          userAvatar={selectedPost?.userId?.profile_picture}
           onClose={() => {
             setEditModalOpen(false);
             setSelectedPost(null);
           }}
-          onSuccess={() => {
-            setEditModalOpen(false);
-            setSelectedPost(null);
-            fetchPosts();
-          }}
-          customSubmit={handleAdminEditSubmit}
+          onPostUpdated={fetchPosts}
         />
 
         {/* Delete Confirmation Dialog */}
@@ -347,8 +300,7 @@ const CurrentPosts = () => {
               <DialogTitle>Delete Post</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-gray-500 mt-2">
-              Are you sure you want to delete "{postToDelete?.title}"? This
-              action cannot be undone.
+              Are you sure you want to delete "{postToDelete?.title}"? This action cannot be undone.
             </p>
             <div className="flex gap-3 mt-4">
               <Button
