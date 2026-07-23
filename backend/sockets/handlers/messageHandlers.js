@@ -179,7 +179,7 @@ async function handleSendMessage(io, socket, data) {
             type: 'new_message',
             title: 'New Message',
             message: `${sender.name}: ${content.substring(0, 100)}${content.length > 100 ? '...' : ''}`,
-            actionUrl: `/dashboard/chat?conversation=${conversationId}`,
+            actionUrl: `/dashboard/chat/${conversationId}?messageId=${message._id}`,
             priority: 'high',
             relatedEntity: {
               entityType: 'message',
@@ -340,7 +340,7 @@ async function handleMessageDeleted(io, socket, data) {
               type: 'new_message',
               title: 'New Message',
               message: `${sender.name}: ${previousMessage.content.substring(0, 100)}${previousMessage.content.length > 100 ? '...' : ''}`,
-              actionUrl: `/dashboard/chat?conversation=${conversationId}`,
+              actionUrl: `/dashboard/chat/${conversationId}?messageId=${previousMessage._id}`,
               priority: 'high',
               relatedEntity: {
                 entityType: 'message',

@@ -33,12 +33,17 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
-  const { accessToken } = useAuth();
+  const { accessToken, user } = useAuth();
   const { socket, isConnected } = useSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    setNotifications([]);
+    setUnreadCount(0);
+    setLoading(false);
+  }, [user?.id]);
   // Fetch notifications
   const fetchNotifications = async () => {
     if (!accessToken) return;
@@ -264,12 +269,12 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [socket, isConnected]);
 
-  // Initial fetch
+  // Initial fetch and socket-reconnect reconciliation
   useEffect(() => {
-    if (accessToken) {
+    if (accessToken && isConnected) {
       fetchNotifications();
     }
-  }, [accessToken]);
+  }, [accessToken, isConnected]);
 
   return (
     <NotificationContext.Provider

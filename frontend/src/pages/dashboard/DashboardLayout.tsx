@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { ProfileProvider, useProfile } from "@/context/ProfileContext";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
-// import { useAuth } from "@/context/AuthContext"; // Removed unused
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 // import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"; // Removed
 // import { Menu } from "lucide-react"; // Removed
@@ -54,6 +54,7 @@ const DashboardContent = () => {
   const isConnectionsPage = location.pathname.startsWith("/dashboard/connections");
   const isNotificationsPage = location.pathname.startsWith("/dashboard/notifications");
   const { profile } = useProfile();
+  const { user } = useAuth();
   // const { logout } = useAuth(); // Removed unused
   const { conversations } = useConversations(); // Restored hook usage
   const { socket } = useChatContext();
@@ -83,7 +84,7 @@ const DashboardContent = () => {
 
   // ... (keeping existing query code) ...
   const { data: pendingRequests = [] } = useQuery({
-    queryKey: ["connections", "received"],
+    queryKey: ["connections", user?.id, "received"],
     queryFn: async () => {
       const { data } = await api.get("/chat/connections/pending");
       return data.data;
@@ -94,7 +95,7 @@ const DashboardContent = () => {
   useEffect(() => {
     if (!socket) return;
     const handleConnectionRequest = () => {
-      queryClient.invalidateQueries({ queryKey: ["connections", "received"] });
+      queryClient.invalidateQueries({ queryKey: ["connections", user?.id, "received"] });
     };
     socket.on("connection_request", handleConnectionRequest);
     return () => {

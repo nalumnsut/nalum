@@ -2,6 +2,7 @@ const Connection = require("../../models/chat/connections.model");
 const User = require("../../models/user/user.model");
 const Profile = require("../../models/user/profile.model");
 const notificationService = require("../../services/notificationService");
+const Notification = require("../../models/notification.model");
 require("dotenv").config();
 // Send connection request
 exports.sendConnectionRequest = async (req, res) => {
@@ -120,16 +121,19 @@ exports.sendConnectionRequest = async (req, res) => {
     try {
       const requester = await User.findById(requesterId).select('name role');
       await notificationService.createNotification({
-        userId: recipientId,
+        recipientId: recipientId,
+        senderId: requesterId,
         type: 'connection_request',
         title: 'New Connection Request',
         message: `${requester.name} sent you a connection request`,
-        actionUrl: '/dashboard/connections',
+        actionUrl: `/dashboard/chat/${conversation._id}${message ? `?messageId=${message._id}` : ''}`,
         metadata: {
           requesterId: requesterId,
           requesterName: requester.name,
           requesterRole: requester.role,
-          connectionId: connection._id
+          connectionId: connection._id,
+          conversationId: conversation._id.toString(),
+          messageId: message?._id.toString() || null
         }
       });
     } catch (notifError) {
@@ -147,6 +151,36 @@ exports.sendConnectionRequest = async (req, res) => {
   }
 };
 
+async function clearConnectionWorkflowNotifications(io, connection, conversationId = null) {
+  const participantIds = [connection.requester, connection.recipient];
+  const query = {
+    $or: [
+      { type: 'connection_request', 'metadata.connectionId': connection._id },
+      { type: 'connection_request', 'metadata.connectionId': connection._id.toString() },
+      ...(conversationId ? [
+        { type: 'new_message', 'metadata.conversationId': conversationId.toString() },
+        { 'relatedEntity.entityType': 'message', recipient: { $in: participantIds }, sender: { $in: participantIds } }
+      ] : [])
+    ]
+  };
+
+  const notifications = await Notification.find(query).select('_id recipient');
+  if (notifications.length === 0) return;
+
+  await Notification.deleteMany({ _id: { $in: notifications.map(item => item._id) } });
+  if (!io) return;
+
+  for (const notification of notifications) {
+    io.to(`user:${notification.recipient}`).emit('notification:removed', {
+      notificationId: notification._id.toString()
+    });
+  }
+
+  for (const participantId of participantIds) {
+    const count = await notificationService.getUnreadCount(participantId);
+    io.to(`user:${participantId}`).emit('notification:badge', { count });
+  }
+}
 // Respond to connection request (accept/reject)
 exports.respondToConnection = async (req, res) => {
   try {
@@ -179,9 +213,19 @@ exports.respondToConnection = async (req, res) => {
     }
 
     if (connection.status !== "pending") {
-      return res
-        .status(400)
-        .json({ error: "Connection request already processed" });
+      const requestedStatus = action === "accept" ? "accepted" : action === "reject" ? "rejected" : "blocked";
+      if (connection.status === requestedStatus) {
+        await connection.populate(["requester", "recipient"], "name email profilePicture");
+        return res.json({
+          message: `Connection request already ${requestedStatus}`,
+          connection,
+          alreadyProcessed: true,
+        });
+      }
+      return res.status(409).json({
+        error: `Connection request is already ${connection.status}`,
+        status: connection.status,
+      });
     }
 
     // Update connection status
@@ -189,20 +233,28 @@ exports.respondToConnection = async (req, res) => {
       connection.status = "accepted";
       connection.respondedAt = new Date();
       await connection.save();
+      await clearConnectionWorkflowNotifications(req.app.get("io"), connection);
+
+      const Conversation = require("../../models/chat/conversations.model");
+      const conversation = await Conversation.findOne({
+        participants: { $all: [connection.requester, connection.recipient], $size: 2 },
+      });
 
       // Create notification for connection acceptance
       try {
         const accepter = await User.findById(userId).select('name');
         await notificationService.createNotification({
-          userId: connection.requester.toString(),
+          recipientId: connection.requester.toString(),
+          senderId: userId,
           type: 'connection_accepted',
           title: 'Connection Accepted',
           message: `${accepter.name} accepted your connection request`,
-          actionUrl: '/dashboard/connections',
+          actionUrl: conversation ? `/dashboard/chat/${conversation._id}` : '/dashboard/connections',
           metadata: {
             accepterId: userId,
             accepterName: accepter.name,
-            connectionId: connection._id
+            connectionId: connection._id,
+            conversationId: conversation?._id.toString() || null
           }
         });
       } catch (notifError) {
@@ -222,9 +274,14 @@ exports.respondToConnection = async (req, res) => {
         participants: { $all: [connection.requester, connection.recipient] }
       });
 
+      const io = req.app.get("io");
+      await clearConnectionWorkflowNotifications(io, connection, conversation?._id);
+
       if (conversation) {
         await Message.deleteMany({ conversation: conversation._id });
         await Conversation.findByIdAndDelete(conversation._id);
+        io?.to(`user:${connection.requester}`).emit("conversation:removed", { conversationId: conversation._id.toString() });
+        io?.to(`user:${connection.recipient}`).emit("conversation:removed", { conversationId: conversation._id.toString() });
       }
     } else if (action === "block") {
       connection.status = "blocked";
@@ -368,8 +425,9 @@ exports.cancelConnectionRequest = async (req, res) => {
       return res.status(400).json({ error: "Recipient ID is required" });
     }
 
-    // Find and delete the pending connection request
-    const connection = await Connection.findOneAndDelete({
+    // Resolve the workflow before deleting it so all derived data can be
+    // removed and both authenticated browser sessions can be notified.
+    const connection = await Connection.findOne({
       requester: userId,
       recipient: recipientId,
       status: "pending",
@@ -381,7 +439,36 @@ exports.cancelConnectionRequest = async (req, res) => {
       });
     }
 
-    res.json({ message: "Connection request cancelled" });
+    const Conversation = require("../../models/chat/conversations.model");
+    const Message = require("../../models/chat/messages.model");
+    const conversation = await Conversation.findOne({
+      participants: { $all: [connection.requester, connection.recipient], $size: 2 },
+    });
+    const io = req.app.get("io");
+
+    await clearConnectionWorkflowNotifications(io, connection, conversation?._id);
+
+    if (conversation) {
+      await Message.deleteMany({ conversation: conversation._id });
+      await Conversation.findByIdAndDelete(conversation._id);
+    }
+    await Connection.findByIdAndDelete(connection._id);
+
+    const payload = {
+      connectionId: connection._id.toString(),
+      conversationId: conversation?._id.toString() || null,
+      requesterId: connection.requester.toString(),
+      recipientId: connection.recipient.toString(),
+    };
+
+    for (const participantId of [connection.requester, connection.recipient]) {
+      io?.to(`user:${participantId}`).emit("connection:cancelled", payload);
+      if (conversation) {
+        io?.to(`user:${participantId}`).emit("conversation:removed", payload);
+      }
+    }
+
+    res.json({ message: "Connection request cancelled", ...payload });
   } catch (error) {
     console.error("Cancel connection request error:", error);
     res.status(500).json({ error: "Failed to cancel connection request" });

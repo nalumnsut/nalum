@@ -1,12 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 export const useConnections = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: connections = [], isLoading: isLoadingConnections } = useQuery({
-    queryKey: ["connections"],
+    queryKey: ["connections", user?.id],
+    enabled: !!user?.id,
     queryFn: async () => {
       const { data } = await api.get("/chat/connections");
       return data.data || [];
@@ -14,7 +17,8 @@ export const useConnections = () => {
   });
 
   const { data: pendingRequests = [] } = useQuery({
-    queryKey: ["pending-requests"],
+    queryKey: ["pending-requests", user?.id],
+    enabled: !!user?.id,
     queryFn: async () => {
       const { data } = await api.get("/chat/connections/pending");
       return data.data || [];
