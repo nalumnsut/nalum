@@ -26,7 +26,7 @@ const Footer = () => {
   const secondaryNav = [
     { text: "myNSUT Login", link: "/login", external: false }, // ✓ Already configured
     { text: "About", link: "/about", external: false }, // ✓ Already configured
-    { text: "NALUM TEAM", link: "/about#team", external: false },
+    { text: "NALUM Team", link: "/about#team", external: false },
     { text: "Contact", link: "/about#contact", external: false }, // ✓ Links to Get in Touch section on About page
     { text: "NSUT.edu", link: "https://www.nsut.ac.in/", external: true }, // ✓ EXAMPLE: External link
   ];
