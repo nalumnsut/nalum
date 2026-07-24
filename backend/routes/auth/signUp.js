@@ -4,6 +4,36 @@ const router = express.Router();
 
 const users = require("../../controllers/user.controller");
 
+const validateEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePassword = (password) => {
+  const minLength = 8;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasDigit = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  if (password.length < minLength) {
+    return "Password must be at least 8 characters long";
+  }
+  if (!hasUppercase) {
+    return "Password must contain at least one uppercase letter (A-Z)";
+  }
+  if (!hasLowercase) {
+    return "Password must contain at least one lowercase letter (a-z)";
+  }
+  if (!hasDigit) {
+    return "Password must contain at least one number (0-9)";
+  }
+  if (!hasSpecial) {
+    return "Password must contain at least one special character";
+  }
+  return null;
+};
+
 router.post("/",async (req,res) => {
   console.log("SignUp request received:", { body: req.body });
   
@@ -22,6 +52,25 @@ router.post("/",async (req,res) => {
   }
   
   const {name,email,password,role} = req.body;
+
+  // Validate email format
+  if (!validateEmail(email)) {
+    return res.status(400).json({
+      err: true,
+      code: 400,
+      message: "Please provide a valid email address"
+    });
+  }
+
+  // Validate password strength
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    return res.status(400).json({
+      err: true,
+      code: 400,
+      message: passwordError
+    });
+  }
   
   // Block admin signup - admins can only be created via scripts
   if(role === "admin"){
@@ -33,12 +82,15 @@ router.post("/",async (req,res) => {
   }
   
   // Validate student email
-  if(role === "student" && !email.endsWith("@nsut.ac.in")){
-    return res.status(400).json({
-      err: true,
-      code: 400,
-      message: "Students must use their @nsut.ac.in email address"
-    });
+  if (role === "student") {
+    const studentEmailRegex = /^[a-z]+(?:\.[a-z]+)*\.[a-z]{2,5}\d{2}@nsut\.ac\.in$/i;
+    if (!studentEmailRegex.test(email)) {
+      return res.status(400).json({
+        err: true,
+        code: 400,
+        message: "Please enter a valid student email (e.g., name.ug25@nsut.ac.in or name.lastname.ug25@nsut.ac.in)"
+      });
+    }
   }
   
   const existingUser = await users.findOne(email);

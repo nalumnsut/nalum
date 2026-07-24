@@ -102,6 +102,44 @@ exports.markAllAsRead = async (req, res) => {
 };
 
 /**
+ * Clear all chat notifications associated with a visited conversation.
+ */
+exports.clearConversationNotifications = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { conversationId } = req.params;
+    const Conversation = require('../models/chat/conversations.model');
+
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      participants: userId,
+    }).select('_id');
+
+    if (!conversation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Conversation not found',
+      });
+    }
+
+    const result = await notificationService.clearConversationNotifications(userId, conversationId);
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    if (error?.name === 'CastError') {
+      return res.status(400).json({ success: false, message: 'Invalid conversation ID' });
+    }
+    console.error('Error clearing conversation notifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to clear conversation notifications',
+    });
+  }
+};
+
+/**
  * Delete notification
  */
 exports.deleteNotification = async (req, res) => {

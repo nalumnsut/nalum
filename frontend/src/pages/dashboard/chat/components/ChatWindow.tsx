@@ -33,7 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { differenceInMinutes } from "date-fns";
 
 interface ChatWindowProps {
@@ -56,9 +56,11 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
   const { socket, isConnected } = useChatContext();
   const { user } = useAuth();
   const { createConversation } = useConversations();
-  const { notifications, deleteNotification } = useNotifications();
+  const { fetchNotifications } = useNotifications();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const routedMessageId = searchParams.get("messageId");
   
   // Handle mobile viewport height changes
   useViewportHeight();
@@ -71,11 +73,23 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
   );
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string | null>(null);
+  const [lastUnreadMessageId, setLastUnreadMessageId] = useState<string | null>(null);
+  const [initialUnreadCount, setInitialUnreadCount] = useState(0);
+  const readAcknowledgedRef = useRef(false);
+  const notificationsClearedRef = useRef(false);
+  const [isRespondingToRequest, setIsRespondingToRequest] = useState(false);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 
   // Sync with prop changes
   useEffect(() => {
     setActiveConversationId(conversation.isConnectionOnly ? null : conversation._id);
   }, [conversation]);
+
+  // Reset conversation-scoped read and notification state when switching chats
+  useEffect(() => {
+    readAcknowledgedRef.current = false;
+    notificationsClearedRef.current = false;
+  }, [activeConversationId]);
 
   // Reset firstUnreadMessageId when conversation changes
   useEffect(() => {
@@ -91,27 +105,21 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
   );
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Find first unread message when messages load
+  // Snapshot unread boundaries for this open-chat session. Keep the divider
+  // stable even after the backend confirms the messages as read.
   useEffect(() => {
-    if (messages.length > 0 && firstUnreadMessageId === null && activeConversationId) {
-      const firstUnread = messages.find((m: any) => {
-        const senderId = m.sender?._id || m.sender || m.senderId;
-        // Check if message is NOT from current user
-        if (senderId === user?.id) return false;
-        if (m.isOptimistic) return false; // Explicitly ignore optimistic messages
+    if (messages.length === 0 || firstUnreadMessageId !== null || !activeConversationId) return;
 
-        // Check if NOT read by current user
-        const isReadByMe = m.readBy?.some((r: any) => {
-          const readerId = r.user?._id || r.user;
-          return readerId === user?.id;
-        });
+    const unreadMessages = messages.filter((message: any) => {
+      const senderId = message.sender?._id || message.sender || message.senderId;
+      if (senderId === user?.id || message.isOptimistic) return false;
+      return !message.readBy?.some((entry: any) => (entry.user?._id || entry.user) === user?.id);
+    });
 
-        return !isReadByMe;
-      });
-
-      if (firstUnread) {
-        setFirstUnreadMessageId(firstUnread._id);
-      }
+    if (unreadMessages.length > 0) {
+      setFirstUnreadMessageId(unreadMessages[0]._id);
+      setLastUnreadMessageId(unreadMessages[unreadMessages.length - 1]._id);
+      setInitialUnreadCount(unreadMessages.length);
     }
   }, [messages, activeConversationId, firstUnreadMessageId, user?.id]);
 
@@ -130,6 +138,18 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  // Notification deep links target both the correct conversation and message.
+  useEffect(() => {
+    if (!routedMessageId || messages.length === 0) return;
+    const target = document.querySelector(`[data-message-id="${routedMessageId}"]`);
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightedMessageId(routedMessageId);
+    const timeout = window.setTimeout(() => setHighlightedMessageId(null), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [messages, routedMessageId]);
 
   // Scroll to bottom on window resize (e.g. keyboard open/close)
   useEffect(() => {
@@ -153,56 +173,69 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
   }, [scrollToBottom]);
 
   const markAsRead = useCallback(() => {
-    if (activeConversationId && socket && isConnected) {
-      // Optimistically update conversations list to show as read (gray)
-      queryClient.setQueryData(["conversations"], (old: any[]) => {
-        if (!old) return old;
-        return old.map((c: any) =>
-          c._id === activeConversationId ? { ...c, unreadCount: 0 } : c
+    if (!activeConversationId || !socket || !isConnected || readAcknowledgedRef.current) return;
+
+    readAcknowledgedRef.current = true;
+    socket.emit('message:read', { conversationId: activeConversationId }, (response: any) => {
+      if (response?.success === false) {
+        readAcknowledgedRef.current = false;
+        return;
+      }
+
+      for (const queryKey of [["inbox", user?.id], ["conversations", user?.id]]) {
+        queryClient.setQueryData<any[]>(queryKey, old =>
+          Array.isArray(old)
+            ? old.map(chat => chat._id === activeConversationId ? { ...chat, unreadCount: 0 } : chat)
+            : old
         );
-      });
+      }
 
-      // Emit with callback to ensure server has processed it before we refetch
-      socket.emit('message:read', { conversationId: activeConversationId }, (response: any) => {
-        // Force a refetch to ensure server state is synced ONLY after server confirms
-        queryClient.invalidateQueries({ queryKey: ["conversations"] });
-      });
-    }
-    
-    // Clear message notifications from this sender
-    const senderId = conversation.otherParticipant?._id;
-    if (senderId && notifications.length > 0) {
-      const messageNotifications = notifications.filter(
-        n => n.type === 'new_message' && n.sender?._id === senderId
-      );
-      
-      // Delete all message notifications from this sender
-      messageNotifications.forEach(notif => {
-        deleteNotification(notif.id);
-      });
-    }
-  }, [activeConversationId, socket, isConnected, queryClient, conversation.otherParticipant, notifications, deleteNotification]);
+      queryClient.invalidateQueries({ queryKey: ["inbox", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
 
-  // Mark messages as read when OPENING conversation (conversationId changes)
-  // and when window gains focus
+    });
+  }, [activeConversationId, socket, isConnected, queryClient, user?.id]);
+
+  // Visiting a visible private chat clears every notification tied to that
+  // conversation, including request/acceptance and notifications not loaded locally.
   useEffect(() => {
-    markAsRead();
+    if (isCommunity || !activeConversationId || isLoading) return;
 
-    const handleFocus = () => {
-      markAsRead();
+    const clearVisitedConversationNotifications = async () => {
+      if (document.visibilityState !== 'visible' || notificationsClearedRef.current) return;
+      notificationsClearedRef.current = true;
+      try {
+        await api.delete(`/notifications/conversation/${activeConversationId}`);
+        await fetchNotifications();
+      } catch (error) {
+        notificationsClearedRef.current = false;
+        console.error('Failed to clear visited conversation notifications:', error);
+      }
     };
 
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
-
+    void clearVisitedConversationNotifications();
+    document.addEventListener('visibilitychange', clearVisitedConversationNotifications);
     return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
+      document.removeEventListener('visibilitychange', clearVisitedConversationNotifications);
     };
-  }, [activeConversationId, markAsRead]);
+  }, [activeConversationId, fetchNotifications, isCommunity, isLoading]);
+  // A conversation becomes read only when its newest initially-unread message
+  // is actually visible and the browser tab is active.
+  useEffect(() => {
+    if (!lastUnreadMessageId || readAcknowledgedRef.current) return;
+    const target = document.querySelector(`[data-message-id="${lastUnreadMessageId}"]`);
+    if (!target) return;
+
+    const observer = new IntersectionObserver(entries => {
+      const isVisible = entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= 0.6);
+      if (isVisible && document.visibilityState === 'visible') markAsRead();
+    }, { threshold: [0.6] });
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [lastUnreadMessageId, markAsRead]);
 
   const handleSendMessage = async (content: string) => {
-    setFirstUnreadMessageId(null);
 
     if (isCommunity) {
       sendMessage.mutate({
@@ -254,9 +287,57 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
     }
   };
 
+  const handleConnectionResponse = async (action: "accept" | "reject") => {
+    if (!conversation.connectionId || isRespondingToRequest) return;
+
+    setIsRespondingToRequest(true);
+    const updateCachedChats = (status: "accepted" | "rejected") => {
+      for (const queryKey of [["inbox", user?.id], ["conversations", user?.id]]) {
+        queryClient.setQueryData<any[]>(queryKey, current => {
+          if (!Array.isArray(current)) return current;
+          if (status === "rejected") {
+            return current.filter(chat => chat.connectionId !== conversation.connectionId);
+          }
+          return current.map(chat =>
+            chat.connectionId === conversation.connectionId || chat._id === conversation._id
+              ? { ...chat, connectionStatus: "accepted" }
+              : chat
+          );
+        });
+      }
+    };
+
+    try {
+      await api.post("/chat/connections/respond", {
+        connectionId: conversation.connectionId,
+        action,
+      });
+
+      updateCachedChats(action === "accept" ? "accepted" : "rejected");
+      toast.success(action === "accept" ? "Request accepted" : "Request ignored");
+
+      if (action === "reject") navigate("/dashboard/chat");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["inbox"] }),
+        queryClient.invalidateQueries({ queryKey: ["conversations"] }),
+        queryClient.invalidateQueries({ queryKey: ["connections"] }),
+      ]);
+    } catch (error: any) {
+      const serverStatus = error?.response?.data?.status;
+      if (action === "accept" && serverStatus === "accepted") {
+        updateCachedChats("accepted");
+        toast.success("Request already accepted");
+      } else if (action === "reject" && serverStatus === "rejected") {
+        updateCachedChats("rejected");
+        navigate("/dashboard/chat");
+      } else {
+        toast.error(error?.response?.data?.error || `Failed to ${action} request`);
+      }
+    } finally {
+      setIsRespondingToRequest(false);
+    }
+  };
   const handleInputFocus = () => {
-    markAsRead();
-    setFirstUnreadMessageId(null);
     setTimeout(scrollToBottom, 300); // Delay to wait for keyboard animation
   };
 
@@ -446,14 +527,18 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
               const showUnseenDivider = message._id === firstUnreadMessageId;
 
               return (
-                <div key={message._id}>
+                <div
+                  key={message._id}
+                  data-message-id={message._id}
+                  className={message._id === highlightedMessageId ? "rounded-xl ring-2 ring-violet-400/80 bg-violet-500/10 transition-all" : "transition-all"}
+                >
                   {showUnseenDivider && (
                     <div className="flex items-center gap-4 my-6">
-                      <div className="h-px bg-indigo-500/30 flex-1" />
-                      <span className="text-xs font-medium text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
-                        Unseen Messages
+                      <div className="h-px bg-emerald-500/30 flex-1" />
+                      <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                        {initialUnreadCount} unread {initialUnreadCount === 1 ? "message" : "messages"}
                       </span>
-                      <div className="h-px bg-indigo-500/30 flex-1" />
+                      <div className="h-px bg-emerald-500/30 flex-1" />
                     </div>
                   )}
                   <MessageBubble
@@ -463,15 +548,6 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
                     isStacked={isStacked}
                     isLastInStack={isLastInStack}
                   />
-                  {index === 0 && conversation.connectionStatus === 'accepted' && (
-                    <div className="flex items-center gap-4 my-6">
-                      <div className="h-px bg-green-500/30 flex-1" />
-                      <span className="text-xs font-medium text-green-400 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
-                        You both have been connected. Start your conversation.
-                      </span>
-                      <div className="h-px bg-green-500/30 flex-1" />
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -523,29 +599,15 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
               <Button
                 variant="outline"
                 className="flex-1 border-red-500/50 text-red-500 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500"
-                onClick={async () => {
-                  try {
-                    if (conversation.connectionId) {
-                      await api.post("/chat/connections/respond", { connectionId: conversation.connectionId, action: "reject" });
-                      toast.success("Request rejected");
-                      queryClient.invalidateQueries({ queryKey: ["conversations"] });
-                    }
-                  } catch (e) { console.error(e); toast.error("Failed to reject request"); }
-                }}
+                onClick={() => handleConnectionResponse("reject")}
+                disabled={isRespondingToRequest}
               >
                 Ignore
               </Button>
               <Button
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={async () => {
-                  try {
-                    if (conversation.connectionId) {
-                      await api.post("/chat/connections/respond", { connectionId: conversation.connectionId, action: "accept" });
-                      toast.success("Request accepted");
-                      queryClient.invalidateQueries({ queryKey: ["conversations"] });
-                    }
-                  } catch (e) { console.error(e); toast.error("Failed to accept request"); }
-                }}
+                onClick={() => handleConnectionResponse("accept")}
+                disabled={isRespondingToRequest}
               >
                 Accept
               </Button>

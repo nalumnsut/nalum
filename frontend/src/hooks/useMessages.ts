@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 export const useMessages = (conversationId: string | null, socket: any, initialMessage: any = null, isCommunity: boolean = false) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const messagesQueryKey = ["messages", user?.id, conversationId] as const;
 
   const {
     data,
@@ -14,7 +15,7 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     hasNextPage,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ["messages", conversationId],
+    queryKey: messagesQueryKey,
     initialPageParam: 1,
     queryFn: async ({ pageParam = 1 }) => {
       if (!conversationId) return { data: [], hasMore: false, page: 1 };
@@ -70,7 +71,7 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
       console.log('Received message:new event:', data);
       const targetId = isCommunity ? data.communityId : data.conversationId;
       if (targetId === conversationId) {
-        queryClient.setQueryData(["messages", conversationId], (old: any) => {
+        queryClient.setQueryData(messagesQueryKey, (old: any) => {
           if (!old) return { pages: [{ data: [data.message], hasMore: false, page: 1 }], pageParams: [1] };
 
           const newPages = [...old.pages];
@@ -93,7 +94,7 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
       // Add the confirmed message or replace optimistic message
       const targetId = isCommunity ? data.communityId : data.conversationId;
       if (targetId === conversationId) {
-        queryClient.setQueryData(["messages", conversationId], (old: any) => {
+        queryClient.setQueryData(messagesQueryKey, (old: any) => {
           if (!old) return { pages: [{ data: [data.message], hasMore: false, page: 1 }], pageParams: [1] };
 
           const newPages = [...old.pages];
@@ -133,7 +134,7 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     const handleMessageRead = (data: any) => {
       const targetId = isCommunity ? data.communityId : data.conversationId;
       if (targetId === conversationId) {
-        queryClient.setQueryData(["messages", conversationId], (old: any) => {
+        queryClient.setQueryData(messagesQueryKey, (old: any) => {
           if (!old) return old;
           const newPages = old.pages.map((page: any) => ({
             ...page,
@@ -166,7 +167,7 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     const handleMessageDeleted = (data: any) => {
       const targetId = isCommunity ? data.communityId : data.conversationId;
       if (targetId === conversationId) {
-        queryClient.setQueryData(["messages", conversationId], (old: any) => {
+        queryClient.setQueryData(messagesQueryKey, (old: any) => {
           if (!old) return old;
           const newPages = old.pages.map((page: any) => ({
             ...page,
@@ -190,7 +191,7 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
       socket.off("message:read", handleMessageRead);
       socket.off("message:deleted", handleMessageDeleted);
     };
-  }, [socket, conversationId, queryClient, isCommunity]);
+  }, [socket, conversationId, queryClient, isCommunity, user?.id]);
 
   const sendMessage = useMutation({
     mutationFn: async ({ content, conversationId: argConversationId, receiverId, tempId }: { content: string; conversationId: string; receiverId: string; tempId?: string }) => {
@@ -215,8 +216,8 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     onMutate: async ({ content, conversationId: argConversationId, tempId }) => {
       if (!tempId) return;
 
-      await queryClient.cancelQueries({ queryKey: ["messages", argConversationId] });
-      const previousMessages = queryClient.getQueryData(["messages", argConversationId]);
+      await queryClient.cancelQueries({ queryKey: ["messages", user?.id, argConversationId] });
+      const previousMessages = queryClient.getQueryData(["messages", user?.id, argConversationId]);
 
       const optimisticMessage = {
         _id: tempId,
@@ -228,7 +229,7 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
         isOptimistic: true,
       };
 
-      queryClient.setQueryData(["messages", argConversationId], (old: any) => {
+      queryClient.setQueryData(["messages", user?.id, argConversationId], (old: any) => {
         if (!old) return { pages: [{ data: [optimisticMessage], hasMore: false, page: 1 }], pageParams: [1] };
         const newPages = [...old.pages];
         newPages[0] = {
@@ -242,7 +243,7 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     },
     onError: (error: any, variables, context) => {
       if (context?.previousMessages) {
-        queryClient.setQueryData(["messages", conversationId], context.previousMessages);
+        queryClient.setQueryData(messagesQueryKey, context.previousMessages);
       }
       toast.error(error.response?.data?.message || "Failed to send message");
     },
@@ -259,10 +260,10 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
       await api.delete(`/chat/messages/${messageId}`);
     },
     onMutate: async (messageId: string) => {
-      await queryClient.cancelQueries({ queryKey: ["messages", conversationId] });
+      await queryClient.cancelQueries({ queryKey: messagesQueryKey });
       const previousMessages = queryClient.getQueryData(["messages", conversationId]);
 
-      queryClient.setQueryData(["messages", conversationId], (old: any) => {
+      queryClient.setQueryData(messagesQueryKey, (old: any) => {
         if (!old) return old;
         const newPages = old.pages.map((page: any) => ({
           ...page,
@@ -275,7 +276,7 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     },
     onError: (err, variables, context) => {
       if (context?.previousMessages) {
-        queryClient.setQueryData(["messages", conversationId], context.previousMessages);
+        queryClient.setQueryData(messagesQueryKey, context.previousMessages);
       }
       toast.error("Failed to delete message");
     },

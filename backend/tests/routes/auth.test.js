@@ -303,7 +303,7 @@ describe("auth routes", () => {
       expect(response.body).toMatchObject({
         err: true,
         code: 401,
-        message: "No User",
+        message: "Incorrect credentials. Please try again.",
       });
     });
 
@@ -343,7 +343,7 @@ describe("auth routes", () => {
       expect(response.body).toMatchObject({
         err: true,
         code: 401,
-        message: "Incorrect password. Please try again.",
+        message: "Incorrect credentials. Please try again.",
       });
       expect(sessions.getOrCreate).not.toHaveBeenCalled();
     });

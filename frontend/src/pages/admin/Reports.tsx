@@ -251,9 +251,9 @@ const Reports = () => {
         </div>
 
         {filteredReports.length === 0 ? (
-          <div className="text-center py-12 bg-white/5 border border-white/10 rounded-lg">
+          <div className="text-center py-12 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg shadow-sm">
             <Flag className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-400 text-lg">No reports found</p>
+            <p className="text-gray-900 dark:text-gray-400 text-lg font-medium">No reports found</p>
           </div>
         ) : (
           <div className="space-y-4">

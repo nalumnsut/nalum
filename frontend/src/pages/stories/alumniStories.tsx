@@ -1,5 +1,5 @@
 import { BookOpen, Lock, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { PreloadLink } from "@/components/PreloadLink";
 
 const AlumniStories = () => {
   return (
@@ -53,13 +53,13 @@ const AlumniStories = () => {
               <p className="text-gray-600 mb-6">
                 Login to contribute your journey and inspire fellow alumni
               </p>
-              <Link
+              <PreloadLink
                 to="/login"
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-nsut-maroon to-nsut-maroon/90 text-white px-8 py-3 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105"
               >
                 Login to Continue
                 <ChevronRight className="w-4 h-4" />
-              </Link>
+              </PreloadLink>
             </div>
           </div>
         </div>

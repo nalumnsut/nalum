@@ -115,13 +115,15 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
                 <button
                   key={chat._id}
                   onClick={() => onSelectConversation(chat)}
-                  className={`w-full p-3 text-left transition-all hover:bg-white/5 group relative ${isSelected
-                    ? "bg-white/10"
-                    : ""
+                  className={`w-full p-3 text-left transition-all group relative ${isSelected
+                    ? "bg-violet-500/15 hover:bg-violet-500/20"
+                    : chat.unreadCount > 0
+                      ? "bg-emerald-500/15 hover:bg-emerald-500/20"
+                      : "hover:bg-white/5"
                     }`}
                 >
                   {isSelected && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500" />
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-violet-400" />
                   )}
                   <div className="flex items-start gap-3 pl-2">
                     <div className="relative">
@@ -129,7 +131,7 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
                         name={chat.itemType === 'community' ? chat.name : (chat.otherParticipant?.name || "Unknown")}
                         src={chat.itemType === 'community' ? chat.avatar : (chat.otherParticipant?.profile_picture || chat.otherParticipant?.profilePicture)}
                         size="md"
-                        className={`border-opacity-20 ${isSelected ? 'border-indigo-400' : 'border-white'}`}
+                        className={`border-opacity-20 ${isSelected ? 'border-violet-400' : chat.unreadCount > 0 ? 'border-emerald-400' : 'border-white'}`}
                       />
                       {/* Optional: Add online status indicator here if available */}
                     </div>
@@ -140,7 +142,7 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
                           {chat.itemType === 'community' ? chat.name : (chat.otherParticipant?.name || "Unknown User")}
                         </p>
                         {(chat.lastMessage?.createdAt || chat.lastMessage?.timestamp) && (
-                          <span className={`text-[10px] ${chat.unreadCount > 0 ? "text-indigo-400 font-medium" : "text-gray-500"}`}>
+                          <span className={`text-[10px] ${chat.unreadCount > 0 ? "text-emerald-400 font-medium" : "text-gray-500"}`}>
                             {formatMessageDate(chat.lastMessage.createdAt || chat.lastMessage.timestamp)}
                           </span>
                         )}

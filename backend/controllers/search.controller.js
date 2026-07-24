@@ -135,7 +135,7 @@ const searchProfiles = async (req, res) => {
   }
 };
 
-// Suggest potential connections based on batch/branch/campus
+// Suggest potential connections based on batch/branch/campus (sequential priority)
 const getSuggestions = async (req, res) => {
   try {
     const currentUserId = req.user?.user_id;
@@ -152,9 +152,9 @@ const getSuggestions = async (req, res) => {
     const { batch, branch, campus } = currentProfile;
 
     // Build user exclusion list: self + admins
-    const excludedUsers = [currentUserId];
+    const excludedUsers = [currentUserId.toString()];
     const adminUsers = await User.find({ role: "admin" }).select("_id");
-    excludedUsers.push(...adminUsers.map((u) => u._id));
+    adminUsers.forEach((u) => excludedUsers.push(u._id.toString()));
 
     // Find all connections (accepted or pending) for current user
     const existingConnections = await Connection.find({
@@ -171,22 +171,74 @@ const getSuggestions = async (req, res) => {
       excludedUsers.push(otherId);
     });
 
-    // Query profiles matching same batch OR branch OR campus, excluding admins/self/connections
-    const suggestions = await Profile.find({
-      $and: [
-        {
-          $or: [
-            { batch: batch || null },
-            { branch: branch || null },
-            { campus: campus || null },
-          ],
-        },
-        { user: { $nin: excludedUsers } },
-      ],
-    })
-      .populate("user", "name email role")
-      .limit(6)
-      .exec();
+    const suggestions = [];
+
+    // Helper function to run query stage and append results to suggestions
+    const addMatchingSuggestions = async (queryFilter) => {
+      const limitVal = 5 - suggestions.length;
+      if (limitVal <= 0) return;
+
+      const results = await Profile.find({
+        ...queryFilter,
+        user: { $nin: excludedUsers },
+      })
+        .populate("user", "name email role")
+        .limit(limitVal)
+        .exec();
+
+      for (const profile of results) {
+        if (profile.user && profile.user._id) {
+          suggestions.push(profile);
+          excludedUsers.push(profile.user._id.toString());
+        }
+      }
+    };
+
+    // Priority 1: Same branch & same campus & same year
+    if (branch && campus && batch) {
+      await addMatchingSuggestions({ branch, campus, batch });
+    }
+
+    // Priority 2: Same branch & same campus & adjacent year (+- 1yr)
+    const batchNum = parseInt(batch);
+    if (branch && campus && !isNaN(batchNum)) {
+      await addMatchingSuggestions({
+        branch,
+        campus,
+        batch: { $in: [String(batchNum - 1), String(batchNum + 1)] },
+      });
+    }
+
+    // Priority 3: Different branch & same campus & same year
+    if (campus && batch) {
+      const filter = { campus, batch };
+      if (branch) {
+        filter.branch = { $ne: branch };
+      }
+      await addMatchingSuggestions(filter);
+    }
+
+    // Priority 4: Same branch & different campus & same year
+    if (branch && batch) {
+      const filter = { branch, batch };
+      if (campus) {
+        filter.campus = { $ne: campus };
+      }
+      await addMatchingSuggestions(filter);
+    }
+
+    // Priority 5: Rest (matching any of batch, branch, or campus)
+    const restOrConditions = [];
+    if (batch) restOrConditions.push({ batch });
+    if (branch) restOrConditions.push({ branch });
+    if (campus) restOrConditions.push({ campus });
+
+    if (restOrConditions.length > 0) {
+      await addMatchingSuggestions({ $or: restOrConditions });
+    }
+
+    // Fallback: Any profile left in the database
+    await addMatchingSuggestions({});
 
     // Attach connectionStatus
     const formatted = suggestions.map((profile) => {

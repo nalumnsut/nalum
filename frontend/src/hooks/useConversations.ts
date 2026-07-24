@@ -11,7 +11,8 @@ export const useConversations = () => {
   const { user } = useAuth();
 
   const { data: conversations = [], isLoading } = useQuery({
-    queryKey: ["conversations"],
+    queryKey: ["conversations", user?.id],
+    enabled: !!user?.id,
     queryFn: async () => {
       const { data } = await api.get("/chat/conversations");
       return data.data || [];
@@ -24,7 +25,7 @@ export const useConversations = () => {
     const handleConversationUpdate = (data: any) => {
       const { conversationId, lastMessage } = data;
 
-      queryClient.setQueryData(["conversations"], (old: any[]) => {
+      queryClient.setQueryData(["conversations", user.id], (old: any[]) => {
         if (!old) return [];
 
         const index = old.findIndex((c: any) => c._id === conversationId);

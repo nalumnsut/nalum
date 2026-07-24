@@ -164,3 +164,107 @@
     /* Custom property fallback */
   }
 }
+
+/* Global Dark Mode Overrides for standard light-themed utility classes */
+.dark {
+
+  .bg-gray-50 {
+    background-color: #0b0f19 !important;
+  }
+
+
+  .bg-white {
+    background-color: #111827 !important;
+  }
+
+
+  .text-gray-900,
+  .text-gray-800 {
+    color: #f9fafb !important;
+  }
+
+  .text-gray-700,
+  .text-gray-600 {
+    color: #cbd5e1 !important;
+  }
+
+  .text-gray-500 {
+    color: #94a3b8 !important;
+  }
+
+
+  .border-gray-100,
+  .border-gray-200,
+  .border-gray-300 {
+    border-color: #1f2937 !important;
+  }
+
+
+  .divide-gray-200> :not([hidden])~ :not([hidden]) {
+    border-color: #1f2937 !important;
+  }
+
+
+  .hover\:bg-gray-50:hover,
+  .hover\:bg-gray-100:hover {
+    background-color: #1f2937 !important;
+  }
+
+  /* Input, select, textarea styling */
+  input,
+  select,
+  textarea {
+    background-color: #0b0f19 !important;
+    color: #f9fafb !important;
+    border-color: #1f2937 !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #64748b !important;
+  }
+
+
+  thead.bg-gray-50 {
+    background-color: #1f2937 !important;
+  }
+
+  .bg-blue-50 {
+    background-color: rgba(30, 41, 59, 0.5) !important;
+  }
+
+  .text-blue-900 {
+    color: #60a5fa !important;
+  }
+
+  /* Status and Role Badges Dark Mode skins */
+  .bg-purple-100 {
+    background-color: #3b0764 !important;
+    color: #e9d5ff !important;
+  }
+  .bg-blue-100 {
+    background-color: #1e3a8a !important;
+    color: #bfdbfe !important;
+  }
+  .bg-gray-100 {
+    background-color: #1f2937 !important;
+    color: #cbd5e1 !important;
+  }
+  .bg-yellow-100 {
+    background-color: #78350f !important;
+    color: #fde68a !important;
+  }
+  .bg-green-100 {
+    background-color: #064e3b !important;
+    color: #a7f3d0 !important;
+  }
+  .bg-red-100 {
+    background-color: #7f1d1d !important;
+    color: #fecaca !important;
+  }
+
+  /* Global text-black dark mode safety */
+  .text-black {
+    color: #f9fafb !important;
+  }
+}

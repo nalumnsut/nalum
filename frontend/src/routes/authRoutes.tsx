@@ -1,14 +1,21 @@
 import { lazy } from "react";
 import { Route } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import {
+  loadLogin,
+  loadSignUp,
+  loadOtpVerificationPage,
+  loadProfileForm,
+  loadForgotPassword,
+  loadResetPassword,
+} from "./loaders";
 
-// Lazy loaded auth pages
-const Login = lazy(() => import("@/pages/auth/Login"));
-const SignUp = lazy(() => import("@/pages/auth/SignUp"));
-const OtpVerificationPage = lazy(() => import("@/pages/auth/OtpVerificationPage"));
-const ProfileForm = lazy(() => import("@/pages/auth/ProfileForm"));
-const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
-const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
+const Login = lazy(loadLogin);
+const SignUp = lazy(loadSignUp);
+const OtpVerificationPage = lazy(loadOtpVerificationPage);
+const ProfileForm = lazy(loadProfileForm);
+const ForgotPassword = lazy(loadForgotPassword);
+const ResetPassword = lazy(loadResetPassword);
 
 export function AuthRoutes() {
   return (

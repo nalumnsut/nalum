@@ -35,8 +35,15 @@ export const NotificationItem = ({ notification, onClose }: NotificationItemProp
       await markAsRead(notification.id);
     }
 
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl);
+    const conversationId = notification.metadata?.conversationId;
+    const messageId = notification.metadata?.messageId;
+    const isChatNotification = ['new_message', 'connection_request', 'connection_accepted'].includes(notification.type);
+    const destination = isChatNotification && conversationId
+      ? `/dashboard/chat/${conversationId}${messageId ? `?messageId=${messageId}` : ''}`
+      : notification.actionUrl;
+
+    if (destination) {
+      navigate(destination);
       onClose();
     }
   };
