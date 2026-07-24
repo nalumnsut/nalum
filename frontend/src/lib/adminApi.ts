@@ -100,6 +100,8 @@ export interface Event {
     website?: string;
   };
   likes?: number;
+  gallery?: string[];
+  recap?: string;
   createdAt: string;
 }
 
@@ -267,6 +269,22 @@ export const rejectEvent = async (eventId: string, reason: string) => {
 
 export const deleteEvent = async (eventId: string) => {
   const response = await apiClient.delete(`/admin/events/delete/${eventId}`);
+  return response.data;
+};
+
+export const addEventGalleryPhotos = async (eventId: string, files: File[]) => {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("gallery_images", file));
+  const response = await apiClient.post(`/admin/events/${eventId}/gallery`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+};
+
+export const removeEventGalleryPhoto = async (eventId: string, photoUrl: string) => {
+  const response = await apiClient.delete(`/admin/events/${eventId}/gallery`, {
+    data: { photo_url: photoUrl },
+  });
   return response.data;
 };
 

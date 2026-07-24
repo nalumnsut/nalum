@@ -1,6 +1,8 @@
 const Event = require("../../models/admin/event.model");
 const User = require("../../models/user/user.model");
 const { logAdminActivity } = require("../../middleware/adminAuth");
+const fs = require("fs");
+const path = require("path");
 
 // Get all events (with filters)
 exports.getAllEvents = async (req, res) => {
@@ -317,6 +319,7 @@ exports.updateEvent = async (req, res) => {
       creator_name,
       creator_email,
       status,
+      recap,
     } = req.body;
 
     // Parse contact_info if it's a string
@@ -342,6 +345,7 @@ exports.updateEvent = async (req, res) => {
     if (creator_name) event.creator_name = creator_name;
     if (creator_email) event.creator_email = creator_email;
     if (status) event.status = status;
+    if (recap !== undefined) event.recap = recap;
 
     // Handle image upload
     if (req.file) {
@@ -373,6 +377,113 @@ exports.updateEvent = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "An error occurred while updating event",
+    });
+  }
+};
+
+// Add photos to an event's gallery (admin only, e.g. recap photos for a completed event)
+exports.addGalleryPhotos = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No photos were uploaded",
+      });
+    }
+
+    const newPhotoUrls = req.files.map(
+      (file) => `/uploads/event-images/${file.filename}`
+    );
+
+    event.gallery.push(...newPhotoUrls);
+    await event.save();
+
+    await logAdminActivity(
+      req.admin.email,
+      "add_event_gallery_photos",
+      "event",
+      eventId,
+      { event_title: event.title, added: newPhotoUrls.length },
+      req.ip
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Photos added to gallery",
+      data: event,
+    });
+  } catch (error) {
+    console.error("Error adding gallery photos:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while adding gallery photos",
+    });
+  }
+};
+
+// Remove a single photo from an event's gallery (admin only)
+exports.removeGalleryPhoto = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { photo_url } = req.body;
+
+    if (!photo_url) {
+      return res.status(400).json({
+        success: false,
+        message: "photo_url is required",
+      });
+    }
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    event.gallery = event.gallery.filter((url) => url !== photo_url);
+    await event.save();
+
+    // Best-effort: delete the file from disk
+    try {
+      const filePath = path.join(__dirname, "../../", photo_url);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (fileError) {
+      console.error("Error deleting gallery photo file:", fileError);
+    }
+
+    await logAdminActivity(
+      req.admin.email,
+      "remove_event_gallery_photo",
+      "event",
+      eventId,
+      { event_title: event.title, photo_url },
+      req.ip
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Photo removed from gallery",
+      data: event,
+    });
+  } catch (error) {
+    console.error("Error removing gallery photo:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while removing the gallery photo",
     });
   }
 };

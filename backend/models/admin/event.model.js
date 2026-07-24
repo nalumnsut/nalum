@@ -35,6 +35,15 @@ const EventSchema = new Schema(
       type: String,
       default: "",
     },
+    gallery: {
+      type: [String],
+      default: [],
+    },
+    recap: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     created_by: {
       type: Schema.Types.ObjectId,
       ref: "User",
