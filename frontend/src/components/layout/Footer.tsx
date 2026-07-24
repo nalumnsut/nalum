@@ -1,6 +1,19 @@
 
 import { PreloadLink } from "@/components/PreloadLink";
-import { Facebook, Twitter, Instagram, Youtube, Linkedin } from 'lucide-react';
+import { Facebook, Instagram, Youtube, Linkedin } from 'lucide-react';
+
+const XLogo = ({ size = 20, className }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+    className={className}
+  >
+    <path d="M18.244 2H21l-6.96 7.965L22.23 22h-6.844l-5.35-6.912L3.985 22H1.227l7.448-8.527L1 2h6.97l4.892 6.32L18.244 2Zm-1.2 18h1.92L7.93 3.993H5.873L17.044 20Z" />
+  </svg>
+);
 
 const Footer = () => {
   const quickNav = [
@@ -11,15 +24,16 @@ const Footer = () => {
     { text: "Stories", link: "/stories/notable-alumni" },
   ];
   const secondaryNav = [
-    { text: "About", link: "/about", external: false }, // ✓ Already configured
     { text: "myNSUT Login", link: "/login", external: false }, // ✓ Already configured
+    { text: "About", link: "/about", external: false }, // ✓ Already configured
+    { text: "NALUM Team", link: "/about#team", external: false },
     { text: "Contact", link: "/about#contact", external: false }, // ✓ Links to Get in Touch section on About page
     { text: "NSUT.edu", link: "https://www.nsut.ac.in/", external: true }, // ✓ EXAMPLE: External link
   ];
 
   const socialLinks = [
-    { icon: Facebook, href: "#", label: "Facebook" },
-    { icon: Twitter, href: "#", label: "Twitter" },
+    { icon: Facebook, href: "https://www.facebook.com/nsutofficial/", label: "Facebook" },
+    { icon: XLogo, href: "https://x.com/NSUT_OFFICIAL", label: "X" },
     { icon: Instagram, href: "https://www.instagram.com/nsut.official?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==", label: "Instagram" },
     { icon: Youtube, href: "https://youtube.com/@nsutdelhi?si=GSi2n3m78a3JvbiK", label: "YouTube" },
     { icon: Linkedin, href: "https://www.linkedin.com/company/officialnsut/", label: "LinkedIn" },
