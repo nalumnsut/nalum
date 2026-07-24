@@ -172,7 +172,7 @@ const Signup = () => {
                 <House className="h-6 w-6 text-nsut-maroon" />
             </Link>
 
-            <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white/7 backdrop-blur-xl border border-white/20 shadow-2xl p-10 m-2">
+            <div className="relative z-10 w-full max-w-3xl rounded-2xl bg-white/7 backdrop-blur-xl border border-white/20 shadow-2xl p-10 m-2">
 
                 {/* Header */}
                 <div>
@@ -213,7 +213,7 @@ const Signup = () => {
                         <button
                             type="button"
                             onClick={() => handleChange("role", "student")}
-                            className={`rounded-2xl p-6 transition-all duration-300 ${formData.role === "student"
+                            className={`rounded-3xl p-6 transition-all duration-300 ${formData.role === "student"
                                 ? "bg-red-700 text-white scale-105 shadow-xl"
                                 : "bg-white/10 text-gray-300 hover:bg-white/20 hover:-translate-y-1"
                                 }`}
@@ -228,7 +228,7 @@ const Signup = () => {
                         <button
                             type="button"
                             onClick={() => handleChange("role", "alumni")}
-                            className={`rounded-2xl p-6 transition-all duration-300 ${formData.role === "alumni"
+                            className={`rounded-3xl p-6 transition-all duration-300 ${formData.role === "alumni"
                                 ? "bg-red-700 text-white scale-105 shadow-xl"
                                 : "bg-white/10 text-gray-300 hover:bg-white/20 hover:-translate-y-1"
                                 }`}
