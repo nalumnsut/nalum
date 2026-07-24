@@ -65,23 +65,22 @@ function CommentComposer({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        autoFocus={autoFocus} // FIXED: Senior review dead-code bug
-        // FIXED: pb-12 add kiya taaki text button ke piche na chhupe
+        autoFocus={autoFocus}
         className="min-h-[100px] w-full bg-white/[0.03] border border-white/10 group-focus-within:bg-white/[0.06] group-focus-within:border-white/20 transition-all duration-300 rounded-[24px] px-4 pt-3.5 pb-12 text-[15px] leading-relaxed text-gray-100 outline-none resize-none placeholder:text-gray-500 shadow-inner"
       />
-      {/* FIXED: bottom-3 right-3 kiya taaki curved border ko touch na kare */}
+      
       <div className="absolute bottom-3 right-3">
         <Button
           onClick={onSubmit}
           disabled={isSubmitting || !value.trim()}
-          title={submitLabel} // Hover karne par text dikhega
-          // FIXED: Sirf Icon ke liye width/height set ki aur text wali padding (px-5) hata di
+          title={submitLabel} 
+          
           className="rounded-full bg-gradient-to-r from-[#800000] to-[#a33] h-10 w-10 p-0 flex items-center justify-center shadow-lg hover:shadow-[#800000]/25 transition-all duration-300 disabled:opacity-40"
         >
           {isSubmitting ? (
             <Loader2 className="h-4.5 w-4.5 animate-spin" />
           ) : (
-            // FIXED: mr-2 hata diya taaki icon center me aaye
+            
             <Send className="h-4.5 w-4.5" />
           )}
         </Button>

@@ -23,7 +23,7 @@ interface EditPostModalProps {
   onPostUpdated?: () => void;
   userName?: string;
   userAvatar?: string;
-  // NEW: customSubmit prop add kiya for Admin routing
+  
   customSubmit?: (formData: FormData) => Promise<void>; 
 }
 
@@ -97,7 +97,7 @@ const EditPostModal = ({
         formData.append("images", file);
       });
 
-      // SMART ROUTING: Agar admin (customSubmit) hai toh wo chalao, nahi toh normal route
+      
       if (customSubmit) {
         await customSubmit(formData);
       } else {

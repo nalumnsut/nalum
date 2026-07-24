@@ -132,7 +132,7 @@ const CurrentPosts = () => {
     setEditModalOpen(true);
   };
 
-  // MISSING FUNCTION WAPAS LAYA! (Admin Route Handle Karega)
+  
   const handleAdminEditSubmit = async (formData: FormData) => {
     if (!selectedPost) return;
     try {
@@ -140,10 +140,9 @@ const CurrentPosts = () => {
         title: formData.get("title") as string,
         content: formData.get("content") as string,
       });
-      // Note: Admin route currently doesn't support image updates in this API call format
-      // if it does, you'd send the full formData instead of extracting title/content.
+      
     } catch (error: any) {
-      throw error; // Re-throw so the modal can show the error toast
+      throw error; 
     }
   };
 
@@ -299,7 +298,7 @@ const CurrentPosts = () => {
           post={selectedPost as any}
           userName={selectedPost?.userId?.name}
           userAvatar={selectedPost?.userId?.profile_picture}
-          customSubmit={handleAdminEditSubmit} // WAPAS BHEJ DIYA VIP PASS!
+          customSubmit={handleAdminEditSubmit} 
           onClose={() => {
             setEditModalOpen(false);
             setSelectedPost(null);
