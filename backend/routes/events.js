@@ -134,7 +134,7 @@ router.post("/create", protect, uploadEventImage.single("event_image"), compress
 // Get all approved events with pagination
 router.get("/approved", async (req, res) => {
   try {
-    const { page = 1, limit = 9, event_type } = req.query;
+    const { page = 1, limit = 9, event_type, time_frame = "upcoming" } = req.query;
 
     // Get today's date at start of day (local timezone)
     const today = new Date();
@@ -143,8 +143,14 @@ router.get("/approved", async (req, res) => {
     const query = {
       status: "approved",
       is_active: true,
-      event_date: { $gte: today }, // Events from today onwards
     };
+
+    if (time_frame === "past") {
+      query.event_date = { $lt: today };
+    } else if (time_frame === "upcoming") {
+      query.event_date = { $gte: today };
+    }
+    // time_frame === "all" → no event_date filter
 
     if (event_type && event_type !== "all") {
       query.event_type = event_type;
@@ -153,7 +159,7 @@ router.get("/approved", async (req, res) => {
     console.log("Fetching events with query:", JSON.stringify(query));
 
     const events = await Event.find(query)
-      .sort({ event_date: 1 }) // Upcoming events first
+      .sort({ event_date: time_frame === "past" ? -1 : 1 }) // Most recent past events first, upcoming events soonest first
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .select("-liked_by"); // Don't send full liked_by array

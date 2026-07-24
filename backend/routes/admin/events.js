@@ -16,6 +16,10 @@ router.post("/reject/:eventId", protectAdmin, eventController.rejectEvent);
 router.put("/update/:eventId", protectAdmin, uploadEventImage.single("event_image"), compressionPresets.eventImage, eventController.updateEvent);
 router.delete("/delete/:eventId", protectAdmin, eventController.deleteEvent);
 
+// Gallery management (admin only) — add/remove recap photos for any event
+router.post("/:eventId/gallery", protectAdmin, uploadEventImage.array("gallery_images", 10), compressionPresets.eventImage, eventController.addGalleryPhotos);
+router.delete("/:eventId/gallery", protectAdmin, eventController.removeGalleryPhoto);
+
 // Create event as admin (auto-approved)
 router.post("/create", protectAdmin, uploadEventImage.single("event_image"), compressionPresets.eventImage, async (req, res) => {
   try {

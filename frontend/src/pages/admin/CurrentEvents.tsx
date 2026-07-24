@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { Event, getAllEvents } from "../../lib/adminApi";
-import { Calendar as CalendarIcon, Edit, Trash2, RefreshCw, Search, Filter } from "lucide-react";
+import { Event, getAllEvents, addEventGalleryPhotos, removeEventGalleryPhoto } from "../../lib/adminApi";
+import { Calendar as CalendarIcon, Edit, Trash2, RefreshCw, Search, Filter, Image as ImageIcon, X, Upload } from "lucide-react";
 import api from "../../lib/api";
 import { BASE_URL } from "../../lib/constants";
 import { Button } from "../../components/ui/button";
@@ -49,10 +49,18 @@ const CurrentEvents = () => {
     creator_name: "",
     creator_email: "",
     status: "",
+    recap: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [updating, setUpdating] = useState(false);
+
+  // Gallery management (recap photos for completed/upcoming events)
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
+  const [newGalleryFiles, setNewGalleryFiles] = useState<File[]>([]);
+  const [newGalleryPreviews, setNewGalleryPreviews] = useState<string[]>([]);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [removingPhoto, setRemovingPhoto] = useState<string | null>(null);
   
   // Delete Dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -128,10 +136,14 @@ const CurrentEvents = () => {
       creator_name: event.creator_name,
       creator_email: event.creator_email,
       status: event.status,
+      recap: event.recap || "",
     });
     if (event.image_url) {
       setImagePreview(`${BASE_URL}${event.image_url}`);
     }
+    setGalleryPhotos(event.gallery || []);
+    setNewGalleryFiles([]);
+    setNewGalleryPreviews([]);
     setEditDialogOpen(true);
   };
 
@@ -161,6 +173,7 @@ const CurrentEvents = () => {
       formDataToSend.append("event_type", editFormData.event_type);
       formDataToSend.append("registration_link", editFormData.registration_link);
       formDataToSend.append("status", editFormData.status);
+      formDataToSend.append("recap", editFormData.recap);
       
       if (editFormData.max_participants) {
         formDataToSend.append("max_participants", editFormData.max_participants);
@@ -196,6 +209,65 @@ const CurrentEvents = () => {
       alert("Failed to update event");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleGalleryFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setNewGalleryFiles((prev) => [...prev, ...files]);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewGalleryPreviews((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+    // Reset the input so selecting the same file again re-triggers onChange
+    e.target.value = "";
+  };
+
+  const handleRemoveStagedFile = (index: number) => {
+    setNewGalleryFiles((prev) => prev.filter((_, i) => i !== index));
+    setNewGalleryPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUploadGalleryPhotos = async () => {
+    if (!selectedEvent || newGalleryFiles.length === 0) return;
+
+    setUploadingGallery(true);
+    try {
+      const response = await addEventGalleryPhotos(selectedEvent._id, newGalleryFiles);
+      if (response.success) {
+        setGalleryPhotos(response.data.gallery || []);
+        setNewGalleryFiles([]);
+        setNewGalleryPreviews([]);
+        fetchEvents();
+      }
+    } catch (err) {
+      console.error("Failed to upload gallery photos:", err);
+      alert("Failed to upload gallery photos");
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
+
+  const handleRemoveGalleryPhoto = async (photoUrl: string) => {
+    if (!selectedEvent) return;
+    if (!window.confirm("Remove this photo from the gallery?")) return;
+
+    setRemovingPhoto(photoUrl);
+    try {
+      const response = await removeEventGalleryPhoto(selectedEvent._id, photoUrl);
+      if (response.success) {
+        setGalleryPhotos(response.data.gallery || []);
+        fetchEvents();
+      }
+    } catch (err) {
+      console.error("Failed to remove gallery photo:", err);
+      alert("Failed to remove gallery photo");
+    } finally {
+      setRemovingPhoto(null);
     }
   };
 
@@ -448,6 +520,18 @@ const CurrentEvents = () => {
                 />
               </div>
 
+              {/* Recap (shown publicly on completed events) */}
+              <div>
+                <Label htmlFor="edit-recap">Recap / Highlights (optional)</Label>
+                <Textarea
+                  id="edit-recap"
+                  value={editFormData.recap}
+                  onChange={(e) => setEditFormData({ ...editFormData, recap: e.target.value })}
+                  placeholder="A short summary of how the event went — shown publicly once the event is completed."
+                  className="min-h-[80px]"
+                />
+              </div>
+
               {/* Date and Time */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -604,6 +688,83 @@ const CurrentEvents = () => {
                   onChange={handleImageUpload}
                   className="cursor-pointer"
                 />
+              </div>
+
+              {/* Gallery (recap photos) */}
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-1 flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Gallery Photos
+                </h4>
+                <p className="text-sm text-gray-500 mb-3">
+                  Add photos to appear in this event's public gallery — great for sharing highlights after it's completed.
+                </p>
+
+                {/* Existing photos already on the event */}
+                {galleryPhotos.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 mb-3">
+                    {galleryPhotos.map((url) => (
+                      <div key={url} className="relative group">
+                        <img
+                          src={`${BASE_URL}${url}`}
+                          alt="Gallery"
+                          className="w-full h-20 object-cover rounded-md border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveGalleryPhoto(url)}
+                          disabled={removingPhoto === url}
+                          className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full p-1 shadow hover:bg-red-700 disabled:opacity-50"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Newly staged photos, not yet uploaded */}
+                {newGalleryPreviews.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 mb-3">
+                    {newGalleryPreviews.map((preview, idx) => (
+                      <div key={idx} className="relative group">
+                        <img
+                          src={preview}
+                          alt="Pending upload"
+                          className="w-full h-20 object-cover rounded-md border-2 border-dashed border-blue-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveStagedFile(idx)}
+                          className="absolute -top-1.5 -right-1.5 bg-gray-700 text-white rounded-full p-1 shadow hover:bg-gray-800"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleGalleryFilesSelected}
+                    className="cursor-pointer"
+                  />
+                  {newGalleryFiles.length > 0 && (
+                    <Button
+                      type="button"
+                      onClick={handleUploadGalleryPhotos}
+                      disabled={uploadingGallery}
+                      className="bg-emerald-600 hover:bg-emerald-700 shrink-0"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploadingGallery ? "Uploading..." : `Upload (${newGalleryFiles.length})`}
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* Action Buttons */}
