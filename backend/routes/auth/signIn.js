@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
     });
   }
 
-  const { email, password } = req.body;
+  const { email, password, rememberMe } = req.body;
   let data = await users.findOne(email);
 
   if (data.error) {
@@ -37,13 +37,13 @@ router.post("/", async (req, res) => {
       message: "Email not verified",
     });
   }
-  
+
   // Check if user is banned
   if (data.data.banned) {
     const banMessage = data.data.ban_expires_at && data.data.ban_expires_at !== null
       ? `Your account has been banned until ${new Date(data.data.ban_expires_at).toLocaleString()}.`
       : "Your account has been permanently banned.";
-    
+
     return res.status(403).json({
       err: true,
       code: 403,
@@ -53,7 +53,7 @@ router.post("/", async (req, res) => {
       ban_reason: data.data.ban_reason,
     });
   }
-  
+
   // Check student email verification timeout (180 days)
   if (data.data.role === "student" && data.data.isStudentVerificationExpired()) {
     return res.status(403).json({
@@ -63,7 +63,7 @@ router.post("/", async (req, res) => {
       verification_expired: true,
     });
   }
-  
+
   let matched;
 
   try {
@@ -87,16 +87,19 @@ router.post("/", async (req, res) => {
   }
 
   const { refresh_token, ...rest } = sessionData.data;
-  
+
   // Set refresh token in httpOnly cookie
   res.cookie("refresh_token", refresh_token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
+    ...(rememberMe && {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    }),
   });
-  
+
   const access_token = sessionData.data.access_token;
 
   return res.status(200).json({

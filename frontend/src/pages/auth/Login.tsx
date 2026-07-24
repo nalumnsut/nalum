@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eye, EyeOff, Mail, Lock, Briefcase } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Briefcase, House } from "lucide-react";
 import { toast } from "sonner";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
@@ -25,6 +25,7 @@ const Login = () => {
     email: "",
     password: "",
     role: "student",
+    rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -167,10 +168,10 @@ const Login = () => {
           },
         });
       } else {
-        const errorMessage = axios.isAxiosError(error) 
+        const errorMessage = axios.isAxiosError(error)
           ? error.response?.data?.message || "Invalid email or password"
           : "Invalid email or password";
-        
+
         toast.error("Login Failed", {
           description: errorMessage,
           style: {
@@ -225,6 +226,12 @@ const Login = () => {
       {/* Right Column: Form */}
       <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
         {/* Subtle Pattern Background */}
+        <Link
+          to="/"
+          className="absolute top-8 right-6 z-20 rounded-full p-2  transition"
+        >
+          <House className="h-6 w-6 text-nsut-maroon" />
+        </Link>
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
@@ -255,6 +262,7 @@ const Login = () => {
               </Link>
             </p>
           </div>
+
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -324,6 +332,13 @@ const Login = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
+                  checked={formData.rememberMe}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      rememberMe: e.target.checked,
+                    }))
+                  }
                   className="h-4 w-4 rounded border-gray-300 text-nsut-maroon focus:ring-nsut-maroon"
                 />
                 <Label htmlFor="remember-me" className="ml-2 block text-base text-gray-900">

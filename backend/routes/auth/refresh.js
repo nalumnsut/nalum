@@ -32,7 +32,7 @@ router.post("/", async (req, res) => {
 
   // store refresh token in httpOnly cookie only and don't expose it in the response
   const { refresh_token: new_refresh_token, ...rest } = data.data;
-  
+
   // Set refresh token in httpOnly cookie
   res.cookie("refresh_token", new_refresh_token, {
     httpOnly: true,

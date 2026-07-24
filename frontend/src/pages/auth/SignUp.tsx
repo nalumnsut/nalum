@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Mail, Lock, User, Briefcase, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, Briefcase, Eye, EyeOff, House } from "lucide-react";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
 import { useAuth } from "@/context/AuthContext";
@@ -176,6 +176,12 @@ const Signup = () => {
 
       {/* Right Column: Form */}
       <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
+        <Link
+          to="/"
+          className="absolute top-8 right-6 z-20 rounded-full p-2  transition"
+        >
+          <House className="h-6 w-6 text-nsut-maroon" />
+        </Link>
         {/* Subtle Pattern Background */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
