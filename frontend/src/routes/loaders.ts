@@ -69,6 +69,7 @@ export const loadAlumniDatabase = () => import("@/pages/admin/AlumniDatabase");
 export const loadReports = () => import("@/pages/admin/Reports");
 export const loadQueryManagement = () => import("@/pages/admin/QueryManagement");
 export const loadGivingManagement = () => import("@/pages/admin/GivingManagement");
+export const loadAdminAnalytics = () => import("@/pages/admin/AdminAnalytics");
 
 // Misc
 export const loadNotFound = () => import("@/pages/NotFound");

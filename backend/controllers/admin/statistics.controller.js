@@ -12,11 +12,11 @@ exports.getDashboardStats = async (req, res) => {
   try {
     console.log('[Dashboard Stats] Fetching statistics...');
     
-    // User statistics
-    const totalUsers = await User.countDocuments();
-    const totalStudents = await User.countDocuments({ role: "student" });
-    const totalAlumni = await User.countDocuments({ role: "alumni" });
-    const verifiedAlumni = await User.countDocuments({ role: "alumni", verified_alumni: true });
+    // User statistics (excluding banned users from user statistics counts)
+    const totalUsers = await User.countDocuments({ banned: { $ne: true } });
+    const totalStudents = await User.countDocuments({ role: "student", banned: { $ne: true } });
+    const totalAlumni = await User.countDocuments({ role: "alumni", banned: { $ne: true } });
+    const verifiedAlumni = await User.countDocuments({ role: "alumni", verified_alumni: true, banned: { $ne: true } });
     const bannedUsers = await User.countDocuments({ banned: true });
 
     console.log('[Dashboard Stats] User stats:', { totalUsers, totalStudents, totalAlumni, verifiedAlumni, bannedUsers });
@@ -150,6 +150,7 @@ exports.getRegistrationGraph = async (req, res) => {
       {
         $match: {
           createdAt: { $gte: startDate },
+          banned: { $ne: true },
         },
       },
       {

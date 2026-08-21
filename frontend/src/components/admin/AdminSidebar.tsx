@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { PreloadLink } from "@/components/PreloadLink";
-import { LayoutDashboard, Users, CheckCircle, Calendar, CalendarCheck, FileText, Ban, LogOut, Key, Database, AlertTriangle, MessageSquare, Heart } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, CheckCircle, Calendar, CalendarCheck, FileText, Ban, LogOut, Key, Database, AlertTriangle, MessageSquare, Heart } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 /**
@@ -16,6 +16,11 @@ const AdminSidebar = () => {
       name: "Dashboard",
       path: "/admin-panel/dashboard",
       icon: LayoutDashboard,
+    },
+    {
+      name: "Analytics & Insights",
+      path: "/admin-panel/analytics",
+      icon: BarChart3,
     },
     {
       name: "Verification Queue",

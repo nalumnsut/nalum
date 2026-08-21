@@ -16,6 +16,7 @@ import {
   loadReports,
   loadQueryManagement,
   loadGivingManagement,
+  loadAdminAnalytics,
 } from "./loaders";
 
 // Lazy loaded admin components with shared loaders
@@ -34,12 +35,15 @@ const AlumniDatabase = lazy(loadAlumniDatabase);
 const Reports = lazy(loadReports);
 const QueryManagement = lazy(loadQueryManagement);
 const GivingManagement = lazy(loadGivingManagement);
+const AdminAnalytics = lazy(loadAdminAnalytics);
 
 export function AdminRoutes() {
   return (
     <>
       <Route element={<AdminProtectedRoute />}>
         <Route path="/admin-panel/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin-panel/analytics" element={<AdminAnalytics />} />
+        <Route path="/admin-panel/verification" element={<VerificationQueue />} />
         <Route path="/admin-panel/verification" element={<VerificationQueue />} />
         <Route path="/admin-panel/verifications" element={<VerificationQueue />} />
         <Route path="/admin-panel/users" element={<UserManagement />} />
