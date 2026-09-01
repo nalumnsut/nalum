@@ -14,16 +14,6 @@ export function AuthErrorHandler() {
       toast.error("Session Expired", {
         id: "session-expired",
         description: "Your session has expired. Please log in again.",
-        style: {
-          background: "#800000",
-          color: "white",
-          border: "2px solid #FFD700",
-          fontSize: "16px",
-        },
-        classNames: {
-          title: "text-xl font-bold text-white",
-          description: "text-base text-white",
-        },
       });
       navigate("/login");
     };

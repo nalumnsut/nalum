@@ -84,50 +84,10 @@ const Login = () => {
 
       trackLogin(formData.role);
 
-      if (user.role === "admin") {
-        let toastId: string | number;
-        toastId = toast.success(
-          <div className="relative w-full flex flex-col pr-4">
-            <button
-              onClick={() => {
-                if (toastId) toast.dismiss(toastId);
-              }}
-              className="absolute -top-1 -right-1 text-white/80 hover:text-white font-bold text-xl leading-none p-1 focus:outline-none"
-              aria-label="Close notification"
-            >
-              &times;
-            </button>
-            <div className="text-xl font-bold text-white pr-4">Login Successful!</div>
-            <div className="text-base text-white/90 mt-1 pr-4">
-              Welcome back to the NSUT Alumni Portal 🎉
-            </div>
-          </div>,
-          {
-            style: {
-              background: "#15803d",
-              color: "white",
-              border: "2px solid #22c55e",
-              fontSize: "16px",
-              padding: "16px",
-            },
-            duration: 4000,
-          }
-        );
-      } else {
-        toast.success("Login Successful!", {
-          description: "Welcome back to the NSUT Alumni Portal 🎉",
-          style: {
-            background: "#800000",
-            color: "white",
-            border: "2px solid #FFD700",
-            fontSize: "16px",
-          },
-          classNames: {
-            title: "text-xl font-bold text-white",
-            description: "text-base text-white",
-          },
-        });
-      }
+      toast.success("Login Successful!", {
+        description: "Welcome back to the NSUT Alumni Portal 🎉",
+        duration: 4000,
+      });
 
       const path = await resolvePostLoginPath(user.role, access_token);
       navigate(path);
@@ -144,16 +104,6 @@ const Login = () => {
       ) {
         toast.error("Email Not Verified", {
           description: "Please verify your email before logging in.",
-          style: {
-            background: "#800000",
-            color: "white",
-            border: "2px solid #FFD700",
-            fontSize: "16px",
-          },
-          classNames: {
-            title: "text-xl font-bold text-white",
-            description: "text-base text-white",
-          },
         });
         navigate("/otp-verification", { state: { email: formData.email } });
       } else if (
@@ -166,16 +116,6 @@ const Login = () => {
         toast.error("Account Banned", {
           description: banMessage,
           duration: 8000,
-          style: {
-            background: "#dc2626",
-            color: "white",
-            border: "2px solid #991b1b",
-            fontSize: "16px",
-          },
-          classNames: {
-            title: "text-xl font-bold text-white",
-            description: "text-base text-white",
-          },
         });
       } else if (
         axios.isAxiosError(error) &&
@@ -185,8 +125,6 @@ const Login = () => {
         toast.error("Verification Expired", {
           description: "Your NSUT email verification has expired. Please re-verify your email.",
           duration: 6000,
-          style: { background: "#800000", color: "white", border: "2px solid #FFD700", fontSize: "16px" },
-          classNames: { title: "text-xl font-bold text-white", description: "text-base text-white" },
         });
         navigate("/otp-verification", { state: { email: formData.email } });
       } else if (
@@ -196,16 +134,6 @@ const Login = () => {
       ) {
         toast.error("Account Not Found", {
           description: "No account exists with this email address",
-          style: {
-            background: "#800000",
-            color: "white",
-            border: "2px solid #FFD700",
-            fontSize: "16px",
-          },
-          classNames: {
-            title: "text-xl font-bold text-white",
-            description: "text-base text-white",
-          },
         });
       } else {
         const errorMessage = axios.isAxiosError(error)
@@ -214,16 +142,6 @@ const Login = () => {
 
         toast.error("Login Failed", {
           description: errorMessage,
-          style: {
-            background: "#800000",
-            color: "white",
-            border: "2px solid #FFD700",
-            fontSize: "16px",
-          },
-          classNames: {
-            title: "text-xl font-bold text-white",
-            description: "text-base text-white",
-          },
         });
       }
     } finally {
