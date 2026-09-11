@@ -62,6 +62,7 @@ function AppContent() {
 }
 
 function App() {
+  console.log("GOOGLE_CLIENT_ID is:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ""}>
       <QueryClientProvider client={queryClient}>

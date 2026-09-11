@@ -78,9 +78,23 @@ const Login = () => {
 
     } catch (error) {
       console.error("Google Login error:", error);
-      toast.error("Google Login Failed", {
-        description: "Unable to authenticate with Google.",
-      });
+      
+      if (
+        axios.isAxiosError(error) && 
+        error.response?.status === 400 && 
+        error.response?.data?.message === "Please select your role before signing up."
+      ) {
+        toast.error("Account Not Found", {
+          description: "Please create an account and select your role first.",
+          style: { background: "#800000", color: "white", border: "2px solid #FFD700", fontSize: "16px" },
+          classNames: { title: "text-xl font-bold text-white", description: "text-base text-white" },
+        });
+        navigate("/signup");
+      } else {
+        toast.error("Google Login Failed", {
+          description: axios.isAxiosError(error) ? error.response?.data?.message || error.message : "Unable to authenticate with Google.",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
