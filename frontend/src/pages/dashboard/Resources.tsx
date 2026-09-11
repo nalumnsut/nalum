@@ -69,17 +69,20 @@ export default function Resources() {
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
                 {section.links.map((link) => (
-                  <a
+                  <Button
                     key={link.url}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    asChild
+                    className="gap-2 rounded-full bg-primary px-5 text-label-md text-primary-foreground hover:bg-primary-hover"
                   >
-                    <Button className="gap-2 rounded-full bg-primary px-5 text-label-md text-primary-foreground hover:bg-primary-hover">
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       {link.label}
                       <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  </a>
+                    </a>
+                  </Button>
                 ))}
               </div>
             </div>
