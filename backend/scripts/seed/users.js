@@ -20,6 +20,12 @@ const alumniData = [
   { name: 'Ananya Iyer', email: 'alumni8@gmail.com', batch: '2021', branch: 'Computer Science Engineering', campus: 'Main Campus' },
   { name: 'Rohit Verma', email: 'alumni9@gmail.com', batch: '2019', branch: 'Electronics and Communication Engineering', campus: 'Main Campus' },
   { name: 'Neha Gupta', email: 'alumni10@gmail.com', batch: '2022', branch: 'Computer Science Engineering', campus: 'Main Campus' },
+
+  // Added 2026-09-04 to improve testing — branch names containing parentheses.
+  { name: 'Test Alumni MAC', email: 'alumni101@gmail.com', batch: '2023', branch: 'Mathematics and Computing (MAC)', campus: 'Main Campus' },
+  { name: 'Test Alumni MPAE', email: 'alumni102@gmail.com', batch: '2023', branch: 'MPAE (Manufacturing Processes and Automation Engineering)', campus: 'Main Campus' },
+  { name: 'Test Alumni CSDS', email: 'alumni103@gmail.com', batch: '2023', branch: 'Computer Science Engineering (Data Science)', campus: 'Main Campus' },
+  { name: 'Test Alumni PHD', email: 'alumni104@gmail.com', batch: '2023', branch: 'Doctor of Philosophy (Ph.D)', campus: 'Main Campus' },
 ];
 
 const studentData = [
@@ -33,6 +39,19 @@ const studentData = [
   { name: 'Sanya Malhotra', email: 's8@nsut.ac.in', batch: '2027', branch: 'Computer Science Engineering', campus: 'Main Campus' },
   { name: 'Vivaan Gupta', email: 's9@nsut.ac.in', batch: '2025', branch: 'Electronics and Communication Engineering', campus: 'East Campus' },
   { name: 'Myra Singh', email: 's10@nsut.ac.in', batch: '2028', branch: 'Electrical Engineering', campus: 'Main Campus' },
+];
+
+// Faculty use department instead of branch/batch (see profile.model.js).
+// Emails must end in @nsut.ac.in — same domain rule as students.
+const facultyData = [
+  { name: 'Dr. Anil Mehta', email: 'f1@nsut.ac.in', department: 'Computer Science and Engineering', campus: 'Main Campus', designation: 'Professor' },
+  { name: 'Dr. Kavita Rao', email: 'f2@nsut.ac.in', department: 'Electrical Engineering', campus: 'Main Campus', designation: 'Associate Professor' },
+  { name: 'Dr. Suresh Nair', email: 'f3@nsut.ac.in', department: 'Mechanical Engineering', campus: 'East Campus', designation: 'Assistant Professor' },
+  { name: 'Dr. Meena Iyer', email: 'f4@nsut.ac.in', department: 'Mathematics and Computing', campus: 'Main Campus', designation: 'Professor' },
+  { name: 'Dr. Rajesh Kumar', email: 'f5@nsut.ac.in', department: 'Civil Engineering', campus: 'West Campus', designation: 'Head of Department' },
+  { name: 'Dr. Pooja Malhotra', email: 'f6@nsut.ac.in', department: 'Biotechnology', campus: 'Main Campus', designation: 'Assistant Professor' },
+  { name: 'Dr. Vikas Chandra', email: 'f7@nsut.ac.in', department: 'Electronics and Communication Engineering', campus: 'East Campus', designation: 'Professor' },
+  { name: 'Dr. Sunita Bhatt', email: 'f8@nsut.ac.in', department: 'Humanities and Social Sciences', campus: 'Main Campus', designation: 'Associate Professor' },
 ];
 
 const adminData = { name: 'Dev Admin', email: 'devadmin@nsut.ac.in' };
@@ -80,6 +99,27 @@ async function seedUsers() {
     console.log(`✅ student: ${s.name} (${s.email})`);
   }
 
+  for (const f of facultyData) {
+    const existing = await User.findOne({ email: f.email });
+    if (existing) {
+      console.log(`⚠️  ${f.email} already exists, skipping`);
+      continue;
+    }
+    await User.create({
+      name: f.name,
+      email: f.email,
+      password: hashedPassword,
+      role: 'faculty',
+      email_verified: true,
+      // Required, not just email_verified — isStudentVerificationExpired()
+      // now also covers faculty (user.model.js) and treats a null
+      // email_verified_at as expired, blocking sign-in.
+      email_verified_at: new Date(),
+      profileCompleted: true,
+    });
+    console.log(`✅ faculty: ${f.name} (${f.email})`);
+  }
+
   const existingAdmin = await User.findOne({ email: adminData.email });
   if (existingAdmin) {
     console.log(`⚠️  ${adminData.email} already exists, skipping`);
@@ -97,4 +137,4 @@ async function seedUsers() {
   }
 }
 
-module.exports = { seedUsers, alumniData, studentData, adminData, PASSWORD };
+module.exports = { seedUsers, alumniData, studentData, facultyData, adminData, PASSWORD };

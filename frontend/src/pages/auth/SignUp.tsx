@@ -6,14 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Mail, Lock, User, Briefcase, Eye, EyeOff, Home } from "lucide-react";
+import { Mail, Lock, User, GraduationCap, Users, Briefcase, Eye, EyeOff, Home, ArrowLeft, Pencil } from "lucide-react";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
 import { useAuth } from "@/context/AuthContext";
@@ -21,6 +14,14 @@ import { resolvePostLoginPath } from "@/lib/roleConfig";
 import { trackSignUp, trackEvent } from "@/lib/analytics";
 import { validatePassword } from "@/lib/passwordPolicy";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+
+const ROLE_ICON = { student: GraduationCap, alumni: Users, faculty: Briefcase } as const;
+
+const ROLE_OPTIONS = [
+  { value: "student", label: "Student", icon: GraduationCap },
+  { value: "alumni", label: "Alumni", icon: Users },
+  { value: "faculty", label: "Faculty", icon: Briefcase },
+] as const;
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const Signup = () => {
     password: "",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [step, setStep] = useState<1 | 2>(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +47,7 @@ const Signup = () => {
     );
   }, [accessToken, user]);
   const [unverifiedEmail, setUnverifiedEmail] = useState(false);
+  const RoleIcon = ROLE_ICON[formData.role as keyof typeof ROLE_ICON] ?? Users;
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -84,12 +87,8 @@ const Signup = () => {
       newErrors.email = "Email is required";
     } else if (!emailRegex.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
-    } else if ((formData.role === "student" || formData.role === "faculty") && !formData.email.endsWith("@nsut.ac.in")) {
-      newErrors.email = "Students and Faculty must use their @nsut.ac.in email address";
-    }
-
-    if (!formData.role) {
-      newErrors.role = "Please select your role";
+    } else if (["student", "faculty"].includes(formData.role) && !formData.email.endsWith("@nsut.ac.in")) {
+      newErrors.email = "Students/Faculty must use their @nsut.ac.in email address";
     }
 
     if (!formData.password) {
@@ -222,177 +221,248 @@ return (
           Create your account to unlock exclusive resources and connect with a global network of peers.
         </p>
       </div>
-    </div>
 
-    {/* Right Column: Form */}
-    <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
-      <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm">
-        <Home className="h-6 w-6 text-red-600" />
-      </Link>
-      {/* Subtle Pattern Background */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }} />
-      </div>
-      <div className="relative z-10 w-full max-w-md space-y-8">
-        {/* Header */}
-        <div>
-          <Link to="/" className="lg:hidden flex items-center gap-3 text-nsut-maroon mb-6 justify-center">
-            <img src={nsutLogo} alt="Logo" className="h-12 w-auto object-contain" />
-            <div className="flex flex-col items-start">
-              <h1 className="text-lg font-bold leading-none tracking-wide text-nsut-maroon whitespace-nowrap">
-                <span className="text-red-600">N</span>SUT
-                <span className="text-red-600"> ALUM</span>NI
-              </h1>
-              <span className="block text-[7px] text-gray-700 font-bold tracking-widest">
-                ASSOCIATION
-              </span>
-            </div>
-          </Link>
-          <h2 className="text-center text-3xl lg:text-4xl font-bold tracking-tight text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-base text-gray-600">
-            Already have an account?{" "}
-            <Link to="/login" className="font-medium text-nsut-maroon hover:text-nsut-maroon/80">
-              Sign in
-            </Link>
-          </p>
+      {/* Right Column: Form */}
+      <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
+        <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm">
+          <Home className="h-6 w-6 text-red-600" />
+        </Link>
+        {/* Subtle Pattern Background */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          }} />
         </div>
-
-        {/* Form */}
-        <form onSubmit={(e) => { e.preventDefault(); handleSignUp(); }} className="mt-8 space-y-6">
-          <div className="space-y-4 rounded-md">
-            {/* Full Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-base">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input
-                  id="name"
-                  placeholder="Enter your full name"
-                  value={formData.name}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                  className={`pl-10 h-12 text-base ${errors.name ? "border-red-500" : ""}`}
-                />
+        <div className="relative z-10 w-full max-w-md space-y-8">
+          {/* Header */}
+          <div>
+            <Link to="/" className="lg:hidden flex items-center gap-3 text-nsut-maroon mb-6 justify-center">
+              <img src={nsutLogo} alt="Logo" className="h-12 w-auto object-contain" />
+              <div className="flex flex-col items-start">
+                <h1 className="text-lg font-bold leading-none tracking-wide text-nsut-maroon whitespace-nowrap">
+                  <span className="text-red-600">N</span>SUT
+                  <span className="text-red-600"> ALUM</span>NI
+                </h1>
+                <span className="block text-[7px] text-gray-700 font-bold tracking-widest">
+                  ASSOCIATION
+                </span>
               </div>
-              {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
-            </div>
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-base">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={(formData.role === "student" || formData.role === "faculty") ? "Your official email ending with @nsut.ac.in" : "your.email@example.com"}
-                  value={formData.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  className={`pl-10 h-12 text-base ${errors.email ? "border-red-500" : ""}`}
-                />
-              </div>
-              {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
-            </div>
-
-            {/* Role */}
-            <div className="space-y-2">
-              <Label htmlFor="role" className="text-base">I am a...</Label>
-              <div className="relative">
-                <Briefcase className="absolute left-3 top-3 h-5 w-5 text-gray-400 z-10" />
-                <Select onValueChange={(value) => handleChange("role", value)} value={formData.role}>
-                  <SelectTrigger id="role" className={`pl-10 h-12 text-base ${errors.role ? "border-red-500" : ""}`}>
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="faculty">Faculty</SelectItem>
-                    <SelectItem value="alumni">Alumni</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {errors.role && <p className="text-sm text-red-600">{errors.role}</p>}
-            </div>
-
-            {/* Password */}
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-base">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create a strong password"
-                  value={formData.password}
-                  onChange={(e) => handleChange("password", e.target.value)}
-                  className={`pl-10 pr-10 h-12 text-base ${errors.password ? "border-red-500" : ""}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 h-5 w-5 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-              {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
-            </div>
-
-            {/* Confirm Password */}
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-base">Confirm Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChange={(e) => handleConfirmPasswordChange(e.target.value)}
-                  className={`pl-10 pr-10 h-12 text-base ${errors.confirmPassword ? "border-red-500" : ""}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-3 h-5 w-5 text-gray-400 hover:text-gray-600"
-                >
-                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-              {errors.confirmPassword && <p className="text-sm text-red-600">{errors.confirmPassword}</p>}
-            </div>
+            </Link>
+            {step === 1 ? (
+              <>
+                <h2 className="text-center text-3xl lg:text-4xl font-bold tracking-tight text-gray-900">
+                  Who are you?
+                </h2>
+                <p className="mt-2 text-center text-base text-gray-600">
+                  Select your role to get started
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-center text-3xl lg:text-4xl font-bold tracking-tight text-gray-900">
+                  Create your account
+                </h2>
+                <p className="mt-2 text-center text-base text-gray-600">
+                  Already have an account?{" "}
+                  <Link to="/login" className="font-medium text-nsut-maroon hover:text-nsut-maroon/80">
+                    Sign in
+                  </Link>
+                </p>
+              </>
+            )}
           </div>
 
-          {unverifiedEmail ? (
-            <div className="text-base text-center text-gray-600">
-              This email is already registered but not verified.{" "}
-              <Link
-                to="/otp-verification"
-                state={{ email: formData.email }}
-                className="font-medium text-nsut-maroon hover:text-nsut-maroon/80"
+          {step === 1 ? (
+            /* Step 1: Role selection */
+            <div className="mt-8 space-y-6">
+              <div className="space-y-2">
+                <div className="space-y-3" role="tablist" aria-label="I am a...">
+                  {ROLE_OPTIONS.map(({ value, label, icon: Icon }) => {
+                    const isActive = formData.role === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        onClick={() => handleChange("role", value)}
+                        className={`flex w-full items-center justify-center gap-2.5 rounded-full border px-4 py-3.5 text-base font-semibold transition-colors ${
+                          isActive
+                            ? "border-nsut-maroon bg-nsut-maroon text-white"
+                            : "border-gray-300 bg-white text-gray-700 hover:border-nsut-maroon/50 hover:text-nsut-maroon"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.role && <p className="text-sm text-red-600">{errors.role}</p>}
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => setStep(2)}
+                className="w-full h-12 bg-nsut-maroon hover:bg-nsut-maroon/90 text-white font-semibold text-lg"
               >
-                Verify now
-              </Link>
+                Continue
+              </Button>
             </div>
           ) : (
-            <Button
-              type="submit"
-              className="w-full h-12 bg-nsut-maroon hover:bg-nsut-maroon/90 text-white font-semibold text-lg"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
-                  Creating account...
-                </span>
-              ) : (
-                "Create Account"
-              )}
-            </Button>
+          /* Step 2: Account details */
+          <>
+          {/* Form */}
+          <form onSubmit={(e) => { e.preventDefault(); handleSignUp(); }} className="mt-8">
+            <div className="space-y-5 rounded-card border border-border bg-card shadow-card p-6 sm:p-8">
+              {/* Card header: back to role selection + current role chip */}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex items-center gap-1 text-base font-medium text-nsut-maroon hover:text-nsut-maroon/80"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  aria-label="Change role"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-nsut-maroon/20 bg-nsut-maroon/10 px-4 py-1.5 text-sm font-semibold capitalize text-nsut-maroon transition-colors hover:bg-nsut-maroon/15"
+                >
+                  <RoleIcon className="h-4 w-4" />
+                  {formData.role}
+                </button>
+              </div>
+
+              <div className="space-y-4">
+              {/* Full Name */}
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-base">Full Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="name"
+                    placeholder="Enter your full name"
+                    value={formData.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    className={`pl-10 h-12 text-base ${errors.name ? "border-red-500" : ""}`}
+                  />
+                </div>
+                {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+              </div>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-base">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={["student", "faculty"].includes(formData.role) ? "Your NSUT email ending with @nsut.ac.in" : "your.email@example.com"}
+                    value={formData.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    className={`pl-10 h-12 text-base ${errors.email ? "border-red-500" : ""}`}
+                  />
+                </div>
+                {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
+              </div>
+
+              {/* Password */}
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-base">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a strong password"
+                    value={formData.password}
+                    onChange={(e) => handleChange("password", e.target.value)}
+                    className={`pl-10 pr-10 h-12 text-base ${errors.password ? "border-red-500" : ""}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 h-5 w-5 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
+              </div>
+
+              {/* Confirm Password */}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-base">Confirm Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+                    className={`pl-10 pr-10 h-12 text-base ${errors.confirmPassword ? "border-red-500" : ""}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-3 h-5 w-5 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {errors.confirmPassword && <p className="text-sm text-red-600">{errors.confirmPassword}</p>}
+              </div>
+            </div>
+
+            {unverifiedEmail ? (
+              <div className="text-base text-center text-gray-600">
+                This email is already registered but not verified.{" "}
+                <Link
+                  to="/otp-verification"
+                  state={{ email: formData.email }}
+                  className="font-medium text-nsut-maroon hover:text-nsut-maroon/80"
+                >
+                  Verify now
+                </Link>
+              </div>
+            ) : (
+              <Button
+                type="submit"
+                className="w-full h-12 bg-nsut-maroon hover:bg-nsut-maroon/90 text-white font-semibold text-lg"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                    Creating account...
+                  </span>
+                ) : (
+                  "Create Account"
+                )}
+              </Button>
+            )}
+
+            <p className="text-center text-sm text-gray-600">
+              Not {/^[aeiou]/i.test(formData.role) ? "an" : "a"}{" "}
+              <span className="capitalize">{formData.role}</span>?{" "}
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="font-medium text-nsut-maroon hover:text-nsut-maroon/80"
+              >
+                Change
+              </button>
+            </p>
+            </div>
+          </form>
+          </>
           )}
-        </form>
+        </div>
       </div>
     </div>
   </div>

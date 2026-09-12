@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { BRANCHES, CAMPUSES } from "@/constants/branches";
+import { BRANCHES, CAMPUSES, DEPARTMENTS } from "@/constants/branches";
 import {
   Select,
   SelectContent,
@@ -171,12 +171,14 @@ const UpdateProfile = () => {
   const [deactivateConfirmation, setDeactivateConfirmation] = useState("");
   const [isDeactivating, setIsDeactivating] = useState(false);
 
-  // Check if user is alumni
+  // Check if user is alumni / faculty
   const isAlumni = user?.role === "alumni";
+  const isFaculty = user?.role === "faculty";
 
   const [formData, setFormData] = useState({
     batch: "",
     branch: "",
+    department: "",
     campus: "",
     bio: "",
     current_company: "",
@@ -255,6 +257,7 @@ const UpdateProfile = () => {
       const initialFormData = {
         batch: contextProfile.batch || "",
         branch: contextProfile.branch || "",
+        department: (contextProfile as any).department || "",
         campus: contextProfile.campus || "",
         bio: contextProfile.bio || "",
         current_company: contextProfile.current_company || "",
@@ -504,10 +507,15 @@ const UpdateProfile = () => {
         }>;
       }
 
-      const updateData: UpdateData = {};
+      const updateData: UpdateData & { department?: string } = {};
 
-      // Required fields - only if all three are present
-      if (formData.batch && formData.branch && formData.campus) {
+      // Required fields - faculty uses department+campus, others use batch+branch+campus
+      if (isFaculty) {
+        if (formData.department && formData.campus) {
+          (updateData as any).department = formData.department;
+          updateData.campus = formData.campus;
+        }
+      } else if (formData.batch && formData.branch && formData.campus) {
         updateData.batch = formData.batch;
         updateData.branch = formData.branch;
         updateData.campus = formData.campus;
@@ -860,93 +868,168 @@ const UpdateProfile = () => {
               }
             >
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-foreground">
-                      Full Name
-                    </Label>
-                    <Input
-                      id="name"
-                      value={contextProfile?.user.name || ""}
-                      readOnly
-                      disabled
-                      className={lockedClass}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="batch" className="text-foreground">
-                      {isAlumni ? "Class Year" : "Expected Graduation"}
-                    </Label>
-                    <Input
-                      id="batch"
-                      type="text"
-                      value={formData.batch}
-                      onChange={(e) =>
-                        handleInputChange("batch", e.target.value)
-                      }
-                      placeholder="e.g., 2020"
-                      readOnly
-                      disabled
-                      className={lockedClass}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="branch" className="text-foreground">
-                      Branch
-                    </Label>
-                    <Select
-                      value={formData.branch}
-                      onValueChange={(value) =>
-                        handleInputChange("branch", value)
-                      }
-                      disabled
-                    >
-                      <SelectTrigger className={lockedClass}>
-                        <SelectValue placeholder="Select branch" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border shadow-overlay">
-                        {BRANCHES.map((branch) => (
-                          <SelectItem
-                            key={branch}
-                            value={branch}
-                            className={selectItemClass}
-                          >
-                            {branch}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="campus" className="text-foreground">
-                      Campus
-                    </Label>
-                    <Select
-                      value={formData.campus}
-                      onValueChange={(value) =>
-                        handleInputChange("campus", value)
-                      }
-                      disabled
-                    >
-                      <SelectTrigger className={lockedClass}>
-                        <SelectValue placeholder="Select campus" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border shadow-overlay">
-                        {CAMPUSES.map((campus) => (
-                          <SelectItem
-                            key={campus}
-                            value={campus}
-                            className={selectItemClass}
-                          >
-                            {campus}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                {isFaculty ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-foreground">
+                          Full Name
+                        </Label>
+                        <Input
+                          id="name"
+                          value={contextProfile?.user.name || ""}
+                          readOnly
+                          disabled
+                          className={lockedClass}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="department" className="text-foreground">
+                          Department
+                        </Label>
+                        <Select
+                          value={formData.department}
+                          onValueChange={(value) =>
+                            handleInputChange("department", value)
+                          }
+                          disabled
+                        >
+                          <SelectTrigger className={lockedClass}>
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border-border shadow-overlay">
+                            {DEPARTMENTS.map((dep) => (
+                              <SelectItem
+                                key={dep}
+                                value={dep}
+                                className={selectItemClass}
+                              >
+                                {dep}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="campus" className="text-foreground">
+                        Campus
+                      </Label>
+                      <Select
+                        value={formData.campus}
+                        onValueChange={(value) =>
+                          handleInputChange("campus", value)
+                        }
+                        disabled
+                      >
+                        <SelectTrigger className={lockedClass}>
+                          <SelectValue placeholder="Select campus" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-border shadow-overlay">
+                          {CAMPUSES.map((campus) => (
+                            <SelectItem
+                              key={campus}
+                              value={campus}
+                              className={selectItemClass}
+                            >
+                              {campus}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-foreground">
+                          Full Name
+                        </Label>
+                        <Input
+                          id="name"
+                          value={contextProfile?.user.name || ""}
+                          readOnly
+                          disabled
+                          className={lockedClass}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="batch" className="text-foreground">
+                          {isAlumni ? "Class Year" : "Expected Graduation"}
+                        </Label>
+                        <Input
+                          id="batch"
+                          type="text"
+                          value={formData.batch}
+                          onChange={(e) =>
+                            handleInputChange("batch", e.target.value)
+                          }
+                          placeholder="e.g., 2020"
+                          readOnly
+                          disabled
+                          className={lockedClass}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="branch" className="text-foreground">
+                          Branch
+                        </Label>
+                        <Select
+                          value={formData.branch}
+                          onValueChange={(value) =>
+                            handleInputChange("branch", value)
+                          }
+                          disabled
+                        >
+                          <SelectTrigger className={lockedClass}>
+                            <SelectValue placeholder="Select branch" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border-border shadow-overlay">
+                            {BRANCHES.map((branch) => (
+                              <SelectItem
+                                key={branch}
+                                value={branch}
+                                className={selectItemClass}
+                              >
+                                {branch}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="campus" className="text-foreground">
+                          Campus
+                        </Label>
+                        <Select
+                          value={formData.campus}
+                          onValueChange={(value) =>
+                            handleInputChange("campus", value)
+                          }
+                          disabled
+                        >
+                          <SelectTrigger className={lockedClass}>
+                            <SelectValue placeholder="Select campus" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border-border shadow-overlay">
+                            {CAMPUSES.map((campus) => (
+                              <SelectItem
+                                key={campus}
+                                value={campus}
+                                className={selectItemClass}
+                              >
+                                {campus}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </FormCard>
 

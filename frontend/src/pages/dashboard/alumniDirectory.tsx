@@ -261,8 +261,8 @@ const AlumniDirectory = () => {
                       onValueChange={(value) => handleFilterChange("roleFilter", value)}
                       onClear={() => handleFilterChange("roleFilter", "all")}
                       placeholder="User Type"
-                      options={["alumni", "student"]}
-                      labels={{ alumni: "Alumni", student: "Students" }}
+                      options={["alumni", "student", "faculty"]}
+                      labels={{ alumni: "Alumni", student: "Students", faculty: "Faculty" }}
                       className="w-[45%] sm:w-auto"
                       triggerClassName="w-full sm:w-36"
                     />

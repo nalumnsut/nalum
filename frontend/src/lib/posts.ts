@@ -17,6 +17,7 @@ export interface PostAuthor {
 }
 
 export type PostStatus = "pending" | "approved" | "rejected";
+export type PostVisibility = "everyone" | "alumni" | "students";
 
 export interface PostRecord {
   _id: string;
@@ -33,10 +34,17 @@ export interface PostRecord {
   /** Server returns an array of user ids; older documents may hold a count. */
   likes?: string[] | number;
   liked_by?: string[];
+  pinned_until?: string | null;
+  view_count?: number;
+  report_count?: number;
+  visibility?: PostVisibility;
 }
 
 export const getPostImageUrl = (image: string) =>
   image.startsWith("http") ? image : `${BASE_URL}/uploads/posts/${image}`;
+
+export const isPostPinned = (post: Pick<PostRecord, "pinned_until">) =>
+  !!post.pinned_until && new Date(post.pinned_until).getTime() > Date.now();
 
 // Likes have been stored two ways over the life of this collection; everything
 // downstream wants the id array.
@@ -84,11 +92,17 @@ export const authorHeadline = (author: PostAuthor) => {
   const role = [author.current_role, author.current_company]
     .filter(Boolean)
     .join(" at ");
-  return role || (author.role === "admin" ? "Administrator" : "Alumni");
+  return role || (author.role === "admin" ? "Administrator" : author.role === "faculty" ? "Faculty" : "Alumni");
 };
 
 export const STATUS_LABELS: Record<PostStatus, string> = {
   approved: "Approved",
   pending: "Pending",
   rejected: "Rejected",
+};
+
+export const VISIBILITY_LABELS: Record<PostVisibility, string> = {
+  everyone: "Everyone",
+  alumni: "Alumni",
+  students: "Students",
 };

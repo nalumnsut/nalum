@@ -62,7 +62,7 @@ router.post(
         }
       }
 
-      const { batch, branch, campus, current_company, current_role } = req.body;
+      const { batch, branch, campus, department, current_company, current_role } = req.body;
 
       // Only alumni can set location
       const user = await User.findById(userId).select("role");
@@ -79,13 +79,44 @@ router.post(
         }
       }
 
-      // Validate required fields
-      if (!batch || !branch || !campus) {
-        return res
-          .status(400)
-          .json({
-            error: "Missing required fields: batch, branch, or campus.",
+      // Validate required fields (faculty: department+campus, others: batch+branch+campus)
+      if (user && user.role === "faculty") {
+        const DEPARTMENTS = [
+          "Department of Applied Chemistry",
+          "Department of Applied Mathematics",
+          "Department of Applied Physics",
+          "Department of Architecture",
+          "Department of Biological Sciences & Engineering",
+          "Department of Civil Engineering",
+          "Department of Computer Science & Engineering",
+          "Department of Design",
+          "Department of Electrical Engineering",
+          "Department of Electronics & Communication Engineering",
+          "Department of Humanities & Social Sciences",
+          "Department of Information Technology",
+          "Department of Instrumentation & Control Engineering",
+          "Department of Management Studies",
+          "Department of Manufacturing Processes & Automation Engineering",
+          "Department of Mechanical Engineering",
+        ];
+        if (!department || !campus) {
+          return res
+            .status(400)
+            .json({ error: "Missing required fields: department or campus." });
+        }
+        if (!DEPARTMENTS.includes(department)) {
+          return res.status(400).json({
+            error: `Invalid department. Must be one of: ${DEPARTMENTS.join(", ")}`,
           });
+        }
+      } else {
+        if (!batch || !branch || !campus) {
+          return res
+            .status(400)
+            .json({
+              error: "Missing required fields: batch, branch, or campus.",
+            });
+        }
       }
 
       // Validate campus enum
@@ -115,8 +146,9 @@ router.post(
       // Create and save the profile
       const profile = new Profile({
         user: userId,
-        batch,
-        branch,
+        batch: user && user.role === "faculty" ? undefined : batch,
+        branch: user && user.role === "faculty" ? undefined : branch,
+        department: user && user.role === "faculty" ? department : undefined,
         campus,
         current_company,
         current_role,

@@ -85,6 +85,7 @@ beforeEach(() => {
     isLoading: false,
     isAuthenticated: false,
     isAdmin: false,
+    isFaculty: false,
     isVerifiedAlumni: null,
     setAuth: setAuthMock,
     logout: vi.fn(),
@@ -122,12 +123,11 @@ describe("auth pages", () => {
     await user.type(screen.getByLabelText(/^password$/i), "password123");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
-    await waitFor(() => {
-      expect(mockedApi.post).toHaveBeenCalledWith("/auth/sign-in", {
-        email: "student@example.com",
-        password: "password123",
-      });
-    });
+    expect(
+      await screen.findByText("Students/Faculty must use their @nsut.ac.in email address"),
+    ).toBeInTheDocument();
+    expect(mockedApi.post).not.toHaveBeenCalled();
+    expect(setAuthMock).not.toHaveBeenCalled();
   });
 
   it("logs in and redirects completed profiles to the dashboard", async () => {
@@ -179,9 +179,8 @@ describe("auth pages", () => {
     const user = userEvent.setup();
     renderWithRouter(<Signup />, "/signup");
 
-    // Select the 'Student' role first
-    await user.click(screen.getByRole("combobox", { name: /i am a/i }));
-    await user.click(screen.getByRole("option", { name: /student/i }));
+    // Step 1: pick a role and continue to the details step
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
 
     await user.type(screen.getByLabelText(/full name/i), "New Student");
     await user.type(screen.getByLabelText(/email address/i), "new@example.com");
@@ -190,7 +189,7 @@ describe("auth pages", () => {
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
     expect(
-      await screen.findByText("Students and Faculty must use their @nsut.ac.in email address"),
+      await screen.findByText("Students/Faculty must use their @nsut.ac.in email address"),
     ).toBeInTheDocument();
     expect(screen.getByText("Password must be at least 8 characters long")).toBeInTheDocument();
     expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
@@ -208,9 +207,8 @@ describe("auth pages", () => {
 
     renderWithRouter(<Signup />, "/signup");
 
-    // Select the 'Student' role first
-    await user.click(screen.getByRole("combobox", { name: /i am a/i }));
-    await user.click(screen.getByRole("option", { name: /student/i }));
+    // Step 1: pick a role and continue to the details step
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
 
     await user.type(screen.getByLabelText(/full name/i), "New Student");
     await user.type(screen.getByLabelText(/email address/i), "new@nsut.ac.in");

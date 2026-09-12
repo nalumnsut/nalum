@@ -9,14 +9,18 @@ const profileSchema = new mongoose.Schema(
       unique: true,
     },
 
-    // Required academic information
+    // Required academic information (faculty uses department instead of branch/batch)
     batch: {
       type: String,
-      required: true,
+      required: false,
     },
     branch: {
       type: String,
-      required: true,
+      required: false,
+    },
+    department: {
+      type: String,
+      trim: true,
     },
     campus: {
       type: String,

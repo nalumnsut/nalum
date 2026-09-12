@@ -57,12 +57,12 @@ router.post("/",async (req,res) => {
     });
   }
   
-  // Validate student email
-  if(role === "student" && !email.endsWith("@nsut.ac.in")){
+  // Validate student/faculty email
+  if(["student", "faculty"].includes(role) && !email.endsWith("@nsut.ac.in")){
     return res.status(400).json({
       err: true,
       code: 400,
-      message: "Students must use their @nsut.ac.in email address"
+      message: "Students/Faculty must use their @nsut.ac.in email address"
     });
   }
   

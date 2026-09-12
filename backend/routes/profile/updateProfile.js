@@ -22,6 +22,7 @@ router.put("/", protect, async (req, res) => {
       batch,
       branch,
       campus,
+      department,
       bio,
       current_company,
       current_role,
@@ -31,12 +32,60 @@ router.put("/", protect, async (req, res) => {
       experience,
     } = req.body;
 
+    // Fetch role early for faculty/department validation
+    const profileOwner = await User.findById(userId).select("role");
+    const isFacultyOwner = profileOwner && profileOwner.role === "faculty";
+
     // Validate required fields if provided
-    if (batch !== undefined || branch !== undefined || campus !== undefined) {
-      if (!batch || !branch || !campus) {
+    if (isFacultyOwner) {
+      if (department !== undefined || campus !== undefined) {
+        if (!department || !campus) {
+          return res.status(400).json({
+            error: "If updating academic info, department and campus are both required.",
+          });
+        }
+        const DEPARTMENTS = [
+          "Department of Applied Chemistry",
+          "Department of Applied Mathematics",
+          "Department of Applied Physics",
+          "Department of Architecture",
+          "Department of Biological Sciences & Engineering",
+          "Department of Civil Engineering",
+          "Department of Computer Science & Engineering",
+          "Department of Design",
+          "Department of Electrical Engineering",
+          "Department of Electronics & Communication Engineering",
+          "Department of Humanities & Social Sciences",
+          "Department of Information Technology",
+          "Department of Instrumentation & Control Engineering",
+          "Department of Management Studies",
+          "Department of Manufacturing Processes & Automation Engineering",
+          "Department of Mechanical Engineering",
+        ];
+        if (!DEPARTMENTS.includes(department)) {
+          return res.status(400).json({
+            error: `Invalid department. Must be one of: ${DEPARTMENTS.join(", ")}`,
+          });
+        }
+      }
+      // Disallow batch/branch for faculty
+      if (batch !== undefined || branch !== undefined) {
         return res.status(400).json({
-          error:
-            "If updating academic info, batch, branch, and campus are all required.",
+          error: "Faculty profiles use department, not batch/branch.",
+        });
+      }
+    } else {
+      if (batch !== undefined || branch !== undefined || campus !== undefined) {
+        if (!batch || !branch || !campus) {
+          return res.status(400).json({
+            error:
+              "If updating academic info, batch, branch, and campus are all required.",
+          });
+        }
+      }
+      if (department !== undefined) {
+        return res.status(400).json({
+          error: "Only faculty profiles use department.",
         });
       }
     }
@@ -67,6 +116,7 @@ router.put("/", protect, async (req, res) => {
     // Update fields
     if (batch !== undefined) profile.batch = batch;
     if (branch !== undefined) profile.branch = branch;
+    if (department !== undefined) profile.department = department;
     if (campus !== undefined) profile.campus = campus;
     if (bio !== undefined) profile.bio = bio;
     if (current_company !== undefined) profile.current_company = current_company;

@@ -238,10 +238,12 @@ emailWorker.on("failed", (job, err) => {
  * Queue an Admin Post Broadcast job in BullMQ
  * This will send emails to all alumni, respecting the 250/day limit
  */
-async function queueAdminPostBroadcast(post, author) {
+async function queueAdminPostBroadcast(post, author, recipientGroups) {
   try {
-    // Query all alumni members
-    const alumniList = await User.find({ role: "alumni" }).select("name email").lean();
+    const groupRoles = { all: ["admin", "alumni", "student", "faculty"], alumni: ["alumni"], students: ["student"], faculty: ["faculty"] };
+    const roles = [...new Set(recipientGroups.flatMap((group) => groupRoles[group] || []))];
+    if (!roles.length) return null;
+    const alumniList = await User.find({ role: { $in: roles } }).select("name email").lean();
 
     if (alumniList.length === 0) {
       console.log(`[BullMQ Queue] No alumni found to notify for post ${post._id}`);

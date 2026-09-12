@@ -54,8 +54,8 @@ router.post("/", async (req, res) => {
     });
   }
   
-  // Check student email verification timeout (180 days)
-  if (data.data.role === "student" && data.data.isStudentVerificationExpired()) {
+  // Check student/faculty email verification timeout (180 days)
+  if (["student", "faculty"].includes(data.data.role) && data.data.isStudentVerificationExpired()) {
     return res.status(403).json({
       err: true,
       code: 403,

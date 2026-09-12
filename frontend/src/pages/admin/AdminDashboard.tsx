@@ -33,6 +33,7 @@ interface DashboardStats {
     total: number;
     students: number;
     alumni: number;
+    faculty: number;
     verified_alumni: number;
     banned: number;
     recent_registrations: number;
@@ -226,13 +227,18 @@ const AdminDashboard = () => {
   const eventsCount = stats?.events.pending || 0;
   const queriesCount = pendingQueriesCount !== null ? pendingQueriesCount : 0;
   const givingsCount = pendingGivingsCount !== null ? pendingGivingsCount : 0;
+  const maxWebsiteVisitors = Math.max(
+    stats?.website_visits?.pre_login || 0,
+    stats?.website_visits?.post_login || 0
+  );
 
   const students = stats?.users.students || 0;
   const totalAlumni = stats?.users.alumni || 0;
+  const totalFaculty = stats?.users.faculty || 0;
   const verifiedAlumni = stats?.users.verified_alumni || 0;
   const unverifiedAlumni = Math.max(0, totalAlumni - verifiedAlumni);
-  const totalUsers = stats?.users.total || (students + totalAlumni);
-  const admins = Math.max(0, totalUsers - (students + totalAlumni));
+  const totalUsers = stats?.users.total || (students + totalAlumni + totalFaculty);
+  const admins = Math.max(0, totalUsers - (students + totalAlumni + totalFaculty));
 
   const CustomTooltip = ({ active, payload, coordinate }: any) => {
     if (active && payload && payload.length && coordinate) {
@@ -295,6 +301,12 @@ const AdminDashboard = () => {
       value: unverifiedAlumni,
       color: '#f59e0b',
       fill: 'url(#gradient-unverified)',
+    },
+    {
+      name: 'Faculty',
+      value: totalFaculty,
+      color: '#14b8a6',
+      fill: 'url(#gradient-faculty)',
     },
     ...(admins > 0 ? [{
       name: 'Admins',
@@ -395,7 +407,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-gray-900">
-                {stats?.website_visits?.total || 0}
+                {maxWebsiteVisitors}
               </div>
               <p className="text-xs text-gray-500 mt-2 flex justify-between">
                 <span>Pre-login: <strong className="text-indigo-600">{stats?.website_visits?.pre_login || 0}</strong></span>
@@ -474,7 +486,7 @@ const AdminDashboard = () => {
                   <CardDescription>Visitor distribution before and after signing in</CardDescription>
                 </div>
                 <span className="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full font-semibold">
-                  Total: {stats?.website_visits?.total || 0} visits
+                  Visits: {maxWebsiteVisitors}
                 </span>
               </div>
             </CardHeader>
@@ -538,6 +550,7 @@ const AdminDashboard = () => {
                     <p className="text-2xl font-bold text-emerald-900">{stats?.website_visits?.post_login || 0}</p>
                   </div>
                 </div>
+                <CardDescription>Total Visits are counted since 17 August 2026</CardDescription>
               </div>
             </CardContent>
           </Card>
@@ -576,6 +589,11 @@ const AdminDashboard = () => {
                   <linearGradient id="gradient-admins" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#818cf8" />
                     <stop offset="100%" stopColor="#4f46e5" />
+                  </linearGradient>
+
+                  <linearGradient id="gradient-faculty" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#5eead4" />
+                    <stop offset="100%" stopColor="#0d9488" />
                   </linearGradient>
                 </defs>
               </svg>

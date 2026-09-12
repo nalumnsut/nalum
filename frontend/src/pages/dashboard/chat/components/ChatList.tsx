@@ -21,7 +21,7 @@ interface ChatListProps {
   chats: any[];
 }
 
-type RoleFilter = "all" | "alumni" | "student";
+type RoleFilter = "all" | "alumni" | "student" | "faculty";
 
 const formatMessageDate = (dateString: string) => {
   if (!dateString) return "";
@@ -42,7 +42,7 @@ const formatMessageDate = (dateString: string) => {
 export const ChatList = ({ onSelectConversation, selectedConversation, chats = [] }: ChatListProps) => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  type FilterType = "all" | "unread" | "alumni" | "student";
+  type FilterType = "all" | "unread" | "alumni" | "student" | "faculty";
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
   if (!user) {
@@ -59,7 +59,7 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
 
       if (activeFilter === "unread" && !(chat.unreadCount > 0)) return false;
 
-      if (activeFilter === "alumni" || activeFilter === "student") {
+      if (["alumni", "student", "faculty"].includes(activeFilter)) {
         if (chat.itemType === 'community') return false;
         if (chat.otherParticipant?.role !== activeFilter) return false;
       }
@@ -73,6 +73,7 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
     { id: "unread", label: "Unread" },
     { id: "student", label: "Students" },
     { id: "alumni", label: "Alumni" },
+    { id: "faculty", label: "Faculty" },
   ];
 
   return (

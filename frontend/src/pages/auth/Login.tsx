@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, Lock, Home } from "lucide-react";
+import { SegmentedToggle } from "@/components/ui/SegmentedToggle";
+import { Eye, EyeOff, Mail, Lock, GraduationCap, Users, Briefcase, Home } from "lucide-react";
 import { toast } from "sonner";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
@@ -20,6 +21,7 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    role: "student",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +47,8 @@ const Login = () => {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
+    } else if (["student", "faculty"].includes(formData.role) && !formData.email.endsWith("@nsut.ac.in")) {
+      newErrors.email = "Students/Faculty must use their @nsut.ac.in email address";
     }
     if (!formData.password) {
       newErrors.password = "Password is required";
@@ -341,6 +345,22 @@ const Login = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             <div className="space-y-4 rounded-md">
+              {/* Role */}
+              <div className="space-y-2">
+                <Label id="role-label" className="text-base">I am a...</Label>
+                <SegmentedToggle
+                  label="I am a..."
+                  value={formData.role}
+                  onChange={(value) => handleInputChange("role", value)}
+                  options={[
+                    { value: "student", label: "Student", icon: GraduationCap },
+                    { value: "alumni", label: "Alumni", icon: Users },
+                    { value: "faculty", label: "Faculty", icon: Briefcase },
+                  ]}
+                  className="w-full"
+                />
+              </div>
+
               {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-base">Email Address</Label>
@@ -349,7 +369,7 @@ const Login = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter your email address"
+                    placeholder={["student", "faculty"].includes(formData.role) ? "Your NSUT email ending with @nsut.ac.in" : "your.email@example.com"}
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     className={`pl-10 h-12 text-base ${errors.email ? "border-red-500" : ""}`}

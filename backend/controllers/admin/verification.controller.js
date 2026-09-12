@@ -168,11 +168,10 @@ exports.rejectVerification = async (req, res) => {
       });
     }
 
-    // Mark as rejected (keep entry so user can see the reason)
     verificationRequest.status = "rejected";
     verificationRequest.rejection_reason = reason;
     await verificationRequest.save();
-
+    
     // Log activity
     await logAdminActivity(
       req.admin.email,
