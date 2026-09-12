@@ -64,6 +64,14 @@ router.post("/", async (req, res) => {
     });
   }
   
+  if (data.data.authProvider === "google") {
+    return res.status(400).json({
+      err: true,
+      code: 400,
+      message: "This account uses Google Sign-In. Please continue with Google instead.",
+    });
+  }
+
   let matched;
 
   try {

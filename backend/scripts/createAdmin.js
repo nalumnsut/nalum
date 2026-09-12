@@ -82,6 +82,7 @@ const createAdmin = async () => {
     const admin = new User({
       ...adminData,
       password: hashedPassword,
+      authProvider: "local",
     });
 
     await admin.save();

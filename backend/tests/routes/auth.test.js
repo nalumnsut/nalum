@@ -136,6 +136,7 @@ describe("auth routes", () => {
         email: "new@example.com",
         password: "hashed-password",
         role: "alumni",
+        authProvider: "local",
       });
     });
 
@@ -239,6 +240,7 @@ describe("auth routes", () => {
         email: "faculty@nsut.ac.in",
         password: "hashed-password",
         role: "faculty",
+        authProvider: "local",
       });
     });
 

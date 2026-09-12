@@ -123,6 +123,7 @@ const createAdmin = async () => {
       profileCompleted: true,
       verified_alumni: false,
       banned: false,
+      authProvider: 'local',
     });
 
     await admin.save();

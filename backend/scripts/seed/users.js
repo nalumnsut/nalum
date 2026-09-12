@@ -74,6 +74,7 @@ async function seedUsers() {
       email_verified_at: new Date(),
       profileCompleted: true,
       verified_alumni: true,
+      authProvider: 'local',
     });
     console.log(`✅ alumni: ${a.name} (${a.email})`);
   }
@@ -95,6 +96,7 @@ async function seedUsers() {
       // blocks sign-in even when email_verified is true.
       email_verified_at: new Date(),
       profileCompleted: true,
+      authProvider: 'local',
     });
     console.log(`✅ student: ${s.name} (${s.email})`);
   }
@@ -116,6 +118,7 @@ async function seedUsers() {
       // email_verified_at as expired, blocking sign-in.
       email_verified_at: new Date(),
       profileCompleted: true,
+      authProvider: 'local',
     });
     console.log(`✅ faculty: ${f.name} (${f.email})`);
   }
@@ -132,6 +135,7 @@ async function seedUsers() {
       email_verified: true,
       email_verified_at: new Date(),
       profileCompleted: true,
+      authProvider: 'local',
     });
     console.log(`✅ admin: ${adminData.name} (${adminData.email})`);
   }

@@ -91,6 +91,10 @@ const Signup = () => {
       newErrors.email = "Students/Faculty must use their @nsut.ac.in email address";
     }
 
+    if (!formData.role) {
+      newErrors.role = "Please select your role";
+    }
+
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else {
@@ -111,6 +115,11 @@ const Signup = () => {
     if (!formData.role) {
       setErrors((prev) => ({ ...prev, role: "Please select your role first" }));
       toast.error("Role Required", { description: "Please select 'I am a...' before continuing with Google." });
+      return;
+    }
+
+    if (formData.role === "admin") {
+      toast.error("Not Allowed", { description: "Admin accounts cannot be created via signup." });
       return;
     }
 
@@ -221,8 +230,9 @@ return (
           Create your account to unlock exclusive resources and connect with a global network of peers.
         </p>
       </div>
+    </div>
 
-      {/* Right Column: Form */}
+    {/* Right Column: Form */}
       <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
         <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm">
           <Home className="h-6 w-6 text-red-600" />
@@ -447,6 +457,29 @@ return (
               </Button>
             )}
 
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-card px-2 text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            {/* Google Button */}
+            <div className="flex justify-center w-full mb-4">
+              <GoogleLogin
+                text="signup_with"
+                onSuccess={handleGoogleSuccess}
+                onError={() => {
+                  toast.error("Google Signup Failed", {
+                    description: "Something went wrong while communicating with Google.",
+                  });
+                }}
+              />
+            </div>
+
             <p className="text-center text-sm text-gray-600">
               Not {/^[aeiou]/i.test(formData.role) ? "an" : "a"}{" "}
               <span className="capitalize">{formData.role}</span>?{" "}
@@ -464,7 +497,6 @@ return (
           )}
         </div>
       </div>
-    </div>
   </div>
 );
 };

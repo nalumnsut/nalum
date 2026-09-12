@@ -46,6 +46,7 @@ const createUser = async (overrides = {}) => {
     role: "alumni",
     email_verified: true,
     email_verified_at: new Date(),
+    authProvider: "local",
     ...overrides,
   });
 

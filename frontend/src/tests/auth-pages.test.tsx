@@ -180,6 +180,7 @@ describe("auth pages", () => {
     renderWithRouter(<Signup />, "/signup");
 
     // Step 1: pick a role and continue to the details step
+    await user.click(screen.getByRole("tab", { name: /student/i }));
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
 
     await user.type(screen.getByLabelText(/full name/i), "New Student");
@@ -208,6 +209,7 @@ describe("auth pages", () => {
     renderWithRouter(<Signup />, "/signup");
 
     // Step 1: pick a role and continue to the details step
+    await user.click(screen.getByRole("tab", { name: /student/i }));
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
 
     await user.type(screen.getByLabelText(/full name/i), "New Student");

@@ -37,6 +37,14 @@ router.post("/", async (req, res) => {
         return res.status(400).json({ error: true, message: "Please select your role before signing up." });
       }
 
+      // Block admin signup - admins can only be created via scripts
+      if (role === "admin") {
+        return res.status(403).json({
+          error: true,
+          message: "Admin accounts cannot be created via signup. Contact system administrator."
+        });
+      }
+
       if ((role === "student" || role === "faculty") && !email.endsWith('@nsut.ac.in')) {
         return res.status(400).json({ error: true, message: "Students and Faculty must use an @nsut.ac.in email address." });
       }
