@@ -7,6 +7,7 @@ const {
   GEOCODING_ERROR_COUNT_KEY: ERROR_COUNT_KEY,
   GEOCODING_IN_PROGRESS_KEY: IN_PROGRESS_KEY,
   GEOCODING_WORKER_LOCK_KEY: WORKER_LOCK_KEY,
+  GEOCODING_FAILED_KEY: FAILED_KEY,
   invalidateAlumniMapCache,
 } = require("../config/cacheKeys");
 const { getCanonicalLocation } = require("../config/canonicalCities");
@@ -46,6 +47,9 @@ const WORKER_ID = `${process.pid}-${Date.now()}`;
 
 let isProcessing = false;
 let processingTimeout = null;
+let backoffTimeout = null;
+let standbyTimeout = null;
+let resumeTimeout = null;
 let pausedUntil = 0; // ms timestamp; 0 = not in a backoff pause
 
 // Add a user to the geocoding queue
@@ -280,6 +284,25 @@ async function processNextItem() {
               isNoResult ? " — no usable geocode result" : ""
             }. Manual intervention required.`,
           );
+          try {
+            if (typeof redis.sAdd === "function") {
+              await redis.sAdd(
+                FAILED_KEY,
+                JSON.stringify({
+                  userId: parsed.userId,
+                  city: parsed.city,
+                  country: parsed.country,
+                  failedAt: Date.now(),
+                  reason: isNoResult ? "NO_RESULT" : "ERROR",
+                }),
+              );
+            }
+          } catch (failedErr) {
+            console.error(
+              "[geocoding] Failed to record dead-lettered item in Redis:",
+              failedErr && failedErr.message ? failedErr.message : failedErr,
+            );
+          }
         }
       }
     }
@@ -315,7 +338,8 @@ async function handleRateLimit(redis) {
 
   // Stop processing and restart after delay (items are safe in the queue)
   stopProcessing();
-  setTimeout(() => {
+  backoffTimeout = setTimeout(() => {
+    backoffTimeout = null;
     pausedUntil = 0;
     console.log("Resuming geocoding queue processing after backoff period");
     startProcessing();
@@ -332,7 +356,8 @@ function startProcessing() {
 
   // Respect an active backoff pause — don't restart early.
   if (pausedUntil && Date.now() < pausedUntil) {
-    setTimeout(() => {
+    resumeTimeout = setTimeout(() => {
+      resumeTimeout = null;
       if (!isProcessing) startProcessing();
     }, pausedUntil - Date.now());
     return;
@@ -354,7 +379,10 @@ function startProcessing() {
         console.log(
           "[geocoding] Another instance holds the worker lock; standing by",
         );
-        setTimeout(() => startProcessing(), LOCK_TTL_SECONDS * 1000);
+        standbyTimeout = setTimeout(() => {
+          standbyTimeout = null;
+          startProcessing();
+        }, LOCK_TTL_SECONDS * 1000);
         return;
       }
     } catch (err) {
@@ -405,7 +433,20 @@ async function tick() {
     if (isProcessing) {
       try {
         const redis = getRedisClient();
-        await redis.set(WORKER_LOCK_KEY, WORKER_ID, { EX: LOCK_TTL_SECONDS });
+        let shouldRenew = true;
+        if (typeof redis.get === "function") {
+          const currentOwner = await redis.get(WORKER_LOCK_KEY);
+          if (currentOwner && currentOwner !== WORKER_ID) {
+            shouldRenew = false;
+            console.warn(
+              "[geocoding] Lost worker lock ownership during tick; stopping processor",
+            );
+            stopProcessing();
+          }
+        }
+        if (shouldRenew) {
+          await redis.set(WORKER_LOCK_KEY, WORKER_ID, { EX: LOCK_TTL_SECONDS });
+        }
       } catch (err) {
         // Best-effort: a failed renew just means the lock TTL will let another
         // instance take over after LOCK_TTL_SECONDS.
@@ -414,7 +455,9 @@ async function tick() {
           err && err.message ? err.message : err,
         );
       }
-      processingTimeout = setTimeout(tick, RATE_LIMIT_MS);
+      if (isProcessing) {
+        processingTimeout = setTimeout(tick, RATE_LIMIT_MS);
+      }
     }
   }
 }
@@ -425,12 +468,36 @@ function stopProcessing() {
     clearTimeout(processingTimeout);
     processingTimeout = null;
   }
+  if (backoffTimeout) {
+    clearTimeout(backoffTimeout);
+    backoffTimeout = null;
+  }
+  if (standbyTimeout) {
+    clearTimeout(standbyTimeout);
+    standbyTimeout = null;
+  }
+  if (resumeTimeout) {
+    clearTimeout(resumeTimeout);
+    resumeTimeout = null;
+  }
+  pausedUntil = 0;
   if (isProcessing) {
     isProcessing = false;
-    // Best-effort release of the distributed lock (only relevant with multiple
-    // instances; a crash leaves it to expire via the TTL).
+    // Best-effort release of the distributed lock (only if still owned by this worker)
     try {
-      getRedisClient().del(WORKER_LOCK_KEY).catch(() => {});
+      const redis = getRedisClient();
+      if (typeof redis.get === "function") {
+        redis
+          .get(WORKER_LOCK_KEY)
+          .then((currentOwner) => {
+            if (currentOwner === WORKER_ID) {
+              redis.del(WORKER_LOCK_KEY).catch(() => {});
+            }
+          })
+          .catch(() => {});
+      } else {
+        redis.del(WORKER_LOCK_KEY).catch(() => {});
+      }
     } catch (err) {
       // Redis unavailable — the lock will expire via TTL
     }
@@ -447,7 +514,7 @@ async function getQueueStatus() {
     const errorCount = (await redis.get(ERROR_COUNT_KEY)) || 0;
     const currentlyProcessing = await redis.get(PROCESSING_KEY);
 
-    return {
+    const status = {
       queueLength,
       inProgressLength,
       errorCount: parseInt(errorCount),
@@ -455,6 +522,17 @@ async function getQueueStatus() {
       pausedUntil: pausedUntil || null,
       currentlyProcessing,
     };
+
+    if (typeof redis.sCard === "function") {
+      try {
+        const failedCount = await redis.sCard(FAILED_KEY);
+        status.failedCount = parseInt(failedCount) || 0;
+      } catch (cardErr) {
+        // ignore
+      }
+    }
+
+    return status;
   } catch (error) {
     console.error("Error getting queue status:", error);
     return null;
@@ -467,5 +545,14 @@ module.exports = {
   stopProcessing,
   getQueueStatus,
   // Exported for tests / observability
-  _internal: { QUEUE_KEY, IN_PROGRESS_KEY, ERROR_COUNT_KEY, MAX_RETRIES, processNextItem },
+  _internal: {
+    QUEUE_KEY,
+    IN_PROGRESS_KEY,
+    ERROR_COUNT_KEY,
+    FAILED_KEY,
+    WORKER_LOCK_KEY,
+    MAX_RETRIES,
+    processNextItem,
+    handleRateLimit,
+  },
 };

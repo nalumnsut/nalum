@@ -149,4 +149,84 @@ describe("Geocoding Queue Service", () => {
       expect(mockRedis.lRem).toHaveBeenCalledWith("geocoding:in_progress", 1, queueItem);
     });
   });
+
+  describe("failure handling, dead-lettering, and backoff", () => {
+    it("dead-letters item into FAILED_KEY after exceeding MAX_RETRIES", async () => {
+      mockRedis.sAdd = jest.fn().mockResolvedValue(1);
+      const queueItem = JSON.stringify({
+        userId: "user999",
+        city: "NonExistentCity12345",
+        country: "Nowhere",
+        retries: 5,
+        addedAt: Date.now(),
+      });
+      mockRedis.lMove.mockResolvedValue(queueItem);
+      axios.get.mockResolvedValue({ data: [] });
+
+      await geocodingQueue._internal.processNextItem();
+
+      expect(mockRedis.sAdd).toHaveBeenCalledTimes(1);
+      const [failedKey, payloadStr] = mockRedis.sAdd.mock.calls[0];
+      expect(failedKey).toBe("geocoding:failed");
+      const payload = JSON.parse(payloadStr);
+      expect(payload.userId).toBe("user999");
+      expect(payload.reason).toBe("NO_RESULT");
+      expect(mockRedis.rPush).not.toHaveBeenCalled();
+    });
+
+    it("re-queues item with incremented retries when under MAX_RETRIES", async () => {
+      mockRedis.sAdd = jest.fn().mockResolvedValue(1);
+      const queueItem = JSON.stringify({
+        userId: "user123",
+        city: "SomeCity",
+        country: "SomeCountry",
+        retries: 2,
+        addedAt: Date.now(),
+      });
+      mockRedis.lMove.mockResolvedValue(queueItem);
+      axios.get.mockResolvedValue({ data: [] });
+
+      await geocodingQueue._internal.processNextItem();
+
+      expect(mockRedis.rPush).toHaveBeenCalledTimes(1);
+      const [queueKey, itemStr] = mockRedis.rPush.mock.calls[0];
+      expect(queueKey).toBe("geocoding:queue");
+      const parsed = JSON.parse(itemStr);
+      expect(parsed.retries).toBe(3);
+      expect(mockRedis.sAdd).not.toHaveBeenCalled();
+    });
+
+    it("handles 429 rate limit by re-queueing without incrementing retries and setting backoff", async () => {
+      mockRedis.expire = jest.fn().mockResolvedValue(1);
+      const queueItem = JSON.stringify({
+        userId: "userRateLimit",
+        city: "Oslo",
+        country: "Norway",
+        retries: 1,
+        addedAt: Date.now(),
+      });
+      mockRedis.lMove.mockResolvedValue(queueItem);
+      const err = new Error("RATE_LIMIT");
+      err.response = { status: 429 };
+      axios.get.mockRejectedValue(err);
+
+      await geocodingQueue._internal.processNextItem();
+
+      expect(mockRedis.rPush).toHaveBeenCalledTimes(1);
+      const [queueKey, itemStr] = mockRedis.rPush.mock.calls[0];
+      expect(queueKey).toBe("geocoding:queue");
+      const parsed = JSON.parse(itemStr);
+      expect(parsed.retries).toBe(1);
+      expect(mockRedis.incr).toHaveBeenCalledWith("geocoding:error_count");
+    });
+
+    it("includes failedCount in getQueueStatus when sCard is supported", async () => {
+      mockRedis.sCard = jest.fn().mockResolvedValue(4);
+      mockRedis.lLen.mockResolvedValue(0);
+      mockRedis.get.mockResolvedValue("0");
+
+      const status = await geocodingQueue.getQueueStatus();
+      expect(status.failedCount).toBe(4);
+    });
+  });
 });
