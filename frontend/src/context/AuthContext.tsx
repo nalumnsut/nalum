@@ -15,7 +15,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: "admin" | "alumni" | "student" | "faculty";
   email_verified: boolean;
   profileCompleted: boolean;
   verified_alumni: boolean;
@@ -27,6 +27,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isFaculty: boolean;
   isVerifiedAlumni: boolean | null;
 
   setAuth: (
@@ -57,6 +58,7 @@ export const AuthProvider = ({
 
   const isAuthenticated = !!accessToken;
   const isAdmin = user?.role === "admin";
+  const isFaculty = user?.role === "faculty";
   const isVerifiedAlumni = user ? (user.verified_alumni ?? false) : null;
 
   const setAuth = (
@@ -145,6 +147,7 @@ export const AuthProvider = ({
         isLoading,
         isAuthenticated,
         isAdmin,
+        isFaculty,
         isVerifiedAlumni,
         setAuth,
         logout,

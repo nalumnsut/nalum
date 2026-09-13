@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, UserCheck, UserX, Users, GraduationCap } from "lucide-react";
+import { Bell, UserCheck, UserX, Users, GraduationCap, Briefcase } from "lucide-react";
 import api from "@/lib/api";
 import UserAvatar from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
@@ -40,12 +40,14 @@ interface ConnectionRequest {
     batch?: string;
     branch?: string;
     campus?: string;
+    department?: string;
     profile_picture?: string;
   };
   recipientProfile?: {
     batch?: string;
     branch?: string;
     campus?: string;
+    department?: string;
     profile_picture?: string;
   };
 }
@@ -310,7 +312,7 @@ const NotificationsPopover = () => {
               value="connections"
               className="mt-0 flex-1 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col data-[state=inactive]:hidden"
             >
-              {/* Connection Sub-tabs: Alumni | Students | Sent */}
+              {/* Connection Sub-tabs: Alumni | Students | Faculty | Sent */}
               <Tabs value={connectionTab} onValueChange={setConnectionTab} className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <TabsList className="w-full rounded-none border-b border-border bg-transparent p-0 h-auto">
                   <TabsTrigger
@@ -332,6 +334,17 @@ const NotificationsPopover = () => {
                     {receivedRequests.filter(r => r.requester.role === 'student').length > 0 && (
                       <Badge variant="destructive" className="ml-2 h-4 w-4 p-0 flex items-center justify-center text-xs">
                         {receivedRequests.filter(r => r.requester.role === 'student').length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="faculty"
+                    className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none py-2 text-sm"
+                  >
+                    Faculty
+                    {receivedRequests.filter(r => r.requester.role === 'faculty').length > 0 && (
+                      <Badge variant="destructive" className="ml-2 h-4 w-4 p-0 flex items-center justify-center text-xs">
+                        {receivedRequests.filter(r => r.requester.role === 'faculty').length}
                       </Badge>
                     )}
                   </TabsTrigger>
@@ -461,6 +474,80 @@ const NotificationsPopover = () => {
                                 {request.requesterProfile && (
                                   <p className="text-xs text-muted-foreground">
                                     {request.requesterProfile.branch} • {request.requesterProfile.batch}
+                                  </p>
+                                )}
+                                {request.requestMessage && (
+                                  <p className="break-words text-xs text-muted-foreground mt-1 line-clamp-2">
+                                    "{request.requestMessage}"
+                                  </p>
+                                )}
+                                <div className="flex gap-2 mt-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={(e) => handleAccept(request._id, e)}
+                                    className="flex-1 bg-primary hover:bg-primary-hover text-primary-foreground"
+                                  >
+                                    <UserCheck className="h-4 w-4 mr-1" />
+                                    Accept
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => handleReject(request._id, e)}
+                                    className="flex-1 border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                                  >
+                                    <UserX className="h-4 w-4 mr-1" />
+                                    Reject
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </TabsContent>
+
+                {/* Faculty Requests */}
+                <TabsContent
+                  value="faculty"
+                  className="mt-0 flex-1 min-h-0 overflow-hidden data-[state=inactive]:hidden"
+                >
+                  <ScrollArea className="h-full min-h-0">
+                    {isLoadingReceived ? (
+                      <div className="flex items-center justify-center h-32">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : receivedRequests.filter(r => r.requester.role === 'faculty').length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                        <Briefcase className="h-12 w-12 mb-2 opacity-40" />
+                        <p className="text-sm">No faculty requests</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {receivedRequests.filter(r => r.requester.role === 'faculty').map((request) => (
+                          <div
+                            key={request._id}
+                            className="p-4 hover:bg-accent transition-colors cursor-pointer"
+                            onClick={() => {
+                              navigate(`/dashboard/alumni/${request.requester._id}`);
+                              setIsOpen(false);
+                            }}
+                          >
+                            <div className="flex gap-3">
+                              <UserAvatar
+                                name={request.requester.name}
+                                src={request.requesterProfile?.profile_picture}
+                                size="sm"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="truncate font-medium text-sm text-foreground">
+                                  {request.requester.name}
+                                </p>
+                                {request.requesterProfile?.department && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {request.requesterProfile.department}
                                   </p>
                                 )}
                                 {request.requestMessage && (

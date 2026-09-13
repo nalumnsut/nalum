@@ -29,7 +29,7 @@ const OtpVerificationPage = () => {
       id: string;
       name: string;
       email: string;
-      role: string;
+      role: "admin" | "alumni" | "student" | "faculty";
       email_verified: boolean;
       profileCompleted: boolean;
       verified_alumni: boolean;

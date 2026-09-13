@@ -13,25 +13,25 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      validate: {
-        validator: function (v) {
-          // Basic email validation
-          if (!/^\S+@\S+\.\S+$/.test(v)) return false;
-
-          // If role is student, email must end with @nsut.ac.in
-          if (this.role === "student" && !v.endsWith("@nsut.ac.in")) {
-            return false;
-          }
-
-          return true;
+      validate: [
+        {
+          validator: function (v) {
+            // Basic email validation
+            return /^\S+@\S+\.\S+$/.test(v);
+          },
+          message: "Invalid email format",
         },
-        message: function (props) {
-          if (props.instance.role === "student") {
-            return "Student email must end with @nsut.ac.in";
-          }
-          return "Invalid email format";
+        {
+          validator: function (v) {
+            // If role is student or faculty, email must end with @nsut.ac.in
+            if (["student", "faculty"].includes(this.role) && !v.endsWith("@nsut.ac.in")) {
+              return false;
+            }
+            return true;
+          },
+          message: "Student/Faculty email must end with @nsut.ac.in",
         },
-      },
+      ],
     },
     password: {
       type: String,
@@ -52,7 +52,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["student", "alumni", "admin"],
+      enum: ["student", "faculty", "alumni", "admin"],
       required: true,
     },
     // Only applicable for alumni - students and admins don't have this field
@@ -87,9 +87,9 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Method to check if student email verification has expired (180 days)
+// Method to check if student/faculty email verification has expired (180 days)
 userSchema.methods.isStudentVerificationExpired = function () {
-  if (this.role !== "student") return false;
+  if (!["student", "faculty"].includes(this.role)) return false;
   if (!this.email_verified || !this.email_verified_at) return true;
 
   const thirtyDaysAgo = new Date();
@@ -97,6 +97,8 @@ userSchema.methods.isStudentVerificationExpired = function () {
 
   return this.email_verified_at < thirtyDaysAgo;
 };
+// Alias for faculty callers
+userSchema.methods.isVerificationExpired = userSchema.methods.isStudentVerificationExpired;
 
 // Method to check if user needs alumni verification
 userSchema.methods.needsAlumniVerification = function () {

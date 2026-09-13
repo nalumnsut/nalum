@@ -71,6 +71,7 @@ beforeEach(() => {
     isLoading: false,
     isAuthenticated: false,
     isAdmin: false,
+    isFaculty: false,
     isVerifiedAlumni: null,
     setAuth: setAuthMock,
     logout: vi.fn(),
@@ -88,7 +89,7 @@ describe("auth pages", () => {
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(
-      await screen.findByText("Students must use their @nsut.ac.in email address"),
+      await screen.findByText("Students/Faculty must use their @nsut.ac.in email address"),
     ).toBeInTheDocument();
     expect(mockedApi.post).not.toHaveBeenCalled();
     expect(setAuthMock).not.toHaveBeenCalled();
@@ -145,6 +146,9 @@ describe("auth pages", () => {
     const user = userEvent.setup();
     renderWithRouter(<Signup />, "/signup");
 
+    // Step 1: pick a role and continue to the details step
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+
     await user.type(screen.getByLabelText(/full name/i), "New Student");
     await user.type(screen.getByLabelText(/email address/i), "new@example.com");
     await user.type(screen.getByLabelText(/^password$/i), "short");
@@ -152,7 +156,7 @@ describe("auth pages", () => {
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
     expect(
-      await screen.findByText("Students must use their @nsut.ac.in email address"),
+      await screen.findByText("Students/Faculty must use their @nsut.ac.in email address"),
     ).toBeInTheDocument();
     expect(screen.getByText("Password must be at least 8 characters long")).toBeInTheDocument();
     expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
@@ -169,6 +173,9 @@ describe("auth pages", () => {
     });
 
     renderWithRouter(<Signup />, "/signup");
+
+    // Step 1: pick a role and continue to the details step
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
 
     await user.type(screen.getByLabelText(/full name/i), "New Student");
     await user.type(screen.getByLabelText(/email address/i), "new@nsut.ac.in");

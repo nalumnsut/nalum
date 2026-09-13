@@ -46,8 +46,8 @@ export default function Events() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Only alumni can host, so only they get the My Events half.
-  const canHost = user?.role === "alumni";
+  // Only alumni and faculty can host, so only they get the My Events half.
+  const canHost = ["alumni", "faculty"].includes(user?.role ?? "");
   const tab: Tab = canHost && searchParams.get("tab") === "my" ? "my" : "all";
 
   const [events, setEvents] = useState<EventRecord[]>([]);

@@ -9,8 +9,8 @@ export function AuthErrorHandler() {
   const { logout } = useAuth();
 
   useEffect(() => {
-    const handleAuthError = () => {
-      logout();
+    const handleAuthError = async () => {
+      await logout();
       toast.error("Session Expired", {
         id: "session-expired",
         description: "Your session has expired. Please log in again.",

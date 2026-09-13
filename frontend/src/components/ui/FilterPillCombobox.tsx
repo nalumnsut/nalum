@@ -50,8 +50,10 @@ export const FilterPillCombobox = ({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              "rounded-full border-border bg-card text-label-md hover:bg-card hover:text-foreground focus:ring-ring h-10 justify-between font-normal",
-              !value && "text-muted-foreground",
+              "rounded-full border text-sm font-medium focus:ring-ring h-10 justify-between transition-colors",
+              value
+                ? "border-primary bg-primary-subtle text-primary hover:bg-primary-subtle hover:text-primary"
+                : "border-border bg-card text-foreground hover:border-primary hover:text-primary hover:bg-card",
               triggerClassName
             )}
           >

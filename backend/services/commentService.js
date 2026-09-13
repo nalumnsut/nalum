@@ -34,7 +34,7 @@ async function resolveMentionTargets(content, senderId) {
   const mentionedUsers = await User.find({
     name: { $in: mentionNames.map((name) => new RegExp(`^${escapeRegex(name)}$`, "i")) },
     _id: { $ne: senderId },
-    role: { $in: ["alumni", "student"] },
+    role: { $in: ["alumni", "student", "faculty"] },
   }).select("_id name");
 
   return mentionedUsers.map((user) => ({

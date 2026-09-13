@@ -15,11 +15,27 @@ import api from "@/lib/api";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface MentionUser {
+  type: "user";
   _id: string;
   name: string;
-  role: "alumni" | "student";
+  role: "alumni" | "student" | "faculty";
   profile_picture: string | null;
 }
+
+interface SpecialMention {
+  type: "special";
+  name: "All" | "Alumni" | "Student" | "Faculty";
+  description: string;
+}
+
+type MentionSuggestion = MentionUser | SpecialMention;
+
+const SPECIAL_MENTIONS: SpecialMention[] = [
+  { type: "special", name: "All", description: "Email all users" },
+  { type: "special", name: "Alumni", description: "Email all alumni" },
+  { type: "special", name: "Student", description: "Email all students" },
+  { type: "special", name: "Faculty", description: "Email all faculty" },
+];
 
 interface MentionTextareaProps
   extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange"> {
@@ -30,6 +46,7 @@ interface MentionTextareaProps
   onResolverReady?: (resolver: (text: string) => string) => void;
   /** Dropdown placement preference (default: "auto") */
   placement?: "auto" | "bottom" | "top";
+  enableSpecialMentions?: boolean;
 }
 
 // ─── Helper: auto-grow textarea ──────────────────────────────────────────────
@@ -43,7 +60,7 @@ function autoGrow(el: HTMLTextAreaElement | null) {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
-  ({ value, onChange, className, onResolverReady, placement = "auto", ...rest }, forwardedRef) => {
+  ({ value, onChange, className, onResolverReady, placement = "auto", enableSpecialMentions = false, ...rest }, forwardedRef) => {
     const internalRef = useRef<HTMLTextAreaElement>(null);
     useImperativeHandle(forwardedRef, () => internalRef.current!);
 
@@ -68,7 +85,7 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
     }, []);
 
     // Mention dropdown state
-    const [suggestions, setSuggestions] = useState<MentionUser[]>([]);
+    const [suggestions, setSuggestions] = useState<MentionSuggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
     const [query, setQuery] = useState("");
@@ -180,14 +197,22 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
           ? `/mention?q=${encodeURIComponent(cleanQuery)}`
           : `/mention`;
         const { data } = await api.get(url);
-        setSuggestions(data.users || []);
-        setShowDropdown((data.users || []).length > 0);
+        const users = (data.users || []).map((user: MentionUser) => ({
+          ...user,
+          type: "user" as const,
+        }));
+
+        const next = enableSpecialMentions
+          ? [...SPECIAL_MENTIONS, ...users]
+          : users;
+        setSuggestions(next);
+        setShowDropdown(next.length > 0);
         setActiveIndex(0);
       } catch {
         setSuggestions([]);
         setShowDropdown(false);
       }
-    }, []);
+    }, [enableSpecialMentions]);
 
     // ── detect @mention trigger in onChange ──
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -198,7 +223,10 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
       const textBeforeCursor = newValue.slice(0, cursor);
       const match = textBeforeCursor.match(/@([A-Za-z0-9_.' -]{0,30})$/);
 
-      if (match) {
+      const isCompletedSpecialMention =
+        enableSpecialMentions && /^@(All|Alumni|Student|Faculty)\s/i.test(match?.[0] || "");
+
+      if (match && !isCompletedSpecialMention) {
         const q = match[1];
         const start = cursor - match[0].length; // position of '@'
         setMentionStart(start);
@@ -219,7 +247,7 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
 
     // ── insert chosen mention ──
     const insertMention = useCallback(
-      (user: MentionUser) => {
+      (suggestion: MentionSuggestion) => {
         const textarea = internalRef.current;
         if (!textarea || mentionStart === null) return;
 
@@ -227,11 +255,11 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
         // Replace the @query segment with just @Name (clean, readable)
         const before = value.slice(0, mentionStart);
         const after = value.slice(cursor);
-        const token = `@${user.name}`;
+        const token = `@${suggestion.name}`;
         const newValue = before + token + " " + after;
 
         // Track name → userId for resolver
-        mentionsMapRef.current[user.name] = user._id;
+        if (suggestion.type !== "special") mentionsMapRef.current[suggestion.name] = suggestion._id;
 
         onChange(newValue);
         setShowDropdown(false);
@@ -347,13 +375,13 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
             }}
             className="absolute z-50 w-full sm:w-72 max-h-56 overflow-y-auto bg-popover text-popover-foreground border border-border rounded-xl shadow-overlay"
           >
-            {suggestions.map((user, i) => (
+            {suggestions.map((suggestion, i) => (
               <button
-                key={user._id}
+                key={suggestion.type === "special" ? `special-${suggestion.name}` : suggestion._id}
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault(); // prevent textarea blur
-                  insertMention(user);
+                  insertMention(suggestion);
                 }}
                 className={cn(
                   "flex items-center gap-3 w-full px-4 py-2.5 text-left transition-colors text-sm",
@@ -364,23 +392,23 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
               >
                 {/* Avatar */}
                 <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0 bg-muted border border-border flex items-center justify-center">
-                  {user.profile_picture ? (
+                  {suggestion.type !== "special" && suggestion.profile_picture ? (
                     <img
-                      src={`${BASE_URL}/uploads/profile/${user.profile_picture}`}
-                      alt={user.name}
+                      src={`${BASE_URL}/uploads/profile/${suggestion.profile_picture}`}
+                      alt={suggestion.name}
                       className="h-full w-full object-cover"
                     />
                   ) : (
                     <span className="text-xs font-semibold text-muted-foreground">
-                      {user.name.charAt(0).toUpperCase()}
+                      {suggestion.name.charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
 
                 {/* Name + role */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{user.name}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+                  <p className="font-medium truncate">{suggestion.name}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{suggestion.type === "special" ? suggestion.description : suggestion.role}</p>
                 </div>
 
                 {/* @hint */}

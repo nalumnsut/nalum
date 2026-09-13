@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,19 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [cooldown, setCooldown] = useState(0);
   const navigate = useNavigate();
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (cooldown <= 0) return;
+
+    const interval = setInterval(() => {
+      setCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [cooldown]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -28,14 +40,20 @@ const ForgotPassword = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!validateForm()) return;
+
+    if (cooldown > 0) {
+      toast.error(`Please wait ${cooldown}s before requesting another reset link.`);
+      return;
+    }
 
     setIsLoading(true);
     try {
       await apiClient.post("/auth/forget-password", { email });
-      
+
+      setCooldown(60);
       setEmailSent(true);
       toast.success("Reset Link Sent!", {
         description: "Check your email for the password reset link.",
@@ -52,8 +70,9 @@ const ForgotPassword = () => {
       });
     } catch (error) {
       console.error("Forgot password error:", error);
-      
+
       // Always show success message to prevent email enumeration
+      setCooldown(60);
       setEmailSent(true);
       toast.success("Reset Link Sent!", {
         description: "If this email exists in our system, you'll receive a reset link.",
@@ -149,24 +168,27 @@ const ForgotPassword = () => {
               >
                 Back to Sign In
               </Button>
-              
+
+              <Button
+                onClick={() => handleSubmit()}
+                disabled={cooldown > 0 || isLoading}
+                variant="outline"
+                className="w-full h-12 border-nsut-maroon text-nsut-maroon hover:bg-nsut-maroon/10 font-semibold text-lg disabled:opacity-50"
+              >
+                {cooldown > 0 ? `Resend link in ${cooldown}s` : "Resend Reset Link"}
+              </Button>
+
               <Button
                 onClick={() => setEmailSent(false)}
-                variant="outline"
-                className="w-full h-12 border-nsut-maroon text-nsut-maroon hover:bg-nsut-maroon/10 font-semibold text-lg"
+                variant="ghost"
+                className="w-full text-gray-600 hover:text-gray-900"
               >
                 Try Different Email
               </Button>
             </div>
 
             <div className="text-center text-sm text-gray-600">
-              Didn't receive the email? Check your spam folder or{" "}
-              <button
-                onClick={() => setEmailSent(false)}
-                className="font-medium text-nsut-maroon hover:text-nsut-maroon/80"
-              >
-                try again
-              </button>
+              Didn't receive the email? Check your spam folder.
             </div>
           </div>
         </div>

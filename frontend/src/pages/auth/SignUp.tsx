@@ -6,20 +6,21 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Mail, Lock, User, Briefcase, Eye, EyeOff, Home } from "lucide-react";
+import { Mail, Lock, User, GraduationCap, Users, Briefcase, Eye, EyeOff, Home, ArrowLeft, Pencil } from "lucide-react";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
 import { useAuth } from "@/context/AuthContext";
 import { resolvePostLoginPath } from "@/lib/roleConfig";
 import { trackSignUp, trackEvent } from "@/lib/analytics";
 import { validatePassword } from "@/lib/passwordPolicy";
+
+const ROLE_ICON = { student: GraduationCap, alumni: Users, faculty: Briefcase } as const;
+
+const ROLE_OPTIONS = [
+  { value: "student", label: "Student", icon: GraduationCap },
+  { value: "alumni", label: "Alumni", icon: Users },
+  { value: "faculty", label: "Faculty", icon: Briefcase },
+] as const;
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ const Signup = () => {
     password: "",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [step, setStep] = useState<1 | 2>(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +46,7 @@ const Signup = () => {
     );
   }, [accessToken, user]);
   const [unverifiedEmail, setUnverifiedEmail] = useState(false);
+  const RoleIcon = ROLE_ICON[formData.role as keyof typeof ROLE_ICON] ?? Users;
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -83,8 +86,8 @@ const Signup = () => {
       newErrors.email = "Email is required";
     } else if (!emailRegex.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
-    } else if (formData.role === "student" && !formData.email.endsWith("@nsut.ac.in")) {
-      newErrors.email = "Students must use their @nsut.ac.in email address";
+    } else if (["student", "faculty"].includes(formData.role) && !formData.email.endsWith("@nsut.ac.in")) {
+      newErrors.email = "Students/Faculty must use their @nsut.ac.in email address";
     }
 
     if (!formData.password) {
@@ -207,20 +210,95 @@ const Signup = () => {
                 </span>
               </div>
             </Link>
-            <h2 className="text-center text-3xl lg:text-4xl font-bold tracking-tight text-gray-900">
-              Create your account
-            </h2>
-            <p className="mt-2 text-center text-base text-gray-600">
-              Already have an account?{" "}
-              <Link to="/login" className="font-medium text-nsut-maroon hover:text-nsut-maroon/80">
-                Sign in
-              </Link>
-            </p>
+            {step === 1 ? (
+              <>
+                <h2 className="text-center text-3xl lg:text-4xl font-bold tracking-tight text-gray-900">
+                  Who are you?
+                </h2>
+                <p className="mt-2 text-center text-base text-gray-600">
+                  Select your role to get started
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-center text-3xl lg:text-4xl font-bold tracking-tight text-gray-900">
+                  Create your account
+                </h2>
+                <p className="mt-2 text-center text-base text-gray-600">
+                  Already have an account?{" "}
+                  <Link to="/login" className="font-medium text-nsut-maroon hover:text-nsut-maroon/80">
+                    Sign in
+                  </Link>
+                </p>
+              </>
+            )}
           </div>
 
+          {step === 1 ? (
+            /* Step 1: Role selection */
+            <div className="mt-8 space-y-6">
+              <div className="space-y-2">
+                <div className="space-y-3" role="tablist" aria-label="I am a...">
+                  {ROLE_OPTIONS.map(({ value, label, icon: Icon }) => {
+                    const isActive = formData.role === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        onClick={() => handleChange("role", value)}
+                        className={`flex w-full items-center justify-center gap-2.5 rounded-full border px-4 py-3.5 text-base font-semibold transition-colors ${
+                          isActive
+                            ? "border-nsut-maroon bg-nsut-maroon text-white"
+                            : "border-gray-300 bg-white text-gray-700 hover:border-nsut-maroon/50 hover:text-nsut-maroon"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.role && <p className="text-sm text-red-600">{errors.role}</p>}
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => setStep(2)}
+                className="w-full h-12 bg-nsut-maroon hover:bg-nsut-maroon/90 text-white font-semibold text-lg"
+              >
+                Continue
+              </Button>
+            </div>
+          ) : (
+          /* Step 2: Account details */
+          <>
           {/* Form */}
-          <form onSubmit={(e) => { e.preventDefault(); handleSignUp(); }} className="mt-8 space-y-6">
-            <div className="space-y-4 rounded-md">
+          <form onSubmit={(e) => { e.preventDefault(); handleSignUp(); }} className="mt-8">
+            <div className="space-y-5 rounded-card border border-border bg-card shadow-card p-6 sm:p-8">
+              {/* Card header: back to role selection + current role chip */}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex items-center gap-1 text-base font-medium text-nsut-maroon hover:text-nsut-maroon/80"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  aria-label="Change role"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-nsut-maroon/20 bg-nsut-maroon/10 px-4 py-1.5 text-sm font-semibold capitalize text-nsut-maroon transition-colors hover:bg-nsut-maroon/15"
+                >
+                  <RoleIcon className="h-4 w-4" />
+                  {formData.role}
+                </button>
+              </div>
+
+              <div className="space-y-4">
               {/* Full Name */}
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-base">Full Name</Label>
@@ -245,31 +323,13 @@ const Signup = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder={formData.role === "student" ? "Your student email ending with @nsut.ac.in" : "your.email@example.com"}
+                    placeholder={["student", "faculty"].includes(formData.role) ? "Your NSUT email ending with @nsut.ac.in" : "your.email@example.com"}
                     value={formData.email}
                     onChange={(e) => handleChange("email", e.target.value)}
                     className={`pl-10 h-12 text-base ${errors.email ? "border-red-500" : ""}`}
                   />
                 </div>
                 {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
-              </div>
-
-              {/* Role */}
-              <div className="space-y-2">
-                <Label htmlFor="role" className="text-base">I am a...</Label>
-                <div className="relative">
-                  <Briefcase className="absolute left-3 top-3 h-5 w-5 text-gray-400 z-10" />
-                  <Select onValueChange={(value) => handleChange("role", value)} defaultValue={formData.role}>
-                    <SelectTrigger id="role" className={`pl-10 h-12 text-base ${errors.role ? "border-red-500" : ""}`}>
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="alumni">Alumni</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {errors.role && <p className="text-sm text-red-600">{errors.role}</p>}
               </div>
 
               {/* Password */}
@@ -348,7 +408,22 @@ const Signup = () => {
                 )}
               </Button>
             )}
+
+            <p className="text-center text-sm text-gray-600">
+              Not {/^[aeiou]/i.test(formData.role) ? "an" : "a"}{" "}
+              <span className="capitalize">{formData.role}</span>?{" "}
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="font-medium text-nsut-maroon hover:text-nsut-maroon/80"
+              >
+                Change
+              </button>
+            </p>
+            </div>
           </form>
+          </>
+          )}
         </div>
       </div>
     </div>

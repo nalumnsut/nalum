@@ -21,8 +21,9 @@ export const AlumniCard = ({
   index = 0,
 }: AlumniCardProps) => {
   const isStudent = alumni.user.role === "student";
+  const isFaculty = alumni.user.role === "faculty";
   const classLabel = alumni.batch
-    ? `${isStudent ? "Student - " : ""}Class of ${alumni.batch}`
+    ? `${isStudent ? "Student - " : isFaculty ? "Faculty - " : ""}${alumni.batch}`
     : undefined;
 
   return (
@@ -54,7 +55,7 @@ export const AlumniCard = ({
           </h3>
           {classLabel && (
             <p className="text-body-sm text-muted-foreground truncate">
-              {alumni.batch}
+              {classLabel}
             </p>
           )}
         </div>
@@ -62,16 +63,22 @@ export const AlumniCard = ({
 
       {/* Body Section */}
       <div className="space-y-3 mb-4 flex-1 w-full min-w-0">
-        {/* Branch Block */}
-        {alumni.branch && (
+        {/* Branch / Department Block */}
+        {(alumni.branch || alumni.department) && (
           <div className="flex items-start gap-3 w-full min-w-0">
             <GraduationCap className="w-[18px] h-[18px] text-primary/70 shrink-0 mt-0.5" />
-            <p 
+            <p
               className="text-sm text-foreground flex-1 min-w-0 truncate"
-              title={alumni.branch}
+              title={alumni.branch || alumni.department}
             >
-              <span className="hidden sm:inline">{alumni.branch}</span>
-              <span className="sm:hidden">{BRANCH_ABBREVIATIONS[alumni.branch] || alumni.branch}</span>
+              {alumni.branch ? (
+                <>
+                  <span className="hidden sm:inline">{alumni.branch}</span>
+                  <span className="sm:hidden">{BRANCH_ABBREVIATIONS[alumni.branch] || alumni.branch}</span>
+                </>
+              ) : (
+                alumni.department
+              )}
             </p>
           </div>
         )}

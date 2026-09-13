@@ -19,6 +19,7 @@ export interface Profile {
   profile_picture?: string;
   branch?: string;
   batch?: string;
+  department?: string;
   campus?: string;
   bio?: string;
   current_company?: string;
