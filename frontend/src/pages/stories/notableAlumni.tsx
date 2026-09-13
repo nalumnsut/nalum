@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Award, Users, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface AlumniProfile {
   id: number;
@@ -256,6 +257,8 @@ const AlumniCard = ({ alumni, index }: { alumni: AlumniProfile; index: number })
 
 // Main Component
 export default function NotableAlumni() {
+  const navigate = useNavigate();
+
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -403,6 +406,7 @@ export default function NotableAlumni() {
             className="bg-white text-[#800000] px-8 py-4 rounded-full font-semibold text-lg flex items-center gap-2 mx-auto hover:bg-gray-100 transition-colors shadow-lg"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/login")}
           >
             Join Our Network
             <ArrowRight className="w-5 h-5" />
