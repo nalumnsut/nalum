@@ -2,6 +2,10 @@ const Profile = require("../models/user/profile.model");
 const User = require("../models/user/user.model");
 const Connection = require("../models/chat/connections.model");
 
+const escapeRegex = (string) => {
+  return string ? string.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&") : "";
+};
+
 const searchProfiles = async (req, res) => {
   try {
     const { name, graduationYear, skills, campus, branch, company, role, city, country, } = req.query;
@@ -12,7 +16,7 @@ const searchProfiles = async (req, res) => {
 
     let userQuery = {};
     if (name) {
-      userQuery.name = { $regex: name, $options: "i" };
+      userQuery.name = { $regex: escapeRegex(name), $options: "i" };
     }
 
     // Add role filter (only allow alumni or student, never admin)
@@ -52,19 +56,19 @@ const searchProfiles = async (req, res) => {
     }
 
     if (branch) {
-      profileQuery.branch = { $regex: `^${branch}$`, $options: "i" };
+      profileQuery.branch = { $regex: `^${escapeRegex(branch)}$`, $options: "i" };
     }
 
     if (company) {
-      profileQuery.current_company = { $regex: company, $options: "i" };
+      profileQuery.current_company = { $regex: escapeRegex(company), $options: "i" };
     }
 
     if (city) {
-      profileQuery["location.city"] = { $regex: city, $options: "i" };
+      profileQuery["location.city"] = { $regex: escapeRegex(city), $options: "i" };
     }
 
     if (country) {
-      profileQuery["location.country"] = { $regex: country, $options: "i" };
+      profileQuery["location.country"] = { $regex: escapeRegex(country), $options: "i" };
     }
 
     const profiles = await Profile.find(profileQuery)
