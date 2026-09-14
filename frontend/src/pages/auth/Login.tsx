@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SegmentedToggle } from "@/components/ui/SegmentedToggle";
-import { Eye, EyeOff, Mail, Lock, GraduationCap, Users, Briefcase, Home } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, GraduationCap, Users, Briefcase, Home, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
@@ -307,7 +307,10 @@ const Login = () => {
 
       {/* Right Column: Form */}
       <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
-        <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm">
+        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go back">
+          <ArrowLeft className="h-6 w-6 text-red-600" />
+        </button>
+        <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go home">
           <Home className="h-6 w-6 text-red-600" />
         </Link>
         {/* Subtle Pattern Background */}

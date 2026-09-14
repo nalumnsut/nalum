@@ -265,17 +265,17 @@ describe("auth pages", () => {
     renderWithRouter(<ResetPassword />, "/reset-password?token=reset-token");
 
     const newPasswordInput = await screen.findByLabelText(/^new password$/i);
-    await user.type(newPasswordInput, "newPassword123");
+    await user.type(newPasswordInput, "newPassword123!");
     await user.type(
       screen.getByLabelText(/confirm new password/i),
-      "newPassword123",
+      "newPassword123!",
     );
     await user.click(screen.getByRole("button", { name: /reset password/i }));
 
     await waitFor(() => {
       expect(mockedApi.post).toHaveBeenCalledWith("/auth/reset-password", {
         token: "reset-token",
-        password: "newPassword123",
+        password: "newPassword123!",
       });
     });
     expect(
@@ -285,6 +285,28 @@ describe("auth pages", () => {
 
   it("validates fields and submits ChangePassword form", async () => {
     const user = userEvent.setup();
+    mockedUseAuth.mockReturnValue({
+      accessToken: "token",
+      user: {
+        id: "1",
+        name: "Test",
+        email: "test@example.com",
+        role: "student",
+        email_verified: true,
+        profileCompleted: true,
+        verified_alumni: true,
+        hasPassword: true,
+      },
+      isLoading: false,
+      isAuthenticated: true,
+      isAdmin: false,
+      isFaculty: false,
+      isVerifiedAlumni: false,
+      setAuth: vi.fn(),
+      logout: vi.fn(),
+      refreshUser: vi.fn(),
+    });
+    
     (mockedApi.post as Mock).mockResolvedValueOnce({
       data: { error: false, message: "Password changed successfully" },
     });
@@ -295,17 +317,17 @@ describe("auth pages", () => {
       screen.getByLabelText(/^current password$/i),
       "oldPassword123",
     );
-    await user.type(screen.getByLabelText(/^new password$/i), "newPassword456");
+    await user.type(screen.getByLabelText(/^new password$/i), "newPassword456!");
     await user.type(
       screen.getByLabelText(/confirm new password/i),
-      "newPassword456",
+      "newPassword456!",
     );
     await user.click(screen.getByRole("button", { name: /reset password/i }));
 
     await waitFor(() => {
       expect(mockedApi.post).toHaveBeenCalledWith("/auth/change-password", {
         currentPassword: "oldPassword123",
-        newPassword: "newPassword456",
+        newPassword: "newPassword456!",
       });
     });
     expect(navigateMock).toHaveBeenCalledWith("/dashboard/profile");

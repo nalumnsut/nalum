@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, Home, ArrowLeft } from "lucide-react";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
 import { useAuth } from "@/context/AuthContext";
@@ -85,6 +85,12 @@ const OtpVerificationPage = () => {
 
       {/* Right Column */}
       <div className="relative flex items-center justify-center py-12 px-4 bg-gray-50 min-h-screen lg:min-h-full">
+        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go back">
+          <ArrowLeft className="h-6 w-6 text-red-600" />
+        </button>
+        <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go home">
+          <Home className="h-6 w-6 text-red-600" />
+        </Link>
         <div className="relative z-10 w-full max-w-md space-y-8">
           {/* Mobile Header */}
           <Link
