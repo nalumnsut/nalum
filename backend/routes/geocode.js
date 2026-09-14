@@ -1,22 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const axios = require("axios");
-const rateLimit = require("express-rate-limit");
 const { protect } = require("../middleware/auth");
-const { getQueueStatus } = require("../services/geocodingQueue");
-const { normalizeCityAndCountry } = require("../config/canonicalCities");
+const { getQueueStatus, addReverseToQueue } = require("../services/geocodingQueue");
 const { getRedisClient } = require("../config/redis.config");
 
-const NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse";
-
-// Rate limiter for reverse geocoding to prevent abuse
-const reverseRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 60,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many reverse geocoding requests, please try again later." },
-});
+const POLL_INTERVAL_MS = 500;
+const POLL_TIMEOUT_MS = 20000;
 
 // Coordinate validation: reject null, undefined, empty string, non-finite numbers
 const isFiniteCoordinate = (value) =>
@@ -25,8 +14,14 @@ const isFiniteCoordinate = (value) =>
   value !== "" &&
   Number.isFinite(Number(value));
 
-// POST /api/geocode/reverse - Reverse geocode coordinates to City & Country
-router.post("/reverse", protect, reverseRateLimiter, async (req, res) => {
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// POST /api/geocode/reverse - Reverse geocode coordinates to City & Country.
+// Enqueues onto the shared geocoding queue (same 1 req/sec pacing as forward
+// geocoding, no direct Nominatim call here) and waits for that specific item
+// to be processed before responding, so the caller gets one request/response
+// cycle with a real resolved result rather than needing to poll separately.
+router.post("/reverse", protect, async (req, res) => {
   try {
     const { lat, lng } = req.body;
     if (!isFiniteCoordinate(lat) || !isFiniteCoordinate(lng)) {
@@ -47,130 +42,54 @@ router.post("/reverse", protect, reverseRateLimiter, async (req, res) => {
       return res.status(400).json({ error: "Coordinates out of bounds" });
     }
 
-    // Check Redis cache first (~110m precision via 3 decimals)
-    const normLat = Math.abs(numericLat) < 0.0005 ? 0 : numericLat;
-    const normLng = Math.abs(numericLng) < 0.0005 ? 0 : numericLng;
-    const cacheKey = `geocoding:reverse:${normLat.toFixed(3)}:${normLng.toFixed(3)}`;
-    let redis = null;
-    try {
-      redis = getRedisClient();
-      if (redis && typeof redis.get === "function") {
-        const cached = await redis.get(cacheKey);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed && (parsed.displayCity || parsed.city || parsed.displayCountry || parsed.country)) {
-            return res.status(200).json(parsed);
-          }
-        }
-      }
-    } catch (cacheErr) {
-      // Redis unavailable or read failed; proceed to live lookup
-    }
+    const { user_id: userId } = req.user;
+    const requestId = await addReverseToQueue(userId, numericLat, numericLng);
+    const resultKey = `geocoding:result:${requestId}`;
+    const deadline = Date.now() + POLL_TIMEOUT_MS;
 
-    let response;
-    try {
-      response = await axios.get(NOMINATIM_REVERSE_URL, {
-        params: {
-          lat: numericLat,
-          lon: numericLng,
-          format: "json",
-          zoom: 10,
-          addressdetails: 1,
-        },
-        headers: {
-          "User-Agent": "NSUT-Alumni-Network/1.0",
-        },
-        timeout: 10000,
-      });
-    } catch (axiosErr) {
-      if (axiosErr.response && axiosErr.response.status === 429) {
-        return res.status(429).json({
-          error: "Geocoding service rate limit reached. Please try again shortly or enter location manually.",
-        });
-      }
-      if (axiosErr.response && axiosErr.response.status === 403) {
-        console.error("Nominatim 403 Forbidden:", axiosErr.response.data);
-        return res.status(503).json({
-          error: "Geocoding service temporarily unavailable. Please enter location manually.",
-        });
-      }
-      throw axiosErr;
-    }
-
-    const data = response.data || {};
-    if (data.error) {
-      return res.status(404).json({
-        error: "Could not determine location for the given coordinates",
-      });
-    }
-
-    const address = data.address || {};
-
-    const rawCity =
-      address.city ||
-      address.town ||
-      address.village ||
-      address.municipality ||
-      address.suburb ||
-      address.borough ||
-      address.city_district ||
-      address.district ||
-      address.quarter ||
-      address.hamlet ||
-      address.county ||
-      address.state_district ||
-      address.state ||
-      "";
-    const rawCountry = address.country || "";
-
-    if (!rawCity && !rawCountry) {
-      return res.status(404).json({
-        error: "Could not determine location for the given coordinates",
-      });
-    }
-
-    let normalizedCity = "";
-    let normalizedCountry = "";
-    let displayCity = "";
-    let displayCountry = "";
-
-    if (rawCity || rawCountry) {
-      const norm = normalizeCityAndCountry(rawCity || "unknown", rawCountry);
-      if (rawCity) {
-        normalizedCity = norm.normalizedCity;
-        displayCity = norm.displayCity;
-      }
-      if (rawCountry) {
-        normalizedCountry = norm.normalizedCountry;
-        displayCountry = norm.displayCountry;
-      }
-    }
-
-    const resultPayload = {
-      city: displayCity,
-      country: normalizedCountry,
-      normalizedCity,
-      normalizedCountry,
-      displayCity,
-      displayCountry,
-      lat: numericLat,
-      lng: numericLng,
-    };
-
-    // Cache in Redis for 24 hours only if a valid city or country was resolved
-    if ((displayCity || normalizedCountry) && redis && typeof redis.set === "function") {
+    while (Date.now() < deadline) {
+      let stored = null;
       try {
-        await redis.set(cacheKey, JSON.stringify(resultPayload), {
-          EX: 86400,
-        });
-      } catch (setCacheErr) {
-        // Best-effort cache set
+        const redis = getRedisClient();
+        stored = await redis.get(resultKey);
+      } catch (pollErr) {
+        // Transient Redis hiccup — treat as "not yet available" and keep
+        // polling within the same overall timeout budget.
+        console.error(
+          "[geocode] Poll attempt failed, retrying:",
+          pollErr && pollErr.message ? pollErr.message : pollErr,
+        );
       }
+
+      if (stored) {
+        try {
+          const redis = getRedisClient();
+          await redis.del(resultKey);
+        } catch (delErr) {
+          // Best-effort cleanup only; the key has a short TTL regardless.
+        }
+
+        const parsed = JSON.parse(stored);
+        if (parsed.error) {
+          return res.status(404).json({
+            error: "Could not determine location for the given coordinates",
+          });
+        }
+        return res.status(200).json(parsed);
+      }
+
+      await sleep(POLL_INTERVAL_MS);
     }
 
-    res.status(200).json(resultPayload);
+    return res.status(504).json({
+      error:
+        "Geocoding is taking longer than expected. Please try again or enter your location manually.",
+    });
   } catch (error) {
-    console.error("Reverse geocoding error:", error && error.message ? error.message : error);
+    console.error(
+      "Reverse geocoding error:",
+      error && error.message ? error.message : error,
+    );
     res.status(500).json({ error: "Failed to reverse geocode location" });
   }
 });

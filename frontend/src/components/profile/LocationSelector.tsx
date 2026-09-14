@@ -71,22 +71,23 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          // Reverse geocode through our backend proxy (Nominatim requires a server User-Agent)
+          // Reverse geocode through the queue-backed backend route — it
+          // enqueues onto the same paced (1 req/sec) queue forward geocoding
+          // uses, and this call waits for that specific item to be processed
+          // before resolving, so we get a real result in one request.
           const response = await api.post("/geocode/reverse", {
             lat: latitude,
             lng: longitude,
           });
 
           const data = response.data || {};
-          const detectedCity = data.displayCity || data.city || "";
-          const detectedCountry = data.normalizedCountry || data.country || "";
-          const displayCountry = data.displayCountry || detectedCountry;
+          const detectedCity = (data.city || "").trim();
+          const detectedCountry = (data.country || "").trim();
+          const lowerCity = detectedCity.toLowerCase();
+          const lowerCountry = detectedCountry.toLowerCase();
 
-          const lowerCity = (data.normalizedCity || detectedCity).toLowerCase().trim();
-          const lowerCountry = detectedCountry.toLowerCase().trim();
-
-          if (detectedCity) {
-            setCityInput(detectedCity);
+          if (lowerCity) {
+            setCityInput(lowerCity);
           }
           if (lowerCountry) {
             setCountryInput(lowerCountry);
@@ -99,17 +100,15 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
             longitude,
           );
 
-          if (detectedCity && lowerCountry) {
-            toast.success(
-              `Location detected: ${detectedCity}${displayCountry ? `, ${displayCountry}` : ""}`,
-            );
-          } else if (detectedCity && !lowerCountry) {
+          if (detectedCity && detectedCountry) {
+            toast.success(`Location detected: ${detectedCity}, ${detectedCountry}`);
+          } else if (detectedCity && !detectedCountry) {
             toast.warning(
               `City detected: ${detectedCity}. Please select your country manually.`,
             );
-          } else if (!detectedCity && lowerCountry) {
+          } else if (!detectedCity && detectedCountry) {
             toast.warning(
-              `Country detected: ${displayCountry}. Please enter your city manually.`,
+              `Country detected: ${detectedCountry}. Please enter your city manually.`,
             );
           } else {
             toast.error(

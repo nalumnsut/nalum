@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const axios = require("axios");
 const { getRedisClient } = require("../config/redis.config");
 const Profile = require("../models/user/profile.model");
@@ -10,9 +11,10 @@ const {
   GEOCODING_FAILED_KEY: FAILED_KEY,
   invalidateAlumniMapCache,
 } = require("../config/cacheKeys");
-const { getCanonicalLocation } = require("../config/canonicalCities");
+const { getCanonicalLocation, normalizeCityAndCountry } = require("../config/canonicalCities");
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+const NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse";
 
 // Nominatim's usage policy is ~1 request/second, aggregate, for the whole app.
 // The pacing loop is a self-scheduling setTimeout chain, NOT a setInterval:
@@ -58,6 +60,7 @@ async function addToQueue(userId, city, country) {
     const redis = getRedisClient();
     const queueItem = JSON.stringify({
       userId,
+      type: "forward",
       city,
       country,
       addedAt: Date.now(),
@@ -73,6 +76,38 @@ async function addToQueue(userId, city, country) {
     }
   } catch (error) {
     console.error("Error adding to geocoding queue:", error);
+    throw error;
+  }
+}
+
+// Add a reverse-geocoding job (coordinates -> city/country) to the same
+// shared queue as forward jobs, so both directions are paced by the single
+// 1-req/sec worker rather than calling Nominatim directly. Returns a
+// requestId the caller can poll `geocoding:result:<requestId>` for.
+async function addReverseToQueue(userId, lat, lng) {
+  try {
+    const redis = getRedisClient();
+    const requestId = crypto.randomUUID();
+    const queueItem = JSON.stringify({
+      userId,
+      type: "reverse",
+      lat,
+      lng,
+      requestId,
+      addedAt: Date.now(),
+    });
+    await redis.rPush(QUEUE_KEY, queueItem);
+    console.log(
+      `Added reverse-geocoding job for user ${userId} (requestId=${requestId})`,
+    );
+
+    if (!isProcessing) {
+      startProcessing();
+    }
+
+    return requestId;
+  } catch (error) {
+    console.error("Error adding reverse job to geocoding queue:", error);
     throw error;
   }
 }
@@ -121,6 +156,70 @@ async function geocodeLocation(city, country) {
     console.error(`Full error:`, error);
     throw error;
   }
+}
+
+// Reverse-geocode coordinates to a city/country using Nominatim, with the
+// same canonical normalization forward geocoding uses. normalizeCityAndCountry
+// defaults a missing argument to "unknown" before normalizing, so it's called
+// once with whatever Nominatim actually returned, and only the field(s) that
+// were genuinely present are read back out — never write through "unknown".
+async function reverseGeocodeLocation(lat, lng) {
+  let response;
+  try {
+    response = await axios.get(NOMINATIM_REVERSE_URL, {
+      params: {
+        lat,
+        lon: lng,
+        format: "json",
+        zoom: 10,
+        addressdetails: 1,
+      },
+      headers: {
+        "User-Agent": "NSUT-Alumni-Network/1.0",
+      },
+      timeout: 10000,
+    });
+  } catch (axiosErr) {
+    if (axiosErr.response && axiosErr.response.status === 429) {
+      throw new Error("RATE_LIMIT");
+    }
+    console.error(`Reverse geocoding error for lat=${lat}, lng=${lng}:`, axiosErr.message);
+    throw axiosErr;
+  }
+
+  const data = response.data || {};
+  if (data.error) {
+    return null;
+  }
+
+  const address = data.address || {};
+
+  const rawCity =
+    address.city ||
+    address.town ||
+    address.village ||
+    address.municipality ||
+    address.suburb ||
+    address.borough ||
+    address.city_district ||
+    address.district ||
+    address.quarter ||
+    address.hamlet ||
+    address.county ||
+    address.state_district ||
+    address.state ||
+    "";
+  const rawCountry = address.country || "";
+
+  if (!rawCity && !rawCountry) {
+    return null;
+  }
+
+  const norm = normalizeCityAndCountry(rawCity, rawCountry);
+  const city = rawCity ? norm.displayCity : "";
+  const country = rawCountry ? norm.displayCountry : "";
+
+  return { city, country };
 }
 
 function safeParse(json) {
@@ -193,39 +292,68 @@ async function processNextItem() {
       return;
     }
 
-    const { userId, city, country } = parsed;
-    console.log(`Processing geocoding for user ${userId}: ${city}, ${country}`);
+    const { userId, city, country, lat: itemLat, lng: itemLng, requestId } = parsed;
+    const itemType = parsed.type || "forward";
 
     // Mark as processing (observability only; concurrency is handled by lMove)
     await redis.set(PROCESSING_KEY, userId, { EX: 60 });
 
-    // Geocode the location
-    const result = await geocodeLocation(city, country);
+    if (itemType === "reverse") {
+      console.log(`Processing reverse geocoding for user ${userId}: lat=${itemLat}, lng=${itemLng}`);
 
-    // A missing or non-finite result is a retryable failure: it goes through
-    // the same retry/dead-letter path as network errors below, so the failure
-    // is observable instead of being dropped silently with no trace.
-    if (!result || !Number.isFinite(result[0]) || !Number.isFinite(result[1])) {
-      throw new Error("NO_USABLE_RESULT");
+      const result = await reverseGeocodeLocation(itemLat, itemLng);
+
+      // A missing result (no city AND no country) is a retryable failure,
+      // same as forward's NO_USABLE_RESULT — goes through the same
+      // retry/dead-letter path below.
+      if (!result || (!result.city && !result.country)) {
+        throw new Error("NO_USABLE_RESULT");
+      }
+
+      // Deliver the result to whichever HTTP request is waiting on it. No
+      // Profile write here on purpose — under this wait-based design the
+      // blocking HTTP response is the only delivery path that matters, and
+      // writing to an existing profile here would silently persist location
+      // data even if the user never saves the edit they were making.
+      if (requestId) {
+        await redis.set(
+          `geocoding:result:${requestId}`,
+          JSON.stringify({ city: result.city, country: result.country }),
+          { EX: 120 },
+        );
+      }
+      console.log(`✓ Reverse-geocoded user ${userId}: ${result.city}, ${result.country}`);
+    } else {
+      console.log(`Processing geocoding for user ${userId}: ${city}, ${country}`);
+
+      // Geocode the location
+      const result = await geocodeLocation(city, country);
+
+      // A missing or non-finite result is a retryable failure: it goes through
+      // the same retry/dead-letter path as network errors below, so the failure
+      // is observable instead of being dropped silently with no trace.
+      if (!result || !Number.isFinite(result[0]) || !Number.isFinite(result[1])) {
+        throw new Error("NO_USABLE_RESULT");
+      }
+
+      const [lat, lng] = result;
+
+      // Update user profile with lat/lng
+      await Profile.findOneAndUpdate(
+        { user: userId },
+        {
+          "location.lat": lat,
+          "location.lng": lng,
+        },
+      );
+      console.log(`✓ Geocoded user ${userId}: lat=${lat}, lng=${lng}`);
+
+      // Invalidate alumni-map cache so the new pin shows up immediately
+      await invalidateAlumniMapCache();
     }
-
-    const [lat, lng] = result;
-
-    // Update user profile with lat/lng
-    await Profile.findOneAndUpdate(
-      { user: userId },
-      {
-        "location.lat": lat,
-        "location.lng": lng,
-      },
-    );
-    console.log(`✓ Geocoded user ${userId}: lat=${lat}, lng=${lng}`);
 
     // Reset error count (rolling 1h window so it can't grow unbounded)
     await redis.set(ERROR_COUNT_KEY, 0, { EX: 3600 });
-
-    // Invalidate alumni-map cache so the new pin shows up immediately
-    await invalidateAlumniMapCache();
 
     // Clear processing flag and remove item from the in-progress list
     await redis.del(PROCESSING_KEY);
@@ -270,6 +398,7 @@ async function processNextItem() {
     if (item) {
       const parsed = safeParse(item);
       if (parsed) {
+        const itemType = parsed.type || "forward";
         parsed.retries = (parsed.retries || 0) + 1;
         if (parsed.retries <= MAX_RETRIES) {
           await redis.rPush(QUEUE_KEY, JSON.stringify(parsed));
@@ -279,8 +408,12 @@ async function processNextItem() {
             } (retry ${parsed.retries}/${MAX_RETRIES})`,
           );
         } else {
+          const locationDesc =
+            itemType === "reverse"
+              ? `lat=${parsed.lat}, lng=${parsed.lng}`
+              : `${parsed.city}, ${parsed.country}`;
           console.error(
-            `[geocoding] Dead-lettering item for user ${parsed.userId} after ${MAX_RETRIES} failed attempts (${parsed.city}, ${parsed.country})${
+            `[geocoding] Dead-lettering item for user ${parsed.userId} after ${MAX_RETRIES} failed attempts (${locationDesc})${
               isNoResult ? " — no usable geocode result" : ""
             }. Manual intervention required.`,
           );
@@ -288,13 +421,23 @@ async function processNextItem() {
             if (typeof redis.sAdd === "function") {
               await redis.sAdd(
                 FAILED_KEY,
-                JSON.stringify({
-                  userId: parsed.userId,
-                  city: parsed.city,
-                  country: parsed.country,
-                  failedAt: Date.now(),
-                  reason: isNoResult ? "NO_RESULT" : "ERROR",
-                }),
+                JSON.stringify(
+                  itemType === "reverse"
+                    ? {
+                        userId: parsed.userId,
+                        lat: parsed.lat,
+                        lng: parsed.lng,
+                        failedAt: Date.now(),
+                        reason: isNoResult ? "NO_RESULT" : "ERROR",
+                      }
+                    : {
+                        userId: parsed.userId,
+                        city: parsed.city,
+                        country: parsed.country,
+                        failedAt: Date.now(),
+                        reason: isNoResult ? "NO_RESULT" : "ERROR",
+                      },
+                ),
               );
             }
           } catch (failedErr) {
@@ -302,6 +445,23 @@ async function processNextItem() {
               "[geocoding] Failed to record dead-lettered item in Redis:",
               failedErr && failedErr.message ? failedErr.message : failedErr,
             );
+          }
+
+          // Let a waiting HTTP request (if any) stop polling immediately with a
+          // clear error, instead of always running out its full timeout.
+          if (itemType === "reverse" && parsed.requestId) {
+            try {
+              await redis.set(
+                `geocoding:result:${parsed.requestId}`,
+                JSON.stringify({ error: true }),
+                { EX: 120 },
+              );
+            } catch (resultErr) {
+              console.error(
+                "[geocoding] Failed to record reverse-geocode error result:",
+                resultErr && resultErr.message ? resultErr.message : resultErr,
+              );
+            }
           }
         }
       }
@@ -541,6 +701,7 @@ async function getQueueStatus() {
 
 module.exports = {
   addToQueue,
+  addReverseToQueue,
   startProcessing,
   stopProcessing,
   getQueueStatus,
