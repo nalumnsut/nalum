@@ -19,8 +19,12 @@ import axios from "axios";
 import { validatePassword, PASSWORD_REQUIREMENTS } from "@/lib/passwordPolicy";
 import { cn } from "@/lib/utils";
 
+import { useAuth } from "@/context/AuthContext";
+
 const ChangePassword = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const hasPassword = user?.hasPassword;
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -42,7 +46,7 @@ const ChangePassword = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.currentPassword) {
+    if (hasPassword && !formData.currentPassword) {
       newErrors.currentPassword = "Current password is required";
     }
 
@@ -75,7 +79,7 @@ const ChangePassword = () => {
     setIsLoading(true);
     try {
       await api.post("/auth/change-password", {
-        currentPassword: formData.currentPassword,
+        currentPassword: hasPassword ? formData.currentPassword : "",
         newPassword: formData.newPassword,
       });
 
@@ -125,10 +129,10 @@ const ChangePassword = () => {
         {/* Page Header */}
         <div>
           <h1 className="text-headline-lg-mobile md:text-headline-xl text-primary">
-            Reset Password
+            {hasPassword ? "Reset Password" : "Set Password"}
           </h1>
           <p className="text-body-md text-muted-foreground mt-1">
-            Update your password to keep your alumni portal account secure.
+            {hasPassword ? "Update your password to keep your alumni portal account secure." : "Choose a strong password to secure your account."}
           </p>
         </div>
 
@@ -140,17 +144,18 @@ const ChangePassword = () => {
             </div>
             <div>
               <h2 className="text-headline-md text-foreground">
-                Change Your Password
+                {hasPassword ? "Change Your Password" : "Set Your Password"}
               </h2>
               <p className="text-body-sm text-muted-foreground mt-0.5">
-                Enter your current password and choose a strong new one.
+                {hasPassword ? "Enter your current password and choose a strong new one." : "Choose a strong password to secure your account."}
               </p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Current Password */}
-            <div className="space-y-2">
+            {hasPassword && (
+              <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="currentPassword" className="text-foreground">
                   Current Password
@@ -196,6 +201,7 @@ const ChangePassword = () => {
                 </p>
               )}
             </div>
+            )}
 
             {/* New Password */}
             <div className="space-y-2">

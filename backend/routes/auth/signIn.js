@@ -37,13 +37,13 @@ router.post("/", async (req, res) => {
       message: "Email not verified",
     });
   }
-  
+
   // Check if user is banned
   if (data.data.banned) {
     const banMessage = data.data.ban_expires_at && data.data.ban_expires_at !== null
       ? `Your account has been banned until ${new Date(data.data.ban_expires_at).toLocaleString()}.`
       : "Your account has been permanently banned.";
-    
+
     return res.status(403).json({
       err: true,
       code: 403,
@@ -53,7 +53,7 @@ router.post("/", async (req, res) => {
       ban_reason: data.data.ban_reason,
     });
   }
-  
+
   // Check student/faculty email verification timeout (180 days)
   if (["student", "faculty"].includes(data.data.role) && data.data.isStudentVerificationExpired()) {
     return res.status(403).json({
@@ -63,7 +63,7 @@ router.post("/", async (req, res) => {
       verification_expired: true,
     });
   }
-  
+
   if (data.data.authProvider === "google") {
     return res.status(400).json({
       err: true,
@@ -95,7 +95,7 @@ router.post("/", async (req, res) => {
   }
 
   const { refresh_token, ...rest } = sessionData.data;
-  
+
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -107,7 +107,7 @@ router.post("/", async (req, res) => {
 
   // Set refresh token in httpOnly cookie
   res.cookie("refresh_token", refresh_token, cookieOptions);
-  
+
   const access_token = sessionData.data.access_token;
 
   return res.status(200).json({
@@ -123,6 +123,7 @@ router.post("/", async (req, res) => {
         email_verified: data.data.email_verified,
         profileCompleted: data.data.profileCompleted,
         verified_alumni: data.data.verified_alumni,
+        hasPassword: !!data.data.password
       },
     },
   });

@@ -21,11 +21,29 @@ router.post("/", protect, async (req, res) => {
     if (passwordError) {
       return res.status(400).json({ error: true, message: passwordError });
     }
-    
+
     const user = await User.findById(user_id);
     if (!user) {
       return res.status(404).json({ error: true, message: "User not found" });
     }
+
+    const hasPassword = !!user.password;
+
+    if (hasPassword && !currentPassword) {
+      return res.status(400).json({ error: true, message: "Current password is required" });
+    }
+
+    if (!newPassword) {
+      return res.status(400).json({ error: true, message: "New password is required" });
+    }
+
+    if (user.authProvider === 'google' && !user.password) {
+      return res.status(400).json({
+        error: true,
+        message: "Your account is linked to Google and does not have a local password to change.",
+      });
+    }
+
 
     const matched = await bcrypt.compare(currentPassword, user.password);
     if (!matched) {

@@ -102,6 +102,7 @@ router.post("/", async (req, res) => {
           email_verified: user.email_verified,
           profileCompleted: user.profileCompleted,
           verified_alumni: user.verified_alumni,
+          hasPassword: !!user.password,
         },
       },
     });
