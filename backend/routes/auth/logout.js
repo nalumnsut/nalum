@@ -23,8 +23,12 @@ router.post('/', async (req, res) => {
             sameSite: 'lax',
             path: '/'
         });
-        
-        
+        res.clearCookie('access_token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/'
+        });
         
         res.status(200).json({
             error: false,
@@ -35,6 +39,12 @@ router.post('/', async (req, res) => {
         
         // Even if there's an error, clear the cookies
         res.clearCookie('refresh_token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/'
+        });
+        res.clearCookie('access_token', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',

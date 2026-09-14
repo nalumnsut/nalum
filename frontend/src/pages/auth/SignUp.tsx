@@ -145,8 +145,12 @@ const Signup = () => {
 
     } catch (error) {
       console.error("Google Signup error:", error);
+      let errorMessage = "Unable to authenticate with Google.";
+      if (axios.isAxiosError(error) && error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
       toast.error("Google Signup Failed", {
-        description: "Unable to authenticate with Google.",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -154,85 +158,85 @@ const Signup = () => {
   };
 
 
-const handleSignUp = async () => {
-  if (!validateForm()) return;
+  const handleSignUp = async () => {
+    if (!validateForm()) return;
 
-  setIsLoading(true);
-  try {
-    const response = await api.post('/auth/sign-up', formData);
+    setIsLoading(true);
+    try {
+      const response = await api.post('/auth/sign-up', formData);
 
-    // Check if user exists but needs verification
-    if (response.data.needsVerification) {
-      toast("Account already exists", {
-        description: "Please verify your email to continue. Redirecting to verification page...",
-      });
-      navigate("/otp-verification", { state: { email: formData.email } });
-      return;
-    }
-
-    toast.success("Registration successful! Please verify your email.");
-    trackSignUp(formData.role);
-    navigate("/otp-verification", { state: { email: formData.email } });
-  } catch (error: unknown) {
-    trackEvent('signup_error', {
-      error_code: axios.isAxiosError(error) ? error.response?.data?.code : 'unknown',
-      error_status: axios.isAxiosError(error) ? String(error.response?.status) : 'unknown',
-    });
-    if (axios.isAxiosError(error)) {
-      const errorCode = error.response?.data?.code;
-      if (errorCode === "USER_NOT_VERIFIED") {
-        setUnverifiedEmail(true);
-        toast.error("Email not verified", {
-          description: "This email is already registered but not verified.",
+      // Check if user exists but needs verification
+      if (response.data.needsVerification) {
+        toast("Account already exists", {
+          description: "Please verify your email to continue. Redirecting to verification page...",
         });
-      } else if (errorCode === "USER_ALREADY_EXISTS" || error.response?.status === 409) {
-        toast.error("User already exists", {
-          description: "This email is already registered and verified. Please sign in instead.",
-        });
-      } else {
-        toast.error(error.response?.data?.message || "An error occurred");
+        navigate("/otp-verification", { state: { email: formData.email } });
+        return;
       }
-    } else {
-      toast.error("An unexpected error occurred");
+
+      toast.success("Registration successful! Please verify your email.");
+      trackSignUp(formData.role);
+      navigate("/otp-verification", { state: { email: formData.email } });
+    } catch (error: unknown) {
+      trackEvent('signup_error', {
+        error_code: axios.isAxiosError(error) ? error.response?.data?.code : 'unknown',
+        error_status: axios.isAxiosError(error) ? String(error.response?.status) : 'unknown',
+      });
+      if (axios.isAxiosError(error)) {
+        const errorCode = error.response?.data?.code;
+        if (errorCode === "USER_NOT_VERIFIED") {
+          setUnverifiedEmail(true);
+          toast.error("Email not verified", {
+            description: "This email is already registered but not verified.",
+          });
+        } else if (errorCode === "USER_ALREADY_EXISTS" || error.response?.status === 409) {
+          toast.error("User already exists", {
+            description: "This email is already registered and verified. Please sign in instead.",
+          });
+        } else {
+          toast.error(error.response?.data?.message || "An error occurred");
+        }
+      } else {
+        toast.error("An unexpected error occurred");
+      }
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
-return (
-  <div className="flex flex-col min-h-[100dvh] w-full bg-gray-50 lg:grid lg:grid-cols-2 lg:h-screen lg:overflow-hidden">
-    {/* Left Column: Image */}
-    <div className="relative hidden lg:flex flex-col items-start justify-between p-10 h-full">
-      <img
-        src={nsutCampusHero}
-        alt="NSUT Campus"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-      <div className="absolute inset-0 bg-black/50" />
-      <Link to="/" className="relative z-10 flex items-center gap-3">
-        <img src={nsutLogo} alt="Logo" width="80" height="80" className="h-16 md:h-20 w-auto object-contain" />
-        <div className="flex flex-col items-start">
-          <h1 className="text-xl md:text-2xl font-bold leading-none tracking-wide text-white whitespace-nowrap">
-            <span className="text-red-600">N</span>SUT
-            <span className="text-red-600"> ALUM</span>NI
+  return (
+    <div className="flex flex-col min-h-[100dvh] w-full bg-gray-50 lg:grid lg:grid-cols-2 lg:h-screen lg:overflow-hidden">
+      {/* Left Column: Image */}
+      <div className="relative hidden lg:flex flex-col items-start justify-between p-10 h-full">
+        <img
+          src={nsutCampusHero}
+          alt="NSUT Campus"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/50" />
+        <Link to="/" className="relative z-10 flex items-center gap-3">
+          <img src={nsutLogo} alt="Logo" width="80" height="80" className="h-16 md:h-20 w-auto object-contain" />
+          <div className="flex flex-col items-start">
+            <h1 className="text-xl md:text-2xl font-bold leading-none tracking-wide text-white whitespace-nowrap">
+              <span className="text-red-600">N</span>SUT
+              <span className="text-red-600"> ALUM</span>NI
+            </h1>
+            <span className="block text-[8px] md:text-xs text-white/90 font-bold tracking-widest">
+              ASSOCIATION
+            </span>
+          </div>
+        </Link>
+        <div className="relative z-10 text-white">
+          <h1 className="text-4xl font-serif font-bold">
+            Begin Your Journey.
           </h1>
-          <span className="block text-[8px] md:text-xs text-white/90 font-bold tracking-widest">
-            ASSOCIATION
-          </span>
+          <p className="mt-2 max-w-md text-lg text-white/80">
+            Create your account to unlock exclusive resources and connect with a global network of peers.
+          </p>
         </div>
-      </Link>
-      <div className="relative z-10 text-white">
-        <h1 className="text-4xl font-serif font-bold">
-          Begin Your Journey.
-        </h1>
-        <p className="mt-2 max-w-md text-lg text-white/80">
-          Create your account to unlock exclusive resources and connect with a global network of peers.
-        </p>
       </div>
-    </div>
 
-    {/* Right Column: Form */}
+      {/* Right Column: Form */}
       <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
         <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm">
           <Home className="h-6 w-6 text-red-600" />
@@ -296,11 +300,10 @@ return (
                         role="tab"
                         aria-selected={isActive}
                         onClick={() => handleChange("role", value)}
-                        className={`flex w-full items-center justify-center gap-2.5 rounded-full border px-4 py-3.5 text-base font-semibold transition-colors ${
-                          isActive
+                        className={`flex w-full items-center justify-center gap-2.5 rounded-full border px-4 py-3.5 text-base font-semibold transition-colors ${isActive
                             ? "border-nsut-maroon bg-nsut-maroon text-white"
                             : "border-gray-300 bg-white text-gray-700 hover:border-nsut-maroon/50 hover:text-nsut-maroon"
-                        }`}
+                          }`}
                       >
                         <Icon className="h-5 w-5" />
                         {label}
@@ -320,185 +323,185 @@ return (
               </Button>
             </div>
           ) : (
-          /* Step 2: Account details */
-          <>
-          {/* Form */}
-          <form onSubmit={(e) => { e.preventDefault(); handleSignUp(); }} className="mt-8">
-            <div className="space-y-5 rounded-card border border-border bg-card shadow-card p-6 sm:p-8">
-              {/* Card header: back to role selection + current role chip */}
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="flex items-center gap-1 text-base font-medium text-nsut-maroon hover:text-nsut-maroon/80"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  aria-label="Change role"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-nsut-maroon/20 bg-nsut-maroon/10 px-4 py-1.5 text-sm font-semibold capitalize text-nsut-maroon transition-colors hover:bg-nsut-maroon/15"
-                >
-                  <RoleIcon className="h-4 w-4" />
-                  {formData.role}
-                </button>
-              </div>
+            /* Step 2: Account details */
+            <>
+              {/* Form */}
+              <form onSubmit={(e) => { e.preventDefault(); handleSignUp(); }} className="mt-8">
+                <div className="space-y-5 rounded-card border border-border bg-card shadow-card p-6 sm:p-8">
+                  {/* Card header: back to role selection + current role chip */}
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="flex items-center gap-1 text-base font-medium text-nsut-maroon hover:text-nsut-maroon/80"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      aria-label="Change role"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-nsut-maroon/20 bg-nsut-maroon/10 px-4 py-1.5 text-sm font-semibold capitalize text-nsut-maroon transition-colors hover:bg-nsut-maroon/15"
+                    >
+                      <RoleIcon className="h-4 w-4" />
+                      {formData.role}
+                    </button>
+                  </div>
 
-              <div className="space-y-4">
-              {/* Full Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-base">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <Input
-                    id="name"
-                    placeholder="Enter your full name"
-                    value={formData.name}
-                    onChange={(e) => handleChange("name", e.target.value)}
-                    className={`pl-10 h-12 text-base ${errors.name ? "border-red-500" : ""}`}
-                  />
+                  <div className="space-y-4">
+                    {/* Full Name */}
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-base">Full Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="name"
+                          placeholder="Enter your full name"
+                          value={formData.name}
+                          onChange={(e) => handleChange("name", e.target.value)}
+                          className={`pl-10 h-12 text-base ${errors.name ? "border-red-500" : ""}`}
+                        />
+                      </div>
+                      {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+                    </div>
+
+                    {/* Email */}
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-base">Email Address</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder={["student", "faculty"].includes(formData.role) ? "Your NSUT email ending with @nsut.ac.in" : "your.email@example.com"}
+                          value={formData.email}
+                          onChange={(e) => handleChange("email", e.target.value)}
+                          className={`pl-10 h-12 text-base ${errors.email ? "border-red-500" : ""}`}
+                        />
+                      </div>
+                      {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
+                    </div>
+
+                    {/* Password */}
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-base">Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Create a strong password"
+                          value={formData.password}
+                          onChange={(e) => handleChange("password", e.target.value)}
+                          className={`pl-10 pr-10 h-12 text-base ${errors.password ? "border-red-500" : ""}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-3 h-5 w-5 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
+                    </div>
+
+                    {/* Confirm Password */}
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword" className="text-base">Confirm Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm your password"
+                          value={confirmPassword}
+                          onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+                          className={`pl-10 pr-10 h-12 text-base ${errors.confirmPassword ? "border-red-500" : ""}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-3 h-5 w-5 text-gray-400 hover:text-gray-600"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      {errors.confirmPassword && <p className="text-sm text-red-600">{errors.confirmPassword}</p>}
+                    </div>
+                  </div>
+
+                  {unverifiedEmail ? (
+                    <div className="text-base text-center text-gray-600">
+                      This email is already registered but not verified.{" "}
+                      <Link
+                        to="/otp-verification"
+                        state={{ email: formData.email }}
+                        className="font-medium text-nsut-maroon hover:text-nsut-maroon/80"
+                      >
+                        Verify now
+                      </Link>
+                    </div>
+                  ) : (
+                    <Button
+                      type="submit"
+                      className="w-full h-12 bg-nsut-maroon hover:bg-nsut-maroon/90 text-white font-semibold text-lg"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                          Creating account...
+                        </span>
+                      ) : (
+                        "Create Account"
+                      )}
+                    </Button>
+                  )}
+
+                  {/* Divider */}
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-gray-300" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="bg-card px-2 text-gray-500">Or continue with</span>
+                    </div>
+                  </div>
+
+                  {/* Google Button */}
+                  <div className="flex justify-center w-full mb-4">
+                    <GoogleLogin
+                      text="signup_with"
+                      onSuccess={handleGoogleSuccess}
+                      onError={() => {
+                        toast.error("Google Signup Failed", {
+                          description: "Something went wrong while communicating with Google.",
+                        });
+                      }}
+                    />
+                  </div>
+
+                  <p className="text-center text-sm text-gray-600">
+                    Not {/^[aeiou]/i.test(formData.role) ? "an" : "a"}{" "}
+                    <span className="capitalize">{formData.role}</span>?{" "}
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="font-medium text-nsut-maroon hover:text-nsut-maroon/80"
+                    >
+                      Change
+                    </button>
+                  </p>
                 </div>
-                {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
-              </div>
-
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-base">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder={["student", "faculty"].includes(formData.role) ? "Your NSUT email ending with @nsut.ac.in" : "your.email@example.com"}
-                    value={formData.email}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    className={`pl-10 h-12 text-base ${errors.email ? "border-red-500" : ""}`}
-                  />
-                </div>
-                {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
-              </div>
-
-              {/* Password */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-base">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Create a strong password"
-                    value={formData.password}
-                    onChange={(e) => handleChange("password", e.target.value)}
-                    className={`pl-10 pr-10 h-12 text-base ${errors.password ? "border-red-500" : ""}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 h-5 w-5 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-                {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
-              </div>
-
-              {/* Confirm Password */}
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-base">Confirm Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm your password"
-                    value={confirmPassword}
-                    onChange={(e) => handleConfirmPasswordChange(e.target.value)}
-                    className={`pl-10 pr-10 h-12 text-base ${errors.confirmPassword ? "border-red-500" : ""}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-3 h-5 w-5 text-gray-400 hover:text-gray-600"
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-                {errors.confirmPassword && <p className="text-sm text-red-600">{errors.confirmPassword}</p>}
-              </div>
-            </div>
-
-            {unverifiedEmail ? (
-              <div className="text-base text-center text-gray-600">
-                This email is already registered but not verified.{" "}
-                <Link
-                  to="/otp-verification"
-                  state={{ email: formData.email }}
-                  className="font-medium text-nsut-maroon hover:text-nsut-maroon/80"
-                >
-                  Verify now
-                </Link>
-              </div>
-            ) : (
-              <Button
-                type="submit"
-                className="w-full h-12 bg-nsut-maroon hover:bg-nsut-maroon/90 text-white font-semibold text-lg"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
-                    Creating account...
-                  </span>
-                ) : (
-                  "Create Account"
-                )}
-              </Button>
-            )}
-
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-card px-2 text-gray-500">Or continue with</span>
-              </div>
-            </div>
-
-            {/* Google Button */}
-            <div className="flex justify-center w-full mb-4">
-              <GoogleLogin
-                text="signup_with"
-                onSuccess={handleGoogleSuccess}
-                onError={() => {
-                  toast.error("Google Signup Failed", {
-                    description: "Something went wrong while communicating with Google.",
-                  });
-                }}
-              />
-            </div>
-
-            <p className="text-center text-sm text-gray-600">
-              Not {/^[aeiou]/i.test(formData.role) ? "an" : "a"}{" "}
-              <span className="capitalize">{formData.role}</span>?{" "}
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="font-medium text-nsut-maroon hover:text-nsut-maroon/80"
-              >
-                Change
-              </button>
-            </p>
-            </div>
-          </form>
-          </>
+              </form>
+            </>
           )}
         </div>
       </div>
-  </div>
-);
+    </div>
+  );
 };
 
 export default Signup;
