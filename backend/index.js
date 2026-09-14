@@ -69,12 +69,19 @@ app.use(
     ],
   }),
 );
-app.use(
-  helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    crossOriginEmbedderPolicy: false,
-  }),
-);
+if (process.env.NODE_ENV !== "production") {
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+      crossOriginEmbedderPolicy: false,
+      // Disable COOP for local development to allow Google OAuth popup communication
+      crossOriginOpenerPolicy: false,
+    })
+  );
+} else {
+  // Production: keep default Helmet (including COOP) for security
+  app.use(helmet());
+}
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -107,7 +114,7 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Backend is working!" });
 });
 
-const port = process.env.PORT;
+const port = process.env.PORT || 2478;
 
 async function startServer() {
   try {

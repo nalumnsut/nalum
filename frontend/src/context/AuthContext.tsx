@@ -19,6 +19,7 @@ interface User {
   email_verified: boolean;
   profileCompleted: boolean;
   verified_alumni: boolean;
+  hasPassword?: boolean;
 }
 
 interface AuthContextType {

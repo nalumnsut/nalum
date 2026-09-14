@@ -3,10 +3,11 @@
 const express = require("express");
 const router = express.Router();
 // const { rateLimiters } = require("../../middleware/rateLimiter");
+const googleAuth = require("./googleAuth.js");
 
 const signIn = require("./signIn");
 const signUp = require("./signUp");
-const refresh = require("./refresh"); 
+const refresh = require("./refresh");
 const revokeToken = require("./revokeToken");
 const logout = require("./logout");
 const forgetPassword = require("./forgetPassword");
@@ -26,6 +27,7 @@ const deleteAccount = require("./deleteAccount");
 router.use("/sign-in", signIn);
 router.use("/sign-up", signUp);
 router.use("/refresh", refresh);
+router.use("/google", googleAuth);
 router.use("/revoke-token", revokeToken);
 router.use("/logout", logout);
 router.use("/change-password", changePassword);

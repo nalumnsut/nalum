@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { resolvePostLoginPath } from "@/lib/roleConfig";
 import { trackSignUp, trackEvent } from "@/lib/analytics";
 import { validatePassword } from "@/lib/passwordPolicy";
+import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 
 const ROLE_ICON = { student: GraduationCap, alumni: Users, faculty: Briefcase } as const;
 
@@ -24,11 +25,11 @@ const ROLE_OPTIONS = [
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { accessToken, user } = useAuth();
+  const { accessToken, user, setAuth } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    role: "student",
+    role: "", // Require explicit selection
     password: "",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -90,6 +91,10 @@ const Signup = () => {
       newErrors.email = "Students/Faculty must use their @nsut.ac.in email address";
     }
 
+    if (!formData.role) {
+      newErrors.role = "Please select your role";
+    }
+
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else {
@@ -104,6 +109,52 @@ const Signup = () => {
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!formData.role) {
+      setErrors((prev) => ({ ...prev, role: "Please select your role first" }));
+      toast.error("Role Required", { description: "Please select 'I am a...' before continuing with Google." });
+      return;
+    }
+
+    if (formData.role === "admin") {
+      toast.error("Not Allowed", { description: "Admin accounts cannot be created via signup." });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await api.post("/auth/google", {
+        credential: credentialResponse.credential,
+        role: formData.role
+      });
+      const { access_token, user: loggedInUser } = response.data.data;
+      // Log the user in on the frontend
+      setAuth(access_token, loggedInUser);
+      trackSignUp(loggedInUser.role);
+
+      toast.success("Google Account Linked!", {
+        description: "Welcome to the NSUT Alumni Portal 🎉",
+        style: { background: "#800000", color: "white", border: "2px solid #FFD700", fontSize: "16px" },
+        classNames: { title: "text-xl font-bold text-white", description: "text-base text-white" },
+      });
+      // Redirect them to the dashboard
+      const path = await resolvePostLoginPath(loggedInUser.role, access_token);
+      navigate(path);
+
+    } catch (error) {
+      console.error("Google Signup error:", error);
+      let errorMessage = "Unable to authenticate with Google.";
+      if (axios.isAxiosError(error) && error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      toast.error("Google Signup Failed", {
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignUp = async () => {
@@ -186,7 +237,10 @@ const Signup = () => {
 
       {/* Right Column: Form */}
       <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
-        <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm">
+        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go back">
+          <ArrowLeft className="h-6 w-6 text-red-600" />
+        </button>
+        <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go home">
           <Home className="h-6 w-6 text-red-600" />
         </Link>
         {/* Subtle Pattern Background */}
@@ -408,6 +462,29 @@ const Signup = () => {
                 )}
               </Button>
             )}
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="bg-card px-2 text-gray-500">Or continue with</span>
+                </div>
+              </div>
+
+              {/* Google Button */}
+              <div className="flex justify-center w-full mb-4">
+                <GoogleLogin
+                  text="signup_with"
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => {
+                    toast.error("Google Signup Failed", {
+                      description: "Something went wrong while communicating with Google.",
+                    });
+                  }}
+                />
+              </div>
 
             <p className="text-center text-sm text-gray-600">
               Not {/^[aeiou]/i.test(formData.role) ? "an" : "a"}{" "}

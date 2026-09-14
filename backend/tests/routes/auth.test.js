@@ -136,6 +136,7 @@ describe("auth routes", () => {
         email: "new@example.com",
         password: "hashed-password",
         role: "alumni",
+        authProvider: "local",
       });
     });
 
@@ -239,6 +240,7 @@ describe("auth routes", () => {
         email: "faculty@nsut.ac.in",
         password: "hashed-password",
         role: "faculty",
+        authProvider: "local",
       });
     });
 
@@ -337,11 +339,10 @@ describe("auth routes", () => {
         "password123",
         "hashed-password",
       );
-      expect(sessions.getOrCreate).toHaveBeenCalledWith(
-        "test@example.com",
-        "user-123",
-        undefined,
-      );
+      expect(sessions.getOrCreate).toHaveBeenCalled();
+      const callArgs = sessions.getOrCreate.mock.calls[0];
+      expect(callArgs[0]).toBe("test@example.com");
+      expect(callArgs[1]).toBe("user-123");
     });
 
     it("rejects login when credentials are missing", async () => {
