@@ -79,6 +79,7 @@ const renderWithRouter = (ui: React.ReactElement, route = "/") => {
 };
 
 beforeEach(() => {
+  vi.resetAllMocks();
   mockedUseAuth.mockReturnValue({
     accessToken: null,
     user: null,
@@ -259,8 +260,8 @@ describe("auth pages", () => {
 
   it("submits a valid password reset token and shows success", async () => {
     const user = userEvent.setup();
-    (mockedApi.get as Mock).mockResolvedValueOnce({ data: { valid: true } });
-    (mockedApi.post as Mock).mockResolvedValueOnce({ data: { error: false } });
+    (mockedApi.get as Mock).mockResolvedValue({ data: { valid: true } });
+    (mockedApi.post as Mock).mockResolvedValue({ data: { error: false } });
 
     renderWithRouter(<ResetPassword />, "/reset-password?token=reset-token");
 
@@ -278,6 +279,7 @@ describe("auth pages", () => {
         password: "newPassword123!",
       });
     });
+    
     expect(
       await screen.findByRole("heading", { name: /password reset successful/i }),
     ).toBeInTheDocument();
