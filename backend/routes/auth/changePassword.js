@@ -10,10 +10,10 @@ router.post("/", protect, async (req, res) => {
     const { user_id } = req.user;
     const { currentPassword, newPassword } = req.body;
 
-    if (!currentPassword || !newPassword) {
+    if (!newPassword) {
       return res.status(400).json({
         error: true,
-        message: "Current password and new password are required",
+        message: "New password is required",
       });
     }
 
@@ -29,41 +29,34 @@ router.post("/", protect, async (req, res) => {
 
     const hasPassword = !!user.password;
 
-    if (hasPassword && !currentPassword) {
-      return res.status(400).json({ error: true, message: "Current password is required" });
-    }
+    if (hasPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({ error: true, message: "Current password is required" });
+      }
 
-    if (!newPassword) {
-      return res.status(400).json({ error: true, message: "New password is required" });
-    }
+      const matched = await bcrypt.compare(currentPassword, user.password);
+      if (!matched) {
+        return res.status(401).json({
+          error: true,
+          message: "Current password is incorrect",
+        });
+      }
 
-    if (user.authProvider === 'google' && !user.password) {
-      return res.status(400).json({
-        error: true,
-        message: "Your account is linked to Google and does not have a local password to change.",
-      });
-    }
-
-
-    const matched = await bcrypt.compare(currentPassword, user.password);
-    if (!matched) {
-      return res.status(401).json({
-        error: true,
-        message: "Current password is incorrect",
-      });
-    }
-
-    if (currentPassword === newPassword) {
-      return res.status(400).json({
-        error: true,
-        message: "New password must be different from current password",
-      });
+      if (currentPassword === newPassword) {
+        return res.status(400).json({
+          error: true,
+          message: "New password must be different from current password",
+        });
+      }
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
-    return res.json({ error: false, message: "Password changed successfully" });
+    return res.json({
+      error: false,
+      message: hasPassword ? "Password changed successfully" : "Password set successfully",
+    });
   } catch (err) {
     console.error("[changePassword] Error:", err.message);
     return res.status(500).json({ error: true, message: "Internal server error" });
