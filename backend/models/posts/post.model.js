@@ -63,6 +63,10 @@ const postSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    viewed_by_sessions: [{
+      type: mongoose.Schema.Types.ObjectId,
+      select: false,
+    }],
     likes: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

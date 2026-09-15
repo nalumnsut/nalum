@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -69,6 +70,7 @@ export default function ViewPost() {
   const { user } = useAuth();
   const { clearPostNotifications } = useNotifications();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [post, setPost] = useState<PostRecord | null>(null);
   const [similar, setSimilar] = useState<PostRecord[]>([]);
@@ -81,6 +83,7 @@ export default function ViewPost() {
   const [hasReported, setHasReported] = useState(false);
   const [showAdminQueryMessage, setShowAdminQueryMessage] = useState(false);
   const clearedForPostRef = useRef<string | null>(null);
+  const viewedForPostRef = useRef<string | null>(null);
 
   const isOwner = !!post && post.userId?._id === user?.id;
   const liked = !!user?.id && likes.includes(user.id);
@@ -114,6 +117,19 @@ export default function ViewPost() {
       })
       .catch((err) => console.error("Error fetching similar posts:", err));
   }, [postId]);
+
+  // Record a view once per post, but never for the post's own author.
+  useEffect(() => {
+    if (!postId || !post || post._id !== postId) return;
+    if (isOwner) return;
+    if (viewedForPostRef.current === postId) return;
+
+    viewedForPostRef.current = postId;
+    api.post(`/posts/${postId}/view`).catch((err) => {
+      console.error("Failed to record post view:", err);
+      viewedForPostRef.current = null; // allow retry on a future visit if this failed
+    });
+  }, [post, postId, isOwner]);
 
   // Reading a post clears any notification that pointed at it.
   useEffect(() => {
@@ -157,7 +173,13 @@ export default function ViewPost() {
 
     try {
       const { data } = await api.post(`/posts/${post._id}/like`);
-      if (data.success && Array.isArray(data.likes)) setLikes(data.likes);
+      if (data.success && Array.isArray(data.likes)) {
+        setLikes(data.likes);
+        setPost((current) => current ? { ...current, likes: data.likes } : current);
+        // The dashboard's recent-posts query may still contain the post state
+        // from before this detail view was opened.
+        void queryClient.invalidateQueries({ queryKey: ["posts"] });
+      }
     } catch (err) {
       console.error("Error toggling like:", err);
       setLikes(previous);

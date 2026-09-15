@@ -71,7 +71,7 @@ function visibilityFilter(role) {
 function isVisibleTo(post, role) {
   if (role === "admin") return true;
   if (!post.visibility || post.visibility === "everyone") return true;
-  if (post.visibility === "alumni") return role === "alumni";
+  if (post.visibility === "alumni") return role === "alumni" || role === "faculty";
   if (post.visibility === "students") return role === "student";
   return true;
 }

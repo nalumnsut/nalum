@@ -90,13 +90,13 @@ exports.createPost = async (req, res) => {
       });
     }
 
-    // Allow admins and verified alumni to create posts
+    // Allow admins, verified alumni, and faculty to create posts
     if (user.role === "admin") {
       // Admins can always create posts - continue to post creation
-    } else if (user.role !== "alumni" || !user.verified_alumni) {
+    } else if (!["alumni", "faculty"].includes(user.role) || (user.role === "alumni" && !user.verified_alumni)) {
       return res.status(403).json({
         success: false,
-        message: "Only verified alumni can create posts",
+        message: "Only verified alumni and faculty can create posts",
       });
     }
 
@@ -523,24 +523,29 @@ exports.getMyPosts = async (req, res) => {
 
 exports.recordView = async (req, res) => {
   try {
-    const postId = req.params.id;
+    const { id } = req.params;
+    const { session_id } = req.user;
 
-    // Increment view count by 1
-    const post = await Post.findByIdAndUpdate(
-      postId,
-      { $inc: { view_count: 1 } },
+    const updated = await Post.findOneAndUpdate(
+      { _id: id, viewed_by: { $ne: session_id } },
+      { $inc: { view_count: 1 }, $addToSet: { viewed_by: session_id } },
       { new: true }
     ).select("view_count");
 
-    return res.status(200).json({
-      success: true,
-      view_count: post?.view_count || 0,
-    });
+    if (!updated) {
+      // Either the post doesn't exist, or this user already viewed it —
+      // fetch the current count either way so the response shape stays consistent.
+      const existing = await Post.findById(id).select("view_count");
+      if (!existing) {
+        return res.status(404).json({ success: false, message: "Post not found" });
+      }
+      return res.json({ success: true, view_count: existing.view_count });
+    }
+
+    return res.json({ success: true, view_count: updated.view_count });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Error recording view",
-    });
+    console.error("Error recording post view:", error);
+    return res.status(500).json({ success: false, message: "Error recording view" });
   }
 };
 
@@ -572,14 +577,14 @@ exports.getPopularTags = async (req, res) => {
 exports.recordViewsBatch = async (req, res) => {
   try {
     const { postIds } = req.body;
+    const { session_id } = req.user;
 
     if (Array.isArray(postIds) && postIds.length > 0) {
       await Post.updateMany(
-        { _id: { $in: postIds } },
-        { $inc: { view_count: 1 } }
+        { _id: { $in: postIds }, viewed_by: { $ne: session_id } },
+        { $inc: { view_count: 1 }, $addToSet: { viewed_by: session_id } }
       );
     }
-
     return res.status(200).json({
       success: true,
       count: postIds?.length || 0,
@@ -587,7 +592,7 @@ exports.recordViewsBatch = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message || "Error recording batch views",
+      message: error.message || "Error recording views",
     });
   }
 };

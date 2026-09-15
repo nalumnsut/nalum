@@ -9,6 +9,7 @@ const GEOCODING_PROCESSING_KEY = "geocoding:processing";
 const GEOCODING_IN_PROGRESS_KEY = "geocoding:in_progress";
 const GEOCODING_ERROR_COUNT_KEY = "geocoding:error_count";
 const GEOCODING_WORKER_LOCK_KEY = "geocoding:worker_lock";
+const GEOCODING_FAILED_KEY = "geocoding:failed";
 
 // Best-effort invalidation of the alumni map cache. Never throws — Redis
 // unavailability should not fail a request that already succeeded in the DB.
@@ -31,5 +32,6 @@ module.exports = {
   GEOCODING_IN_PROGRESS_KEY,
   GEOCODING_ERROR_COUNT_KEY,
   GEOCODING_WORKER_LOCK_KEY,
+  GEOCODING_FAILED_KEY,
   invalidateAlumniMapCache,
 };

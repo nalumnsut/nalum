@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi, Mock } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, Mock } from "vitest";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import Login from "@/pages/auth/Login";
 import Signup from "@/pages/auth/SignUp";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
@@ -9,6 +10,17 @@ import ResetPassword from "@/pages/auth/ResetPassword";
 import ChangePassword from "@/pages/dashboard/ChangePassword";
 import apiClient from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+
+// Polyfill for Radix UI pointer capture methods (jsdom doesn't support these)
+if (!Element.prototype.hasPointerCapture) {
+  Element.prototype.hasPointerCapture = () => false;
+}
+if (!Element.prototype.setPointerCapture) {
+  Element.prototype.setPointerCapture = () => {};
+}
+if (!Element.prototype.releasePointerCapture) {
+  Element.prototype.releasePointerCapture = () => {};
+}
 
 const navigateMock = vi.fn();
 const setAuthMock = vi.fn();
@@ -55,22 +67,26 @@ const renderWithRouter = (ui: React.ReactElement, route = "/") => {
   window.history.pushState({}, "Test page", route);
 
   return render(
-    <MemoryRouter
-      initialEntries={[route]}
-      future={{ v7_relativeSplatPath: true, v7_startTransition: true }}
-    >
-      {ui}
-    </MemoryRouter>,
+    <GoogleOAuthProvider clientId="test-client-id">
+      <MemoryRouter
+        initialEntries={[route]}
+        future={{ v7_relativeSplatPath: true, v7_startTransition: true }}
+      >
+        {ui}
+      </MemoryRouter>
+    </GoogleOAuthProvider>,
   );
 };
 
 beforeEach(() => {
+  vi.resetAllMocks();
   mockedUseAuth.mockReturnValue({
     accessToken: null,
     user: null,
     isLoading: false,
     isAuthenticated: false,
     isAdmin: false,
+    isFaculty: false,
     isVerifiedAlumni: null,
     setAuth: setAuthMock,
     logout: vi.fn(),
@@ -79,8 +95,29 @@ beforeEach(() => {
 });
 
 describe("auth pages", () => {
-  it("keeps student login on the client when the email is not an NSUT address", async () => {
+  it("logs in with any email address without client-side role restriction", async () => {
     const user = userEvent.setup();
+    (mockedApi.post as Mock).mockResolvedValueOnce({
+      data: {
+        data: {
+          access_token: "access-token",
+          email: "student@example.com",
+          user: {
+            id: "user-1",
+            name: "Test User",
+            email: "student@example.com",
+            role: "alumni",
+            email_verified: true,
+            profileCompleted: true,
+            verified_alumni: true,
+          },
+        },
+      },
+    });
+    (mockedApi.get as Mock).mockResolvedValueOnce({
+      data: { profileCompleted: true },
+    });
+
     renderWithRouter(<Login />, "/login");
 
     await user.type(screen.getByLabelText(/email address/i), "student@example.com");
@@ -88,7 +125,7 @@ describe("auth pages", () => {
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(
-      await screen.findByText("Students must use their @nsut.ac.in email address"),
+      await screen.findByText("Students/Faculty must use their @nsut.ac.in email address"),
     ).toBeInTheDocument();
     expect(mockedApi.post).not.toHaveBeenCalled();
     expect(setAuthMock).not.toHaveBeenCalled();
@@ -127,8 +164,6 @@ describe("auth pages", () => {
       expect(mockedApi.post).toHaveBeenCalledWith("/auth/sign-in", {
         email: "student@nsut.ac.in",
         password: "password123",
-        role: "student",
-        rememberMe: false,
       });
     });
     expect(setAuthMock).toHaveBeenCalledWith(
@@ -145,6 +180,10 @@ describe("auth pages", () => {
     const user = userEvent.setup();
     renderWithRouter(<Signup />, "/signup");
 
+    // Step 1: pick a role and continue to the details step
+    await user.click(screen.getByRole("tab", { name: /student/i }));
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+
     await user.type(screen.getByLabelText(/full name/i), "New Student");
     await user.type(screen.getByLabelText(/email address/i), "new@example.com");
     await user.type(screen.getByLabelText(/^password$/i), "short");
@@ -152,7 +191,7 @@ describe("auth pages", () => {
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
     expect(
-      await screen.findByText("Students must use their @nsut.ac.in email address"),
+      await screen.findByText("Students/Faculty must use their @nsut.ac.in email address"),
     ).toBeInTheDocument();
     expect(screen.getByText("Password must be at least 8 characters long")).toBeInTheDocument();
     expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
@@ -169,6 +208,10 @@ describe("auth pages", () => {
     });
 
     renderWithRouter(<Signup />, "/signup");
+
+    // Step 1: pick a role and continue to the details step
+    await user.click(screen.getByRole("tab", { name: /student/i }));
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
 
     await user.type(screen.getByLabelText(/full name/i), "New Student");
     await user.type(screen.getByLabelText(/email address/i), "new@nsut.ac.in");
@@ -191,7 +234,7 @@ describe("auth pages", () => {
 
   it("shows the forgot-password confirmation even when the API rejects", async () => {
     const user = userEvent.setup();
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => { });
     (mockedApi.post as Mock).mockRejectedValueOnce(new Error("network down"));
 
     renderWithRouter(<ForgotPassword />, "/forgot-password");
@@ -217,25 +260,26 @@ describe("auth pages", () => {
 
   it("submits a valid password reset token and shows success", async () => {
     const user = userEvent.setup();
-    (mockedApi.get as Mock).mockResolvedValueOnce({ data: { valid: true } });
-    (mockedApi.post as Mock).mockResolvedValueOnce({ data: { error: false } });
+    (mockedApi.get as Mock).mockResolvedValue({ data: { valid: true } });
+    (mockedApi.post as Mock).mockResolvedValue({ data: { error: false } });
 
     renderWithRouter(<ResetPassword />, "/reset-password?token=reset-token");
 
     const newPasswordInput = await screen.findByLabelText(/^new password$/i);
-    await user.type(newPasswordInput, "newPassword123");
+    await user.type(newPasswordInput, "newPassword123!");
     await user.type(
       screen.getByLabelText(/confirm new password/i),
-      "newPassword123",
+      "newPassword123!",
     );
     await user.click(screen.getByRole("button", { name: /reset password/i }));
 
     await waitFor(() => {
       expect(mockedApi.post).toHaveBeenCalledWith("/auth/reset-password", {
         token: "reset-token",
-        password: "newPassword123",
+        password: "newPassword123!",
       });
     });
+    
     expect(
       await screen.findByRole("heading", { name: /password reset successful/i }),
     ).toBeInTheDocument();
@@ -243,6 +287,28 @@ describe("auth pages", () => {
 
   it("validates fields and submits ChangePassword form", async () => {
     const user = userEvent.setup();
+    mockedUseAuth.mockReturnValue({
+      accessToken: "token",
+      user: {
+        id: "1",
+        name: "Test",
+        email: "test@example.com",
+        role: "student",
+        email_verified: true,
+        profileCompleted: true,
+        verified_alumni: true,
+        hasPassword: true,
+      },
+      isLoading: false,
+      isAuthenticated: true,
+      isAdmin: false,
+      isFaculty: false,
+      isVerifiedAlumni: false,
+      setAuth: vi.fn(),
+      logout: vi.fn(),
+      refreshUser: vi.fn(),
+    });
+    
     (mockedApi.post as Mock).mockResolvedValueOnce({
       data: { error: false, message: "Password changed successfully" },
     });
@@ -253,20 +319,19 @@ describe("auth pages", () => {
       screen.getByLabelText(/^current password$/i),
       "oldPassword123",
     );
-    await user.type(screen.getByLabelText(/^new password$/i), "newPassword456");
+    await user.type(screen.getByLabelText(/^new password$/i), "newPassword456!");
     await user.type(
       screen.getByLabelText(/confirm new password/i),
-      "newPassword456",
+      "newPassword456!",
     );
     await user.click(screen.getByRole("button", { name: /reset password/i }));
 
     await waitFor(() => {
       expect(mockedApi.post).toHaveBeenCalledWith("/auth/change-password", {
         currentPassword: "oldPassword123",
-        newPassword: "newPassword456",
+        newPassword: "newPassword456!",
       });
     });
     expect(navigateMock).toHaveBeenCalledWith("/dashboard/profile");
   });
 });
-

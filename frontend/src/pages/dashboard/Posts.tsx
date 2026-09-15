@@ -23,8 +23,8 @@ export default function Posts() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Only alumni (and admins) can publish, so only they get the My Posts half.
-  const canPost = user?.role === "alumni" || user?.role === "admin";
+  // Only alumni, faculty (and admins) can publish, so only they get the My Posts half.
+  const canPost = ["alumni", "admin", "faculty"].includes(user?.role ?? "");
   const tab: Tab = canPost && searchParams.get("tab") === "my" ? "my" : "all";
 
   const setTab = (next: Tab) => {

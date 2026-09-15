@@ -11,12 +11,12 @@
 const User = require("../models/user/user.model");
 const notificationService = require("./notificationService");
 
-const SPECIAL_MENTION_GROUPS = { all: "all", alumni: "alumni", student: "students" };
+const SPECIAL_MENTION_GROUPS = { all: "all", alumni: "alumni", student: "students", faculty: "faculty" };
 const SPECIAL_MENTION_NAMES = new Set(Object.keys(SPECIAL_MENTION_GROUPS));
 function extractSpecialMentionGroups(text) {
   if (!text) return [];
   const groups = new Set();
-  const re = /@(All|Alumni|Student)(?=[.,!?;:]*(?:\s|$))/gi;
+  const re = /@(All|Alumni|Student|Faculty)(?=[.,!?;:]*(?:\s|$))/gi;
   let match;
   while ((match = re.exec(text)) !== null) groups.add(SPECIAL_MENTION_GROUPS[match[1].toLowerCase()]);
   return [...groups];
@@ -85,7 +85,7 @@ async function notifyMentions({
     const users = await User.find({
       name: { $in: names.map((n) => new RegExp(`^${escapeRegex(n)}$`, "i")) },
       _id: { $ne: senderId }, // don't notify yourself
-      role: { $in: ["alumni", "student"] },
+      role: { $in: ["alumni", "student", "faculty"] },
     }).select("_id name");
 
     if (!users.length) return;

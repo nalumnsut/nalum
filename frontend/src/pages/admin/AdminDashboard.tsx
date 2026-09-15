@@ -33,6 +33,7 @@ interface DashboardStats {
     total: number;
     students: number;
     alumni: number;
+    faculty: number;
     verified_alumni: number;
     banned: number;
     recent_registrations: number;
@@ -233,10 +234,11 @@ const AdminDashboard = () => {
 
   const students = stats?.users.students || 0;
   const totalAlumni = stats?.users.alumni || 0;
+  const totalFaculty = stats?.users.faculty || 0;
   const verifiedAlumni = stats?.users.verified_alumni || 0;
   const unverifiedAlumni = Math.max(0, totalAlumni - verifiedAlumni);
-  const totalUsers = stats?.users.total || (students + totalAlumni);
-  const admins = Math.max(0, totalUsers - (students + totalAlumni));
+  const totalUsers = stats?.users.total || (students + totalAlumni + totalFaculty);
+  const admins = Math.max(0, totalUsers - (students + totalAlumni + totalFaculty));
 
   const CustomTooltip = ({ active, payload, coordinate }: any) => {
     if (active && payload && payload.length && coordinate) {
@@ -299,6 +301,12 @@ const AdminDashboard = () => {
       value: unverifiedAlumni,
       color: '#f59e0b',
       fill: 'url(#gradient-unverified)',
+    },
+    {
+      name: 'Faculty',
+      value: totalFaculty,
+      color: '#14b8a6',
+      fill: 'url(#gradient-faculty)',
     },
     ...(admins > 0 ? [{
       name: 'Admins',
@@ -581,6 +589,11 @@ const AdminDashboard = () => {
                   <linearGradient id="gradient-admins" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#818cf8" />
                     <stop offset="100%" stopColor="#4f46e5" />
+                  </linearGradient>
+
+                  <linearGradient id="gradient-faculty" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#5eead4" />
+                    <stop offset="100%" stopColor="#0d9488" />
                   </linearGradient>
                 </defs>
               </svg>

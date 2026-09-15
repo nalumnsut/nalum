@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, Home } from "lucide-react";
 import { useProfile } from "@/context/ProfileContext";
 import { useNotifications } from "@/context/NotificationContext";
 import UserAvatar from "@/components/UserAvatar";
@@ -80,6 +80,16 @@ const Header = () => {
       <div className="flex-1 min-w-0" />
 
       <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+        {/* Home — goes to the landing page without signing out */}
+        <Link
+          to="/"
+          className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+          aria-label="Go to Home Page"
+          title="Go to Home Page"
+        >
+          <Home className="h-5 w-5" />
+        </Link>
+
         {/* Search — opens a centered command-palette style modal (⌘K / Ctrl+K also works) */}
         <button
           type="button"

@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
     });
   }
 
-  const { email, password, rememberMe } = req.body;
+  const { email, password } = req.body;
   let data = await users.findOne(email);
 
   if (data.error) {
@@ -37,13 +37,13 @@ router.post("/", async (req, res) => {
       message: "Email not verified",
     });
   }
-  
+
   // Check if user is banned
   if (data.data.banned) {
     const banMessage = data.data.ban_expires_at && data.data.ban_expires_at !== null
       ? `Your account has been banned until ${new Date(data.data.ban_expires_at).toLocaleString()}.`
       : "Your account has been permanently banned.";
-    
+
     return res.status(403).json({
       err: true,
       code: 403,
@@ -53,9 +53,9 @@ router.post("/", async (req, res) => {
       ban_reason: data.data.ban_reason,
     });
   }
-  
-  // Check student email verification timeout (180 days)
-  if (data.data.role === "student" && data.data.isStudentVerificationExpired()) {
+
+  // Check student/faculty email verification timeout (180 days)
+  if (["student", "faculty"].includes(data.data.role) && data.data.isStudentVerificationExpired()) {
     return res.status(403).json({
       err: true,
       code: 403,
@@ -63,7 +63,15 @@ router.post("/", async (req, res) => {
       verification_expired: true,
     });
   }
-  
+
+  if (data.data.authProvider === "google") {
+    return res.status(400).json({
+      err: true,
+      code: 400,
+      message: "This account uses Google Sign-In. Please continue with Google instead.",
+    });
+  }
+
   let matched;
 
   try {
@@ -80,14 +88,14 @@ router.post("/", async (req, res) => {
     });
   }
 
-  const sessionData = await sessions.getOrCreate(email, data.data._id, rememberMe);
+  const sessionData = await sessions.getOrCreate(email, data.data._id);
 
   if (sessionData.error) {
     return res.status(500).json(sessionData);
   }
 
   const { refresh_token, ...rest } = sessionData.data;
-  
+
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -95,13 +103,11 @@ router.post("/", async (req, res) => {
     path: "/",
   };
 
-  if (rememberMe) {
-    cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-  }
+  cookieOptions.maxAge = 3650 * 24 * 60 * 60 * 1000; // 10 years
 
   // Set refresh token in httpOnly cookie
   res.cookie("refresh_token", refresh_token, cookieOptions);
-  
+
   const access_token = sessionData.data.access_token;
 
   return res.status(200).json({
@@ -117,6 +123,7 @@ router.post("/", async (req, res) => {
         email_verified: data.data.email_verified,
         profileCompleted: data.data.profileCompleted,
         verified_alumni: data.data.verified_alumni,
+        hasPassword: !!data.data.password
       },
     },
   });

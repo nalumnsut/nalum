@@ -22,6 +22,7 @@ export interface DashboardStats {
     total: number;
     students: number;
     alumni: number;
+    faculty: number;
     verified_alumni: number;
     banned: number;
     recent_registrations: number;

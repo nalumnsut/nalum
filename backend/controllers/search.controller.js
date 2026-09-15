@@ -15,8 +15,8 @@ const searchProfiles = async (req, res) => {
       userQuery.name = { $regex: name, $options: "i" };
     }
 
-    // Add role filter (only allow alumni or student, never admin)
-    if (role && (role === "alumni" || role === "student")) {
+    // Add role filter (only allow alumni, student, or faculty — never admin)
+    if (role && ["alumni", "student", "faculty"].includes(role)) {
       userQuery.role = role;
     }
 

@@ -240,7 +240,7 @@ emailWorker.on("failed", (job, err) => {
  */
 async function queueAdminPostBroadcast(post, author, recipientGroups) {
   try {
-    const groupRoles = { all: ["admin", "alumni", "student"], alumni: ["alumni"], students: ["student"] };
+    const groupRoles = { all: ["admin", "alumni", "student", "faculty"], alumni: ["alumni"], students: ["student"], faculty: ["faculty"] };
     const roles = [...new Set(recipientGroups.flatMap((group) => groupRoles[group] || []))];
     if (!roles.length) return null;
     const alumniList = await User.find({ role: { $in: roles } }).select("name email").lean();

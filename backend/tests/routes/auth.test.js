@@ -136,6 +136,7 @@ describe("auth routes", () => {
         email: "new@example.com",
         password: "hashed-password",
         role: "alumni",
+        authProvider: "local",
       });
     });
 
@@ -182,7 +183,64 @@ describe("auth routes", () => {
       expect(response.body).toMatchObject({
         err: true,
         code: 400,
-        message: "Students must use their @nsut.ac.in email address",
+        message: "Students/Faculty must use their @nsut.ac.in email address",
+      });
+    });
+
+    it("requires faculty signups to use an nsut email", async () => {
+      const response = await request(app).post("/api/auth/sign-up").send({
+        name: "Faculty User",
+        email: "faculty@example.com",
+        password: "password123",
+        role: "faculty",
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toMatchObject({
+        err: true,
+        code: 400,
+        message: "Students/Faculty must use their @nsut.ac.in email address",
+      });
+    });
+
+    it("creates a faculty user with a valid nsut email", async () => {
+      users.findOne.mockResolvedValue({ error: false, data: null });
+      bcrypt.hash.mockResolvedValue("hashed-password");
+      users.create.mockResolvedValue({
+        error: false,
+        data: {
+          _id: "faculty-123",
+          name: "Faculty User",
+          email: "faculty@nsut.ac.in",
+          role: "faculty",
+        },
+      });
+
+      const response = await request(app).post("/api/auth/sign-up").send({
+        name: "Faculty User",
+        email: "faculty@nsut.ac.in",
+        password: "password123",
+        role: "faculty",
+      });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toEqual({
+        err: false,
+        code: 201,
+        message: "User created successfully",
+        data: {
+          id: "faculty-123",
+          name: "Faculty User",
+          email: "faculty@nsut.ac.in",
+          role: "faculty",
+        },
+      });
+      expect(users.create).toHaveBeenCalledWith({
+        name: "Faculty User",
+        email: "faculty@nsut.ac.in",
+        password: "hashed-password",
+        role: "faculty",
+        authProvider: "local",
       });
     });
 
@@ -281,11 +339,10 @@ describe("auth routes", () => {
         "password123",
         "hashed-password",
       );
-      expect(sessions.getOrCreate).toHaveBeenCalledWith(
-        "test@example.com",
-        "user-123",
-        undefined,
-      );
+      expect(sessions.getOrCreate).toHaveBeenCalled();
+      const callArgs = sessions.getOrCreate.mock.calls[0];
+      expect(callArgs[0]).toBe("test@example.com");
+      expect(callArgs[1]).toBe("user-123");
     });
 
     it("rejects login when credentials are missing", async () => {

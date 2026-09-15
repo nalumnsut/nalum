@@ -112,6 +112,7 @@ async function run() {
             email_verified_at: new Date(),
             profileCompleted: true,
             verified_alumni: true,
+            authProvider: "local",
           });
         }
 

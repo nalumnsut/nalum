@@ -18,6 +18,10 @@ const ROLE_CONFIG: Record<string, RoleConfig> = {
     needsProfileCheck: true,
     postLoginPath: (profileCompleted) => profileCompleted ? '/dashboard' : '/profile-form',
   },
+  faculty: {
+    needsProfileCheck: true,
+    postLoginPath: (profileCompleted) => profileCompleted ? '/dashboard' : '/profile-form',
+  },
 };
 
 export const resolvePostLoginPath = async (
