@@ -2,6 +2,7 @@ const Query = require('../models/query.model');
 const User = require('../models/user/user.model');
 const { notifyMentions } = require('../services/mentionHelper');
 const { cleanupFiles, assertDeletePermission } = require('../utils/deleteHelper');
+const escapeRegex = require('../utils/escapeRegex');
 
 // Create a new query (Students & Alumni)
 exports.createQuery = async (req, res) => {
@@ -91,17 +92,17 @@ exports.getAllQueries = async (req, res) => {
     const queryObj = {};
 
     if (title) {
-      queryObj.title = { $regex: title, $options: 'i' };
+      queryObj.title = { $regex: escapeRegex(title), $options: 'i' };
     }
 
     if (content) {
-      queryObj.content = { $regex: content, $options: 'i' };
+      queryObj.content = { $regex: escapeRegex(content), $options: 'i' };
     }
 
     // If author search is provided, find matching users first
     if (author) {
       const users = await User.find({
-        name: { $regex: author, $options: 'i' },
+        name: { $regex: escapeRegex(author), $options: 'i' },
       }).select('_id');
 
       const userIds = users.map((user) => user._id);
