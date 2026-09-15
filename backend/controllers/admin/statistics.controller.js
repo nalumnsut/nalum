@@ -6,6 +6,7 @@ const VerificationQueue = require("../../models/verificationQueue.model");
 const AdminActivity = require("../../models/admin/adminActivity.model");
 const Post = require("../../models/posts/post.model");
 const PageVisit = require("../../models/pageVisit.model");
+const escapeRegex = require("../../utils/escapeRegex");
 
 // Get dashboard statistics
 exports.getDashboardStats = async (req, res) => {
@@ -200,8 +201,8 @@ exports.getAllUsers = async (req, res) => {
     if (banned !== undefined) query.banned = banned === "true";
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
+        { name: { $regex: escapeRegex(search), $options: "i" } },
+        { email: { $regex: escapeRegex(search), $options: "i" } },
       ];
     }
 
