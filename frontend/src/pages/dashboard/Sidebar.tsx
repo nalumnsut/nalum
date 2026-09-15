@@ -1,6 +1,16 @@
 import { useLocation } from "react-router-dom";
 import { PreloadLink } from "@/components/PreloadLink";
-import { LayoutGrid, Users, LogOut, MessageSquare, Calendar, FileText, HelpCircle, Heart } from "lucide-react";
+import {
+  LayoutGrid,
+  Users,
+  LogOut,
+  MessageSquare,
+  Calendar,
+  FileText,
+  HelpCircle,
+  Heart,
+  BookOpen,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import { useConversations } from "@/hooks/useConversations";
@@ -22,7 +32,10 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
   const location = useLocation();
   const { conversations } = useConversations();
 
-  const unreadCount = conversations.reduce((acc: number, conv: any) => acc + (conv.unreadCount || 0), 0);
+  const unreadCount = conversations.reduce(
+    (acc: number, conv: any) => acc + (conv.unreadCount || 0),
+    0,
+  );
 
   const isActive = (path: string) =>
     path === "/dashboard"
@@ -34,9 +47,15 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
   const navItems: NavItem[] = [
     { to: "/dashboard", label: "Overview", icon: LayoutGrid },
     { to: "/dashboard/alumni", label: "Directory", icon: Users },
-    { to: "/dashboard/chat", label: "Messages", icon: MessageSquare, badge: unreadCount },
+    {
+      to: "/dashboard/chat",
+      label: "Messages",
+      icon: MessageSquare,
+      badge: unreadCount,
+    },
     { to: "/dashboard/events", label: "Events", icon: Calendar },
     { to: "/dashboard/posts", label: "Posts", icon: FileText },
+    { to: "/dashboard/resources", label: "Resources", icon: BookOpen },
     { to: "/dashboard/queries", label: "Queries", icon: HelpCircle },
   ];
 
@@ -68,7 +87,7 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
                 "relative flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors duration-200",
                 active
                   ? "text-primary before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-6 before:w-1 before:rounded-full before:bg-primary before:content-['']"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               <div className="relative">
