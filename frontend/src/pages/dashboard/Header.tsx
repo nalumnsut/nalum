@@ -20,6 +20,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard/events": "Events",
   "/dashboard/queries": "Queries",
   "/dashboard/posts": "Posts",
+  "/dashboard/resources": "Resources",
   "/dashboard/posts/new": "Create Post",
   "/dashboard/giving": "Give",
   "/dashboard/profile": "Profile",
@@ -60,8 +61,17 @@ const Header = () => {
   return (
     <header className="flex items-center gap-2 md:gap-4 h-20 min-h-0 max-h-20 px-4 md:px-8 border-b border-border bg-card sticky top-0 z-30 shrink-0">
       {/* Brand mark — sidebar (which carries the same mark) is hidden below md */}
-      <PreloadLink to="/dashboard" className="flex items-center gap-2 md:hidden shrink-0">
-        <img src={nsutLogo} alt="NSUT Alumni" width={24} height={24} className="h-6 w-6" />
+      <PreloadLink
+        to="/dashboard"
+        className="flex items-center gap-2 md:hidden shrink-0"
+      >
+        <img
+          src={nsutLogo}
+          alt="NSUT Alumni"
+          width={24}
+          height={24}
+          className="h-6 w-6"
+        />
         <span className="font-bold text-sm tracking-wide whitespace-nowrap">
           <span className="text-primary">N</span>
           <span className="text-foreground">SUT</span>
@@ -130,7 +140,7 @@ const Header = () => {
             size="sm"
             className={cn(
               "ring-2 transition-all",
-              isProfileMenuOpen ? "ring-primary" : "ring-transparent"
+              isProfileMenuOpen ? "ring-primary" : "ring-transparent",
             )}
           />
         </button>
@@ -146,7 +156,10 @@ const Header = () => {
         </Link>
       </div>
 
-      <ProfileMenu isOpen={isProfileMenuOpen} onClose={() => setIsProfileMenuOpen(false)} />
+      <ProfileMenu
+        isOpen={isProfileMenuOpen}
+        onClose={() => setIsProfileMenuOpen(false)}
+      />
     </header>
   );
 };
