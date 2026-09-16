@@ -3,6 +3,7 @@ const NotificationPreferences = require('../models/notificationPreferences.model
 const PushSubscription = require('../models/pushSubscription.model');
 const webPush = require('web-push');
 const mailService = require('../mail/mailService');
+const escapeRegex = require('../utils/escapeRegex');
 
 // Configure web-push with VAPID keys
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -474,7 +475,7 @@ class NotificationService {
    * Safe to repeat and synchronized to every active session for the recipient.
    */
   async clearConversationNotifications(userId, conversationId) {
-    const escapedConversationId = conversationId;
+    const escapedConversationId = escapeRegex(String(conversationId));
     const notifications = await Notification.find({
       recipient: userId,
       type: { $in: ['connection_request', 'connection_accepted', 'new_message'] },
@@ -507,7 +508,7 @@ class NotificationService {
    * and older notification records.
    */
   async clearPostNotifications(userId, postId) {
-    const escapedPostId = String(postId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedPostId = escapeRegex(String(postId));
     const notifications = await Notification.find({
       recipient: userId,
       type: {
