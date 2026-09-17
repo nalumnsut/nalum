@@ -6,7 +6,7 @@ import {
 } from "@/components/ContributionPopup";
 
 const openPopup = () => {
-  act(() => vi.advanceTimersByTime(7000));
+  act(() => vi.advanceTimersByTime(1000));
 };
 
 describe("ContributionPopup", () => {
@@ -27,16 +27,16 @@ describe("ContributionPopup", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("opens seven seconds after the homepage becomes ready", () => {
+  it("opens one second after the homepage becomes ready", () => {
     const { rerender } = render(
       <ContributionPopup ready={false} pathname="/" />,
     );
 
-    act(() => vi.advanceTimersByTime(7000));
+    act(() => vi.advanceTimersByTime(1000));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     rerender(<ContributionPopup ready pathname="/" />);
-    act(() => vi.advanceTimersByTime(6999));
+    act(() => vi.advanceTimersByTime(999));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     act(() => vi.advanceTimersByTime(1));
 
@@ -94,7 +94,7 @@ describe("ContributionPopup", () => {
     unmount();
 
     expect(clearTimeoutSpy).toHaveBeenCalledTimes(1);
-    act(() => vi.advanceTimersByTime(7000));
+    act(() => vi.advanceTimersByTime(1000));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
@@ -112,9 +112,9 @@ describe("ContributionPopup", () => {
 
   it("cancels a pending homepage popup after route navigation", () => {
     const { rerender } = render(<ContributionPopup ready pathname="/" />);
-    act(() => vi.advanceTimersByTime(3000));
+    act(() => vi.advanceTimersByTime(500));
     rerender(<ContributionPopup ready pathname="/admin-panel/dashboard" />);
-    act(() => vi.advanceTimersByTime(4000));
+    act(() => vi.advanceTimersByTime(500));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
