@@ -1,4 +1,37 @@
-.contribution-paper { background-color: #fffaf2; background-image: url("/Communities/Clubs/NSUTIIF.jpeg"); background-position: right bottom; background-repeat: no-repeat; background-size: 48% auto; }
-.contribution-paper::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: rgba(255, 250, 242, 0.78); }
-@media (max-width: 480px) { .contribution-paper { background-size: 70% auto; } }
-@media (prefers-reduced-motion: reduce) { .contribution-dialog, .contribution-dialog * { animation: none !important; transition: none !important; } }
+.contribution-paper {
+  background-color: #fffaf2;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(153 0 0 / 35%) transparent;
+}
+
+.contribution-paper::after {
+  position: absolute;
+  inset: 0;
+  background: rgb(255 250 242 / 86%);
+  content: "";
+  pointer-events: none;
+}
+
+.contribution-campus-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: sepia(0.7) saturate(0.6);
+}
+
+.contribution-dialog :focus-visible {
+  outline: 2px solid #990000 !important;
+  outline-offset: 2px;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contribution-dialog,
+  .contribution-dialog * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

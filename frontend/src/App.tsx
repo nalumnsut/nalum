@@ -56,7 +56,7 @@ function AppContent() {
       )}
       <TooltipProvider>
         <AppRoutes />
-        <ContributionPopup ready={!showIntro} />
+        <ContributionPopup ready={!showIntro} pathname={location.pathname} />
         <Toaster />
       </TooltipProvider>
     </>

@@ -1,6 +1,13 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ContributionPopup, CONTRIBUTION_POPUP_DISMISSED_KEY } from "@/components/ContributionPopup";
+import {
+  ContributionPopup,
+  CONTRIBUTION_POPUP_DISMISSED_KEY,
+} from "@/components/ContributionPopup";
+
+const openPopup = () => {
+  act(() => vi.advanceTimersByTime(7000));
+};
 
 describe("ContributionPopup", () => {
   beforeEach(() => {
@@ -9,64 +16,106 @@ describe("ContributionPopup", () => {
   });
 
   afterEach(() => {
-    vi.runOnlyPendingTimers();
+    vi.clearAllTimers();
     vi.useRealTimers();
     window.sessionStorage.clear();
+    vi.restoreAllMocks();
   });
 
-  it("waits seven seconds before opening and does not auto-close", () => {
-    render(<ContributionPopup ready />);
+  it("is initially absent", () => {
+    render(<ContributionPopup ready pathname="/" />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("opens seven seconds after the homepage becomes ready", () => {
+    const { rerender } = render(
+      <ContributionPopup ready={false} pathname="/" />,
+    );
+
+    act(() => vi.advanceTimersByTime(7000));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    rerender(<ContributionPopup ready pathname="/" />);
     act(() => vi.advanceTimersByTime(6999));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     act(() => vi.advanceTimersByTime(1));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    act(() => vi.advanceTimersByTime(30000));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveAccessibleName("Batches change. Years pass.");
+    expect(dialog).toHaveAccessibleDescription(/From classrooms to careers/);
+  });
+
+  it("does not close automatically", () => {
+    render(<ContributionPopup ready pathname="/" />);
+    openPopup();
+    act(() => vi.advanceTimersByTime(60000));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("dismisses with Maybe Later, close, and Escape", () => {
-    const { unmount } = render(<ContributionPopup ready />);
-    act(() => vi.advanceTimersByTime(7000));
+  it("Maybe Later dismisses it and records the session dismissal", () => {
+    render(<ContributionPopup ready pathname="/" />);
+    openPopup();
     fireEvent.click(screen.getByRole("button", { name: "Maybe Later" }));
+
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY)).toBe("true");
+  });
 
-    window.sessionStorage.clear();
-    const second = render(<ContributionPopup ready />);
-    act(() => vi.advanceTimersByTime(7000));
-    fireEvent.click(screen.getByRole("button", { name: /close/i }));
+  it("the close button dismisses it", () => {
+    render(<ContributionPopup ready pathname="/" />);
+    openPopup();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    second.unmount();
+    expect(sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY)).toBe("true");
+  });
 
-    window.sessionStorage.clear();
-    render(<ContributionPopup ready />);
-    act(() => vi.advanceTimersByTime(7000));
+  it("Escape dismisses it", () => {
+    render(<ContributionPopup ready pathname="/" />);
+    openPopup();
     fireEvent.keyDown(document, { key: "Escape" });
+
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    unmount();
+    expect(sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY)).toBe("true");
   });
 
-  it("does not reopen after the session has been dismissed and cleans up timers", () => {
+  it("does not reopen after dismissal in the same session", () => {
     window.sessionStorage.setItem(CONTRIBUTION_POPUP_DISMISSED_KEY, "true");
-    const { unmount } = render(<ContributionPopup ready />);
-    act(() => vi.advanceTimersByTime(7000));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    unmount();
+    render(<ContributionPopup ready pathname="/" />);
+    openPopup();
 
-    const setTimeoutSpy = vi.spyOn(window, "setTimeout");
-    const instance = render(<ContributionPopup ready />);
-    instance.unmount();
-    act(() => vi.advanceTimersByTime(7000));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(setTimeoutSpy).not.toHaveBeenCalled();
   });
 
-  it("does not render on admin routes", () => {
-    window.history.pushState({}, "", "/admin-panel/dashboard");
-    render(<ContributionPopup ready />);
-    act(() => vi.advanceTimersByTime(2000));
+  it("clears the pending timer when unmounted", () => {
+    const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
+    const { unmount } = render(<ContributionPopup ready pathname="/" />);
+    unmount();
+
+    expect(clearTimeoutSpy).toHaveBeenCalledTimes(1);
+    act(() => vi.advanceTimersByTime(7000));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    window.history.pushState({}, "", "/");
+  });
+
+  it("does not render on admin or other non-home routes", () => {
+    const { rerender } = render(
+      <ContributionPopup ready pathname="/admin-panel/dashboard" />,
+    );
+    openPopup();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    rerender(<ContributionPopup ready pathname="/events" />);
+    openPopup();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("cancels a pending homepage popup after route navigation", () => {
+    const { rerender } = render(<ContributionPopup ready pathname="/" />);
+    act(() => vi.advanceTimersByTime(3000));
+    rerender(<ContributionPopup ready pathname="/admin-panel/dashboard" />);
+    act(() => vi.advanceTimersByTime(4000));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

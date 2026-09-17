@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, HeartHandshake, Leaf } from "lucide-react";
+import nsutCampusImage from "@/assets/hero.webp";
 import {
   Dialog,
   DialogContent,
@@ -28,14 +29,32 @@ function rememberDismissal() {
   }
 }
 
-export function ContributionPopup({ ready = false }: { ready?: boolean }) {
+interface ContributionPopupProps {
+  ready?: boolean;
+  pathname?: string;
+}
+
+export function ContributionPopup({
+  ready = false,
+  pathname = window.location.pathname,
+}: ContributionPopupProps) {
   const [open, setOpen] = useState(false);
+  const hasShown = useRef(false);
 
   useEffect(() => {
-    if (!ready || hasBeenDismissed() || window.location.pathname.startsWith("/admin-panel")) return;
-    const timer = window.setTimeout(() => setOpen(true), DISPLAY_DELAY_MS);
+    if (pathname !== "/" || !ready || hasShown.current || hasBeenDismissed()) return;
+
+    const timer = window.setTimeout(() => {
+      hasShown.current = true;
+      setOpen(true);
+    }, DISPLAY_DELAY_MS);
+
     return () => window.clearTimeout(timer);
-  }, [ready]);
+  }, [pathname, ready]);
+
+  useEffect(() => {
+    if (pathname !== "/") setOpen(false);
+  }, [pathname]);
 
   const dismiss = () => {
     rememberDismissal();
@@ -45,17 +64,25 @@ export function ContributionPopup({ ready = false }: { ready?: boolean }) {
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && dismiss()}>
       <DialogContent
-        className="contribution-dialog max-w-[600px] overflow-hidden border-[#990000]/35 bg-[#fffaf2] p-0 text-[#30231d] shadow-[0_24px_80px_rgba(0,0,0,.35)] sm:rounded-2xl"
+        overlayClassName="bg-black/70 backdrop-blur-sm"
+        closeClassName="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#fffaf2]/90 text-[#5b514a] opacity-100 hover:bg-[#f6e7d5] hover:text-[#990000]"
+        className="contribution-dialog max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-[600px] overflow-hidden rounded-xl border-[#990000]/35 bg-[#fffaf2] p-0 text-[#30231d] shadow-[0_24px_80px_rgba(0,0,0,.35)] sm:rounded-2xl"
       >
-        <div className="contribution-paper relative max-h-[min(760px,calc(100vh-2rem))] overflow-y-auto px-6 py-8 sm:px-12 sm:py-10">
+        <div className="contribution-paper relative max-h-[calc(100dvh-1rem)] overflow-y-auto px-5 py-8 sm:px-12 sm:py-10">
+          <img
+            src={nsutCampusImage}
+            alt=""
+            aria-hidden="true"
+            className="contribution-campus-image"
+          />
           <Leaf className="absolute -left-2 -top-2 h-24 w-24 rotate-[-35deg] text-[#b97955]/25" aria-hidden="true" />
           <Leaf className="absolute -bottom-8 -right-2 h-28 w-28 rotate-[35deg] text-[#b97955]/20" aria-hidden="true" />
 
           <div className="relative z-[1] text-center">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#990000]">Team NALUM · NSUT</p>
-            <DialogTitle className="font-serif text-2xl font-semibold leading-tight text-[#30231d] sm:text-[2rem]">Batches change. Years pass.</DialogTitle>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-[#990000]">Team NALUM · NSUT</p>
+            <DialogTitle className="px-8 font-serif text-2xl font-semibold leading-tight text-[#30231d] sm:text-[2rem]">Batches change. Years pass.</DialogTitle>
             <p className="mt-1 font-serif text-2xl font-bold leading-tight text-[#990000] sm:text-[2rem]">The NSUT connection stays.</p>
-            <DialogDescription id="contribution-popup-description" className="mx-auto mt-5 max-w-md font-serif text-base leading-7 text-[#4e4037] sm:text-lg">
+            <DialogDescription className="mx-auto mt-5 max-w-md font-serif text-base leading-7 text-[#4e4037] sm:text-lg">
               From classrooms to careers, NSUT remains a part of our journey. <span className="font-semibold text-[#990000]">Help us carry it forward.</span>
             </DialogDescription>
 
