@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ContributionPopup,
   CONTRIBUTION_POPUP_DISMISSED_KEY,
+  CONTRIBUTION_POPUP_DISMISSED_VALUE,
 } from "@/components/ContributionPopup";
 
 const openPopup = () => {
@@ -59,7 +60,9 @@ describe("ContributionPopup", () => {
     fireEvent.click(screen.getByRole("button", { name: "Maybe Later" }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY)).toBe("true");
+    expect(sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY)).toBe(
+      CONTRIBUTION_POPUP_DISMISSED_VALUE,
+    );
   });
 
   it("the close button dismisses it", () => {
@@ -68,7 +71,9 @@ describe("ContributionPopup", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY)).toBe("true");
+    expect(sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY)).toBe(
+      CONTRIBUTION_POPUP_DISMISSED_VALUE,
+    );
   });
 
   it("Escape dismisses it", () => {
@@ -77,11 +82,16 @@ describe("ContributionPopup", () => {
     fireEvent.keyDown(document, { key: "Escape" });
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY)).toBe("true");
+    expect(sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY)).toBe(
+      CONTRIBUTION_POPUP_DISMISSED_VALUE,
+    );
   });
 
   it("does not reopen after dismissal in the same session", () => {
-    window.sessionStorage.setItem(CONTRIBUTION_POPUP_DISMISSED_KEY, "true");
+    window.sessionStorage.setItem(
+      CONTRIBUTION_POPUP_DISMISSED_KEY,
+      CONTRIBUTION_POPUP_DISMISSED_VALUE,
+    );
     render(<ContributionPopup ready pathname="/" />);
     openPopup();
 
@@ -98,16 +108,16 @@ describe("ContributionPopup", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("does not render on admin or other non-home routes", () => {
-    const { rerender } = render(
-      <ContributionPopup ready pathname="/admin-panel/dashboard" />,
-    );
+  it("does not render on admin routes", () => {
+    render(<ContributionPopup ready pathname="/admin-panel/dashboard" />);
     openPopup();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 
-    rerender(<ContributionPopup ready pathname="/events" />);
+  it("renders on the authenticated dashboard home", () => {
+    render(<ContributionPopup ready pathname="/dashboard" />);
     openPopup();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("cancels a pending homepage popup after route navigation", () => {

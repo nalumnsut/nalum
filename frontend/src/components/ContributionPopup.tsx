@@ -10,12 +10,13 @@ import {
 import "./contribution-popup.css";
 
 export const CONTRIBUTION_POPUP_DISMISSED_KEY = "nalum-contribution-popup-dismissed";
+export const CONTRIBUTION_POPUP_DISMISSED_VALUE = "2026-09";
 export const CONTRIBUTION_DESTINATION = "tel:+919871598390";
 const DISPLAY_DELAY_MS = 1000;
 
 function hasBeenDismissed() {
   try {
-    return window.sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY) === "true";
+    return window.sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY) === CONTRIBUTION_POPUP_DISMISSED_VALUE;
   } catch {
     return false;
   }
@@ -23,7 +24,10 @@ function hasBeenDismissed() {
 
 function rememberDismissal() {
   try {
-    window.sessionStorage.setItem(CONTRIBUTION_POPUP_DISMISSED_KEY, "true");
+    window.sessionStorage.setItem(
+      CONTRIBUTION_POPUP_DISMISSED_KEY,
+      CONTRIBUTION_POPUP_DISMISSED_VALUE,
+    );
   } catch {
     // Storage can be disabled by privacy settings. The dialog still works.
   }
@@ -40,9 +44,10 @@ export function ContributionPopup({
 }: ContributionPopupProps) {
   const [open, setOpen] = useState(false);
   const hasShown = useRef(false);
+  const isAdminRoute = pathname.startsWith("/admin-panel");
 
   useEffect(() => {
-    if (pathname !== "/" || !ready || hasShown.current || hasBeenDismissed()) return;
+    if (isAdminRoute || !ready || hasShown.current || hasBeenDismissed()) return;
 
     const timer = window.setTimeout(() => {
       hasShown.current = true;
@@ -50,11 +55,11 @@ export function ContributionPopup({
     }, DISPLAY_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [pathname, ready]);
+  }, [isAdminRoute, ready]);
 
   useEffect(() => {
-    if (pathname !== "/") setOpen(false);
-  }, [pathname]);
+    if (isAdminRoute) setOpen(false);
+  }, [isAdminRoute]);
 
   const dismiss = () => {
     rememberDismissal();
