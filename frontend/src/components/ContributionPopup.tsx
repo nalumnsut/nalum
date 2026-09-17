@@ -10,7 +10,7 @@ import "./contribution-popup.css";
 
 export const CONTRIBUTION_POPUP_DISMISSED_KEY = "nalum-contribution-popup-dismissed";
 export const CONTRIBUTION_DESTINATION = "tel:+919871598390";
-const DISPLAY_DELAY_MS = 2000;
+const DISPLAY_DELAY_MS = 7000;
 
 function hasBeenDismissed() {
   try {
