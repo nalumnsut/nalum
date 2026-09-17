@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -103,11 +104,20 @@ export const PostCard = ({
   isHighlighted = false,
 }: PostCardProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const cardRef = useRef<HTMLElement>(null);
 
   const [likes, setLikes] = useState<string[]>(likeIds(post));
   const [likePending, setLikePending] = useState(false);
+
+  // A card can survive a feed refetch or be recreated from React Query's
+  // cached post object after navigation. Keep the optimistic local copy in
+  // step with the latest server-backed prop instead of treating the first
+  // render as the permanent source of truth.
+  useEffect(() => {
+    setLikes(likeIds(post));
+  }, [post]);
 
   const liked = !!user?.id && likes.includes(user.id);
   const isOwner = !!user?.id && post.userId?._id === user.id;
@@ -134,7 +144,12 @@ export const PostCard = ({
 
     try {
       const { data } = await api.post(`/posts/${post._id}/like`);
-      if (data.success && Array.isArray(data.likes)) setLikes(data.likes);
+      if (data.success && Array.isArray(data.likes)) {
+        setLikes(data.likes);
+        // Recent posts are cached across route changes. Mark every posts query
+        // stale so a remounted card cannot resurrect its pre-like payload.
+        void queryClient.invalidateQueries({ queryKey: ["posts"] });
+      }
     } catch (error) {
       console.error("Error liking post:", error);
       setLikes(previous);

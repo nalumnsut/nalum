@@ -3,11 +3,12 @@ const router = express.Router();
 const { protect } = require("../middleware/auth");
 const User = require("../models/user/user.model");
 const Profile = require("../models/user/profile.model");
+const escapeRegex = require("../utils/escapeRegex");
 
 /**
  * GET /api/mention?q=name
  * Returns up to 8 users matching the name query for @mention autocomplete.
- * Only visible users (alumni/student, not banned) are returned.
+ * Only visible users (alumni/student/faculty, not banned) are returned.
  */
 router.get("/", protect, async (req, res) => {
   try {
@@ -15,12 +16,12 @@ router.get("/", protect, async (req, res) => {
 
     // Search users by name if query provided, or return top users if bare @
     const filter = {
-      role: { $in: ["alumni", "student"] },
+      role: { $in: ["alumni", "student", "faculty"] },
       _id: { $ne: req.user.user_id }, // exclude self
     };
 
     if (q && q.length > 0) {
-      filter.name = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
+      filter.name = { $regex: escapeRegex(q), $options: "i" };
     }
 
     const users = await User.find(filter)

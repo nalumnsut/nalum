@@ -48,7 +48,7 @@ export const MyPostsPanel = ({ embedded, action }: MyPostsPanelProps) => {
   const [deleteTarget, setDeleteTarget] = useState<PostRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const canPost = user?.role === "alumni" || user?.role === "admin";
+  const canPost = ["alumni", "admin", "faculty"].includes(user?.role ?? "");
 
   const fetchMyPosts = useCallback(async () => {
     setLoading(true);
@@ -119,8 +119,8 @@ export const MyPostsPanel = ({ embedded, action }: MyPostsPanelProps) => {
     return (
       <EmptyState
         icon={<FileText className="mx-auto h-14 w-14 text-muted-foreground/50" />}
-        title="Posting is alumni-only for now"
-        description="Publishing to the community feed will open up to students in a future release."
+        title="Posting is limited for now"
+        description="Publishing to the community feed is currently open to alumni and faculty."
       />
     );
   }

@@ -6,6 +6,7 @@ const VerificationQueue = require("../../models/verificationQueue.model");
 const AdminActivity = require("../../models/admin/adminActivity.model");
 const Post = require("../../models/posts/post.model");
 const PageVisit = require("../../models/pageVisit.model");
+const escapeRegex = require("../../utils/escapeRegex");
 
 // Get dashboard statistics
 exports.getDashboardStats = async (req, res) => {
@@ -16,10 +17,11 @@ exports.getDashboardStats = async (req, res) => {
     const totalUsers = await User.countDocuments({ banned: { $ne: true } });
     const totalStudents = await User.countDocuments({ role: "student", banned: { $ne: true } });
     const totalAlumni = await User.countDocuments({ role: "alumni", banned: { $ne: true } });
+    const totalFaculty = await User.countDocuments({ role: "faculty", banned: { $ne: true } });
     const verifiedAlumni = await User.countDocuments({ role: "alumni", verified_alumni: true, banned: { $ne: true } });
     const bannedUsers = await User.countDocuments({ banned: true });
 
-    console.log('[Dashboard Stats] User stats:', { totalUsers, totalStudents, totalAlumni, verifiedAlumni, bannedUsers });
+    console.log('[Dashboard Stats] User stats:', { totalUsers, totalStudents, totalAlumni, totalFaculty, verifiedAlumni, bannedUsers });
 
     // Website Visit statistics (Pre-login vs Post-login)
     const preLoginVisits = await PageVisit.countDocuments({ is_authenticated: false });
@@ -88,6 +90,7 @@ exports.getDashboardStats = async (req, res) => {
         total: totalUsers,
         students: totalStudents,
         alumni: totalAlumni,
+        faculty: totalFaculty,
         verified_alumni: verifiedAlumni,
         banned: bannedUsers,
         recent_registrations: recentRegistrations,
@@ -198,8 +201,8 @@ exports.getAllUsers = async (req, res) => {
     if (banned !== undefined) query.banned = banned === "true";
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
+        { name: { $regex: escapeRegex(search), $options: "i" } },
+        { email: { $regex: escapeRegex(search), $options: "i" } },
       ];
     }
 

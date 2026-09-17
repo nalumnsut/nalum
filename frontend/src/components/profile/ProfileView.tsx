@@ -36,6 +36,7 @@ export interface ProfileViewData {
   };
   batch?: string;
   branch?: string;
+  department?: string;
   campus?: string;
   bio?: string;
   current_company?: string;
@@ -166,7 +167,8 @@ const ProfileView = ({
       ? `${profile.current_role} at ${profile.current_company}`
       : profile.current_role || profile.current_company || "";
 
-  const classLabel = profile.batch || "";
+  const classLabel = profile.user.role === "faculty" ? "" : profile.batch || "";
+  const departmentLabel = profile.department || "";
 
   const hasCurrentPosition = Boolean(
     profile.current_role || profile.current_company,
@@ -254,8 +256,10 @@ const ProfileView = ({
                       {classLabel}
                     </span>
                   )}
-                  {profile.branch && (
-                    <span className="ap-chip">{profile.branch}</span>
+                  {departmentLabel ? (
+                    <span className="ap-chip">{departmentLabel}</span>
+                  ) : (
+                    profile.branch && <span className="ap-chip">{profile.branch}</span>
                   )}
                   {profile.campus && (
                     <span className="ap-chip">
@@ -451,17 +455,18 @@ const ProfileView = ({
               </SectionCard>
             )}
 
-            {/* Education — one entry, since the schema stores a single NSUT record. */}
-            {(profile.branch || profile.batch || profile.campus) && (
+            {/* Education — one entry, since the schema stores a single NSUT record. Hidden for faculty (department shown via hero chips instead). */}
+            {(profile.branch || profile.department || profile.batch || profile.campus) &&
+              profile.user.role !== "faculty" && (
               <SectionCard title="Education">
                 <div className="flex gap-3">
                   <div className="h-9 w-9 rounded-lg bg-primary-subtle text-primary-subtle-foreground flex items-center justify-center shrink-0">
                     <GraduationCap className="h-[18px] w-[18px]" />
                   </div>
                   <div className="min-w-0">
-                    {profile.branch && (
+                    {(profile.department || profile.branch) && (
                       <h4 className="text-label-md text-foreground">
-                        {profile.branch}
+                        {profile.department || profile.branch}
                       </h4>
                     )}
                     <p className="text-body-sm text-muted-foreground">

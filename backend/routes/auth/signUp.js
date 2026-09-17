@@ -11,8 +11,8 @@ const validateEmail = (email) => {
 };
 
 router.post("/",async (req,res) => {
-  console.log("SignUp request received:", { body: req.body });
-  
+  console.log("SignUp request received:", { email: req.body.email, role: req.body.role });
+
   if(!req.body.name || !req.body.email || !req.body.password || !req.body.role){
     console.log("Missing required fields:", {
       name: !!req.body.name,
@@ -57,12 +57,12 @@ router.post("/",async (req,res) => {
     });
   }
   
-  // Validate student email
-  if(role === "student" && !email.endsWith("@nsut.ac.in")){
+  // Validate student/faculty email
+  if(["student", "faculty"].includes(role) && !email.endsWith("@nsut.ac.in")){
     return res.status(400).json({
       err: true,
       code: 400,
-      message: "Students must use their @nsut.ac.in email address"
+      message: "Students/Faculty must use their @nsut.ac.in email address"
     });
   }
   
@@ -98,7 +98,8 @@ router.post("/",async (req,res) => {
     name,
     email,
     password: hashedPassword,
-    role
+    role,
+    authProvider: "local"
   });
   if(newUser.error){
     return res.status(500).json({

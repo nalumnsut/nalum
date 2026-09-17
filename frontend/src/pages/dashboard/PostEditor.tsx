@@ -30,7 +30,7 @@ export default function PostEditor({ mode }: PostEditorProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [initial, setInitial] = useState<PostComposerInitial | undefined>(undefined);
 
-  const canPost = user?.role === "alumni" || user?.role === "admin";
+  const canPost = ["alumni", "admin", "faculty"].includes(user?.role ?? "");
   const isAdmin = user?.role === "admin";
   const [isOwnPost, setIsOwnPost] = useState(true);
 
@@ -109,8 +109,8 @@ export default function PostEditor({ mode }: PostEditorProps) {
       <div className="mx-auto max-w-3xl py-12">
         <EmptyState
           icon={<Info className="mx-auto h-14 w-14 text-muted-foreground/50" />}
-          title="Posting is alumni-only for now"
-          description="Publishing to the community feed will open up to students in a future release."
+          title="Posting is limited for now"
+          description="Publishing to the community feed is currently open to alumni and faculty."
           action={
             <Link to="/dashboard/posts">
               <Button className="gap-2 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary-hover">

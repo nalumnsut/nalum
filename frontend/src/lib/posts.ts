@@ -92,7 +92,7 @@ export const authorHeadline = (author: PostAuthor) => {
   const role = [author.current_role, author.current_company]
     .filter(Boolean)
     .join(" at ");
-  return role || (author.role === "admin" ? "Administrator" : "Alumni");
+  return role || (author.role === "admin" ? "Administrator" : author.role === "faculty" ? "Faculty" : "Alumni");
 };
 
 export const STATUS_LABELS: Record<PostStatus, string> = {

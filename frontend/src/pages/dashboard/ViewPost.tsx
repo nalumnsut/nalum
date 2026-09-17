@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -69,6 +70,7 @@ export default function ViewPost() {
   const { user } = useAuth();
   const { clearPostNotifications } = useNotifications();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [post, setPost] = useState<PostRecord | null>(null);
   const [similar, setSimilar] = useState<PostRecord[]>([]);
@@ -171,7 +173,13 @@ export default function ViewPost() {
 
     try {
       const { data } = await api.post(`/posts/${post._id}/like`);
-      if (data.success && Array.isArray(data.likes)) setLikes(data.likes);
+      if (data.success && Array.isArray(data.likes)) {
+        setLikes(data.likes);
+        setPost((current) => current ? { ...current, likes: data.likes } : current);
+        // The dashboard's recent-posts query may still contain the post state
+        // from before this detail view was opened.
+        void queryClient.invalidateQueries({ queryKey: ["posts"] });
+      }
     } catch (err) {
       console.error("Error toggling like:", err);
       setLikes(previous);

@@ -15,12 +15,9 @@ const {
   visibilityFilter,
   isVisibleTo,
 } = require("../utils/postHelpers");
+const escapeRegex = require("../utils/escapeRegex");
 
 const PIN_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
-
-function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 // Decorates lean post documents with the author's public profile fields and a
 // live comment count — both are needed by every list the dashboard renders,
@@ -90,13 +87,13 @@ exports.createPost = async (req, res) => {
       });
     }
 
-    // Allow admins and verified alumni to create posts
+    // Allow admins, verified alumni, and faculty to create posts
     if (user.role === "admin") {
       // Admins can always create posts - continue to post creation
-    } else if (user.role !== "alumni" || !user.verified_alumni) {
+    } else if (!["alumni", "faculty"].includes(user.role) || (user.role === "alumni" && !user.verified_alumni)) {
       return res.status(403).json({
         success: false,
-        message: "Only verified alumni can create posts",
+        message: "Only verified alumni and faculty can create posts",
       });
     }
 
@@ -256,7 +253,7 @@ exports.searchPosts = async (req, res) => {
 
     // Find users matching the name
     const users = await User.find({
-      name: { $regex: query, $options: "i" },
+      name: { $regex: escapeRegex(query), $options: "i" },
     }).select("_id");
 
     const userIds = users.map((user) => user._id);
@@ -268,8 +265,8 @@ exports.searchPosts = async (req, res) => {
         visibilityFilter(req.user.role),
         {
           $or: [
-            { title: { $regex: query, $options: "i" } },
-            { tags: { $regex: query, $options: "i" } },
+            { title: { $regex: escapeRegex(query), $options: "i" } },
+            { tags: { $regex: escapeRegex(query), $options: "i" } },
             { userId: { $in: userIds } },
           ],
         },

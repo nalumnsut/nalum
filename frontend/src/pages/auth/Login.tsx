@@ -3,14 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Eye, EyeOff, Mail, Lock, Briefcase, Home } from "lucide-react";
+import { SegmentedToggle } from "@/components/ui/SegmentedToggle";
+import { Eye, EyeOff, Mail, Lock, GraduationCap, Users, Briefcase, Home, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
@@ -20,6 +14,8 @@ import { resolvePostLoginPath } from "@/lib/roleConfig";
 import { preloadDashboard, preloadPath } from "@/lib/preloadRoutes";
 import axios from "axios";
 import { trackLogin, trackEvent } from "@/lib/analytics";
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -27,7 +23,6 @@ const Login = () => {
     password: "",
     role: "student",
   });
-  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,14 +47,61 @@ const Login = () => {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
-    } else if (formData.role === "student" && !formData.email.endsWith("@nsut.ac.in")) {
-      newErrors.email = "Students must use their @nsut.ac.in email address";
+    } else if (["student", "faculty"].includes(formData.role) && !formData.email.endsWith("@nsut.ac.in")) {
+      newErrors.email = "Students/Faculty must use their @nsut.ac.in email address";
     }
     if (!formData.password) {
       newErrors.password = "Password is required";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    setIsLoading(true);
+    try {
+
+      const response = await apiClient.post("/auth/google", {
+        credential: credentialResponse.credential,
+      });
+
+      const { access_token, user: loggedInUser } = response.data.data;
+
+
+      setAuth(access_token, loggedInUser);
+      trackLogin(loggedInUser.role);
+
+      toast.success("Google Login Successful!", {
+        description: "Welcome back to the NSUT Alumni Portal 🎉",
+        style: { background: "#800000", color: "white", border: "2px solid #FFD700", fontSize: "16px" },
+        classNames: { title: "text-xl font-bold text-white", description: "text-base text-white" },
+      });
+
+
+      const path = await resolvePostLoginPath(loggedInUser.role, access_token);
+      navigate(path);
+
+    } catch (error) {
+      console.error("Google Login error:", error);
+      
+      if (
+        axios.isAxiosError(error) && 
+        error.response?.status === 400 && 
+        error.response?.data?.message === "Please select your role before signing up."
+      ) {
+        toast.error("Account Not Found", {
+          description: "Please create an account and select your role first.",
+          style: { background: "#800000", color: "white", border: "2px solid #FFD700", fontSize: "16px" },
+          classNames: { title: "text-xl font-bold text-white", description: "text-base text-white" },
+        });
+        navigate("/signup");
+      } else {
+        toast.error("Google Login Failed", {
+          description: axios.isAxiosError(error) ? error.response?.data?.message || error.message : "Unable to authenticate with Google.",
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,15 +116,15 @@ const Login = () => {
     setIsLoading(true);
     try {
       const response = await apiClient.post("/auth/sign-in", {
-        ...formData,
-        rememberMe,
+        email: formData.email,
+        password: formData.password,
       });
       const { access_token, user } = response.data.data;
 
       // Set full user data in auth context
       setAuth(access_token, user);
 
-      trackLogin(formData.role);
+      trackLogin(user.role);
 
       toast.success("Login Successful!", {
         description: "Welcome back to the NSUT Alumni Portal 🎉",
@@ -183,7 +225,10 @@ const Login = () => {
 
       {/* Right Column: Form */}
       <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
-        <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm">
+        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go back">
+          <ArrowLeft className="h-6 w-6 text-red-600" />
+        </button>
+        <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go home">
           <Home className="h-6 w-6 text-red-600" />
         </Link>
         {/* Subtle Pattern Background */}
@@ -223,19 +268,18 @@ const Login = () => {
             <div className="space-y-4 rounded-md">
               {/* Role */}
               <div className="space-y-2">
-                <Label htmlFor="role" className="text-base">I am a...</Label>
-                <div className="relative">
-                  <Briefcase className="absolute left-3 top-3 h-5 w-5 text-gray-400 z-10" />
-                  <Select onValueChange={(value) => handleInputChange("role", value)} defaultValue={formData.role}>
-                    <SelectTrigger id="role" className="pl-10 h-12 text-base">
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="alumni">Alumni</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Label id="role-label" className="text-base">I am a...</Label>
+                <SegmentedToggle
+                  label="I am a..."
+                  value={formData.role}
+                  onChange={(value) => handleInputChange("role", value)}
+                  options={[
+                    { value: "student", label: "Student", icon: GraduationCap },
+                    { value: "alumni", label: "Alumni", icon: Users },
+                    { value: "faculty", label: "Faculty", icon: Briefcase },
+                  ]}
+                  className="w-full"
+                />
               </div>
 
               {/* Email */}
@@ -246,7 +290,7 @@ const Login = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder={formData.role === "student" ? "Your student email ending with @nsut.ac.in" : "your.email@example.com"}
+                    placeholder={["student", "faculty"].includes(formData.role) ? "Your NSUT email ending with @nsut.ac.in" : "your.email@example.com"}
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     className={`pl-10 h-12 text-base ${errors.email ? "border-red-500" : ""}`}
@@ -281,19 +325,7 @@ const Login = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-nsut-maroon focus:ring-nsut-maroon"
-                />
-                <Label htmlFor="remember-me" className="ml-2 block text-base text-gray-900">
-                  Remember me
-                </Label>
-              </div>
+              <div></div>
               <div className="text-base">
                 <Link to="/forgot-password" className="font-medium text-nsut-maroon hover:text-nsut-maroon/80">
                   Forgot your password?
@@ -315,6 +347,29 @@ const Login = () => {
                 "Sign In"
               )}
             </Button>
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-gray-50 px-2 text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            {/* Google Button */}
+            <div className="flex justify-center w-full mt-4">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => {
+                  toast.error("Google Login Failed", {
+                    description: "Something went wrong while communicating with Google.",
+                  });
+                }}
+                useOneTap
+              />
+            </div>
+
           </form>
         </div>
       </div>

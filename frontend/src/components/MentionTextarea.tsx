@@ -18,13 +18,13 @@ interface MentionUser {
   type: "user";
   _id: string;
   name: string;
-  role: "alumni" | "student";
+  role: "alumni" | "student" | "faculty";
   profile_picture: string | null;
 }
 
 interface SpecialMention {
   type: "special";
-  name: "All" | "Alumni" | "Student";
+  name: "All" | "Alumni" | "Student" | "Faculty";
   description: string;
 }
 
@@ -34,6 +34,7 @@ const SPECIAL_MENTIONS: SpecialMention[] = [
   { type: "special", name: "All", description: "Email all users" },
   { type: "special", name: "Alumni", description: "Email all alumni" },
   { type: "special", name: "Student", description: "Email all students" },
+  { type: "special", name: "Faculty", description: "Email all faculty" },
 ];
 
 interface MentionTextareaProps
@@ -223,7 +224,7 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
       const match = textBeforeCursor.match(/@([A-Za-z0-9_.' -]{0,30})$/);
 
       const isCompletedSpecialMention =
-        enableSpecialMentions && /^@(All|Alumni|Student)\s/i.test(match?.[0] || "");
+        enableSpecialMentions && /^@(All|Alumni|Student|Faculty)\s/i.test(match?.[0] || "");
 
       if (match && !isCompletedSpecialMention) {
         const q = match[1];

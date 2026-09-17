@@ -17,13 +17,14 @@ interface QuickAction {
   icon: LucideIcon;
 }
 
-// Two of the three tiles are capability-dependent: only alumni may host events,
-// and only alumni/admins may publish posts. Rather than leave gaps — or send
-// students to a page that turns them away — the grid substitutes an action
-// they can actually take, so it is always three tiles wide.
+// Two of the three tiles are capability-dependent: only alumni and faculty
+// may host events, and only alumni/faculty/admins may publish posts. Rather
+// than leave gaps — or send students to a page that turns them away — the
+// grid substitutes an action they can actually take, so it is always three
+// tiles wide.
 const actionsFor = (role?: string): QuickAction[] => {
-  const canHost = role === "alumni";
-  const canPost = role === "alumni" || role === "admin";
+  const canHost = role === "alumni" || role === "faculty";
+  const canPost = ["alumni", "admin", "faculty"].includes(role ?? "");
 
   return [
     { to: "/dashboard/update-profile", label: "Update Profile", icon: UserPen },

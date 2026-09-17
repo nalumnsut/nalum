@@ -148,10 +148,12 @@ You need to create 3 files — none of them are committed to the repo (see
 ```bash
 cp frontend/.env.example frontend/.env
 ```
-The example values already work as-is, no changes needed:
 ```
 VITE_API_URL_DEV=http://localhost:2478
 VITE_API_URL_PROD=http://localhost
+
+# Google OAuth
+VITE_GOOGLE_CLIENT_ID=983561314165-1hjbdmabr1q61nrbljt1iv99ldjr84dd.apps.googleusercontent.com
 ```
 
 ### File 2 of 3 — `backend/.env`
@@ -166,6 +168,9 @@ NODE_ENV=development
 DEBUG_MAIL=true
 JWT_SECRET=dev-secret-change-me
 JWT_EXPIRES_IN=7d
+
+# Google OAuth
+GOOGLE_CLIENT_ID=983561314165-1hjbdmabr1q61nrbljt1iv99ldjr84dd.apps.googleusercontent.com
 
 # Leave blank — Docker sets these directly, whatever you put here is ignored
 PORT=
@@ -189,6 +194,8 @@ BREVO_SMTP_PASS=
 VAPID_PUBLIC_KEY=
 VAPID_PRIVATE_KEY=
 ```
+
+If Google Sign-In isn't working, generate your own key from https://console.cloud.google.com/.
 
 ### File 3 of 3 — `docker-compose.override.yml`
 
@@ -344,3 +351,6 @@ still fails. Real Neon credentials are never needed locally for this.
 **First `npm run dev:up` after cloning feels slow.**
 Normal — it's building images and installing dependencies for the first time.
 Every run after that is fast.
+
+**Google Sign-In isn't working.**
+Generate your own key from https://console.cloud.google.com/.
