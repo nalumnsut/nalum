@@ -1,0 +1,4 @@
+.contribution-paper { background-color: #fffaf2; background-image: url("/Communities/Clubs/NSUTIIF.jpeg"); background-position: right bottom; background-repeat: no-repeat; background-size: 48% auto; }
+.contribution-paper::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: rgba(255, 250, 242, 0.78); }
+@media (max-width: 480px) { .contribution-paper { background-size: 70% auto; } }
+@media (prefers-reduced-motion: reduce) { .contribution-dialog, .contribution-dialog * { animation: none !important; transition: none !important; } }

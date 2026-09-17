@@ -17,6 +17,7 @@ import { useLocation } from "react-router-dom";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { AxiosError } from "axios";
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { ContributionPopup } from "@/components/ContributionPopup";
 
 
 const queryClient = new QueryClient({
@@ -55,6 +56,7 @@ function AppContent() {
       )}
       <TooltipProvider>
         <AppRoutes />
+        <ContributionPopup ready={!showIntro} />
         <Toaster />
       </TooltipProvider>
     </>
