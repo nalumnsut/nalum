@@ -14,10 +14,10 @@ describe("ContributionPopup", () => {
     window.sessionStorage.clear();
   });
 
-  it("waits seven seconds before opening and does not auto-close", () => {
+  it("waits two seconds before opening and does not auto-close", () => {
     render(<ContributionPopup ready />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    act(() => vi.advanceTimersByTime(6999));
+    act(() => vi.advanceTimersByTime(1999));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     act(() => vi.advanceTimersByTime(1));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -27,21 +27,21 @@ describe("ContributionPopup", () => {
 
   it("dismisses with Maybe Later, close, and Escape", () => {
     const { unmount } = render(<ContributionPopup ready />);
-    act(() => vi.advanceTimersByTime(7000));
+    act(() => vi.advanceTimersByTime(2000));
     fireEvent.click(screen.getByRole("button", { name: "Maybe Later" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY)).toBe("true");
 
     window.sessionStorage.clear();
     const second = render(<ContributionPopup ready />);
-    act(() => vi.advanceTimersByTime(7000));
+    act(() => vi.advanceTimersByTime(2000));
     fireEvent.click(screen.getByRole("button", { name: /close/i }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     second.unmount();
 
     window.sessionStorage.clear();
     render(<ContributionPopup ready />);
-    act(() => vi.advanceTimersByTime(7000));
+    act(() => vi.advanceTimersByTime(2000));
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     unmount();
@@ -50,14 +50,14 @@ describe("ContributionPopup", () => {
   it("does not reopen after the session has been dismissed and cleans up timers", () => {
     window.sessionStorage.setItem(CONTRIBUTION_POPUP_DISMISSED_KEY, "true");
     const { unmount } = render(<ContributionPopup ready />);
-    act(() => vi.advanceTimersByTime(7000));
+    act(() => vi.advanceTimersByTime(2000));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     unmount();
 
     const setTimeoutSpy = vi.spyOn(window, "setTimeout");
     const instance = render(<ContributionPopup ready />);
     instance.unmount();
-    act(() => vi.advanceTimersByTime(7000));
+    act(() => vi.advanceTimersByTime(2000));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(setTimeoutSpy).not.toHaveBeenCalled();
   });
@@ -65,7 +65,7 @@ describe("ContributionPopup", () => {
   it("does not render on admin routes", () => {
     window.history.pushState({}, "", "/admin-panel/dashboard");
     render(<ContributionPopup ready />);
-    act(() => vi.advanceTimersByTime(7000));
+    act(() => vi.advanceTimersByTime(2000));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     window.history.pushState({}, "", "/");
   });
