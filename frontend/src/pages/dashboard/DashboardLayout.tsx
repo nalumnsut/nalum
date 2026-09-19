@@ -9,12 +9,14 @@ import { cn } from "@/lib/utils";
 import { Home, Users, Calendar, MessageSquare, FileText } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { Suspense, useEffect } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
 import { useChatContext } from "@/context/ChatContext";
 import { useConversations } from "@/hooks/useConversations";
 import { useLocationGuard } from "@/hooks/useLocationGuard";
 import { PreloadLink } from "@/components/PreloadLink";
+import { ContributionPopup } from "@/components/ContributionPopup";
+import { ContributionPopupProvider } from "@/context/ContributionPopupContext";
 
 const DashboardContent = () => {
   const location = useLocation();
@@ -25,7 +27,10 @@ const DashboardContent = () => {
   const { socket } = useChatContext();
   const queryClient = useQueryClient();
   const { conversations } = useConversations();
-  const unreadMessageCount = conversations.reduce((acc: number, conv: any) => acc + (conv.unreadCount || 0), 0);
+  const unreadMessageCount = conversations.reduce(
+    (acc: number, conv: { unreadCount?: number }) => acc + (conv.unreadCount || 0),
+    0,
+  );
 
   // Enforce profile completion and location
   useLocationGuard();
@@ -47,7 +52,7 @@ const DashboardContent = () => {
     return () => {
       socket.off("connection_request", handleConnectionRequest);
     };
-  }, [socket, queryClient]);
+  }, [socket, queryClient, user?.id]);
 
   const hasPendingRequests = pendingRequests.length > 0;
 
@@ -178,15 +183,23 @@ const DashboardContent = () => {
 };
 
 const DashboardLayout = () => {
+  const [popupOpenRequest, setPopupOpenRequest] = useState(0);
+  const openContributionPopup = useCallback(() => {
+    setPopupOpenRequest((request) => request + 1);
+  }, []);
+
   return (
     // `reducedMotion="user"` is the single opt-out for every animation under
     // /dashboard: when the OS asks for reduced motion, framer drops transforms
     // and keeps opacity, so nothing individual components do needs to check.
     <MotionConfig reducedMotion="user">
-      <ProfileProvider>
-        <DashboardContent />
-        <PWAInstallPrompt />
-      </ProfileProvider>
+      <ContributionPopupProvider onOpen={openContributionPopup}>
+        <ProfileProvider>
+          <DashboardContent />
+          <PWAInstallPrompt />
+          <ContributionPopup openRequest={popupOpenRequest} />
+        </ProfileProvider>
+      </ContributionPopupProvider>
     </MotionConfig>
   );
 };

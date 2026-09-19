@@ -19,7 +19,6 @@ export const loadLearningPage = () => import("@/pages/benefits/learning");
 export const loadCareerPage = () => import("@/pages/benefits/career");
 export const loadAlumniDirectoryHome = () =>
   import("@/pages/benefits/alumniDirectoryHome");
-export const loadGivingHome = () => import("@/pages/benefits/givingHome");
 export const loadAttendAnEvent = () => import("@/pages/events/attendAnEvent");
 export const loadEventsHome = () => import("@/pages/events/EventsHome");
 export const loadExploreCommunities = () =>
@@ -61,7 +60,6 @@ export const loadPostEditor = () => import("@/pages/dashboard/PostEditor");
 export const loadViewPost = () => import("@/pages/dashboard/ViewPost");
 export const loadResources = () => import("@/pages/dashboard/Resources");
 export const loadQueries = () => import("@/pages/dashboard/Queries");
-export const loadGiving = () => import("@/pages/dashboard/Giving");
 export const loadMobileNotifications = () =>
   import("@/pages/dashboard/MobileNotifications");
 export const loadChangePassword = () =>

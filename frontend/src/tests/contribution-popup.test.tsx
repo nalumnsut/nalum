@@ -24,19 +24,19 @@ describe("ContributionPopup", () => {
   });
 
   it("is initially absent", () => {
-    render(<ContributionPopup ready pathname="/" />);
+    render(<ContributionPopup ready />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("opens one second after the homepage becomes ready", () => {
+  it("opens one second after its public page becomes ready", () => {
     const { rerender } = render(
-      <ContributionPopup ready={false} pathname="/" />,
+      <ContributionPopup ready={false} />,
     );
 
     act(() => vi.advanceTimersByTime(1000));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-    rerender(<ContributionPopup ready pathname="/" />);
+    rerender(<ContributionPopup ready />);
     act(() => vi.advanceTimersByTime(999));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     act(() => vi.advanceTimersByTime(1));
@@ -48,25 +48,60 @@ describe("ContributionPopup", () => {
   });
 
   it("does not close automatically", () => {
-    render(<ContributionPopup ready pathname="/" />);
+    render(<ContributionPopup ready />);
     openPopup();
     act(() => vi.advanceTimersByTime(60000));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("Maybe Later dismisses it and records the session dismissal", () => {
-    render(<ContributionPopup ready pathname="/" />);
+  it("records the popup as shown as soon as it opens", () => {
+    render(<ContributionPopup ready />);
     openPopup();
-    fireEvent.click(screen.getByRole("button", { name: "Maybe Later" }));
 
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(sessionStorage.getItem(CONTRIBUTION_POPUP_DISMISSED_KEY)).toBe(
       CONTRIBUTION_POPUP_DISMISSED_VALUE,
     );
   });
 
+  it("keeps the contribution email actionable", () => {
+    render(<ContributionPopup ready />);
+    openPopup();
+
+    expect(
+      screen.getByRole("link", { name: "alumni@nsut.ac.in" }),
+    ).toHaveAttribute("href", "mailto:alumni@nsut.ac.in");
+  });
+
+  it("shows the student-built hosting support message", () => {
+    render(<ContributionPopup ready />);
+    openPopup();
+
+    expect(
+      screen.getByText(/built entirely by NSUT students/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/sustain the recurring server expenses/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/We now need/)).not.toBeInTheDocument();
+  });
+
+  it("turns the support heart on when clicked", () => {
+    render(<ContributionPopup ready />);
+    openPopup();
+
+    const supportButton = screen.getByRole("button", { name: "Support NALUM" });
+    expect(supportButton).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(supportButton);
+
+    expect(screen.getByRole("button", { name: "Remove support" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
   it("the close button dismisses it", () => {
-    render(<ContributionPopup ready pathname="/" />);
+    render(<ContributionPopup ready />);
     openPopup();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
 
@@ -77,7 +112,7 @@ describe("ContributionPopup", () => {
   });
 
   it("Escape dismisses it", () => {
-    render(<ContributionPopup ready pathname="/" />);
+    render(<ContributionPopup ready />);
     openPopup();
     fireEvent.keyDown(document, { key: "Escape" });
 
@@ -92,7 +127,7 @@ describe("ContributionPopup", () => {
       CONTRIBUTION_POPUP_DISMISSED_KEY,
       CONTRIBUTION_POPUP_DISMISSED_VALUE,
     );
-    render(<ContributionPopup ready pathname="/" />);
+    render(<ContributionPopup ready />);
     openPopup();
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -100,7 +135,7 @@ describe("ContributionPopup", () => {
 
   it("clears the pending timer when unmounted", () => {
     const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
-    const { unmount } = render(<ContributionPopup ready pathname="/" />);
+    const { unmount } = render(<ContributionPopup ready />);
     unmount();
 
     expect(clearTimeoutSpy).toHaveBeenCalledTimes(1);
@@ -108,22 +143,36 @@ describe("ContributionPopup", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("does not render on admin routes", () => {
-    render(<ContributionPopup ready pathname="/admin-panel/dashboard" />);
-    openPopup();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("renders on the authenticated dashboard home", () => {
-    render(<ContributionPopup ready pathname="/dashboard" />);
+  it("auto-opens wherever the public layout mounts it", () => {
+    render(<ContributionPopup ready />);
     openPopup();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("cancels a pending homepage popup after route navigation", () => {
-    const { rerender } = render(<ContributionPopup ready pathname="/" />);
+  it("can be reopened manually after the automatic session display", () => {
+    const { rerender } = render(<ContributionPopup ready openRequest={0} />);
+    openPopup();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+
+    rerender(<ContributionPopup ready openRequest={1} />);
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("does not auto-open again after an early manual open is closed", () => {
+    const { rerender } = render(<ContributionPopup ready openRequest={0} />);
+
+    rerender(<ContributionPopup ready openRequest={1} />);
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    act(() => vi.advanceTimersByTime(1000));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("cancels a pending popup when the public layout stops being ready", () => {
+    const { rerender } = render(<ContributionPopup ready />);
     act(() => vi.advanceTimersByTime(500));
-    rerender(<ContributionPopup ready pathname="/admin-panel/dashboard" />);
+    rerender(<ContributionPopup ready={false} />);
     act(() => vi.advanceTimersByTime(500));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
