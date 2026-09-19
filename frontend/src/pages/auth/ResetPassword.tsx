@@ -90,16 +90,6 @@ const ResetPassword = () => {
       setResetSuccess(true);
       toast.success("Password Reset Successful!", {
         description: "Your password has been reset. You can now sign in.",
-        style: {
-          background: "#800000",
-          color: "white",
-          border: "2px solid #FFD700",
-          fontSize: "16px",
-        },
-        classNames: {
-          title: "text-xl font-bold text-white",
-          description: "text-base text-white",
-        },
       });
 
       // Redirect to login after 3 seconds
@@ -115,23 +105,11 @@ const ResetPassword = () => {
         if (errorMessage.includes("expired") || errorMessage.includes("Invalid")) {
           toast.error("Reset Link Expired", {
             description: "This password reset link has expired. Please request a new one.",
-            style: {
-              background: "#800000",
-              color: "white",
-              border: "2px solid #FFD700",
-              fontSize: "16px",
-            },
           });
           setTokenError(true);
         } else {
           toast.error("Reset Failed", {
             description: errorMessage,
-            style: {
-              background: "#800000",
-              color: "white",
-              border: "2px solid #FFD700",
-              fontSize: "16px",
-            },
           });
         }
       }

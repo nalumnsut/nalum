@@ -636,7 +636,7 @@ const UpdateProfile = () => {
   };
 
   // Soft-deletes the account server-side and cascades to the user's posts,
-  // comments, events, givings and queries. The typed confirmation is the only
+  // comments, events, contributions and queries. The typed confirmation is the only
   // guard, so the request is gated on it here as well as on the button.
   const handleDeactivateAccount = async () => {
     if (deactivateConfirmation !== "DELETE") return;
@@ -1578,7 +1578,7 @@ const UpdateProfile = () => {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-body-sm text-muted-foreground max-w-2xl">
               Deactivating your account removes your posts, comments, events,
-              givings and queries from the network. This cannot be easily undone.
+              contributions and queries from the network. This cannot be easily undone.
             </p>
             <Button
               type="button"
@@ -1607,7 +1607,7 @@ const UpdateProfile = () => {
             <AlertDialogTitle>Deactivate account?</AlertDialogTitle>
             <AlertDialogDescription>
               This deactivates your account and removes your posts, comments,
-              events, givings and queries. Type{" "}
+              events, contributions and queries. Type{" "}
               <span className="font-semibold text-destructive">DELETE</span> to
               confirm.
             </AlertDialogDescription>

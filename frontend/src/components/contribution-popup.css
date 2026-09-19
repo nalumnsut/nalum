@@ -1,0 +1,422 @@
+.contribution-dialog {
+  box-sizing: border-box;
+  display: block !important;
+  left: max(12px, calc((100vw - 600px) / 2)) !important;
+  right: max(12px, calc((100vw - 600px) / 2)) !important;
+  width: auto !important;
+  max-width: none !important;
+  max-height: calc(100dvh - 24px) !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+  transform: translateY(-50%) !important;
+}
+
+.contribution-paper {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: calc(100dvh - 24px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: #fbf4e9;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(174 72 25 / 35%) transparent;
+}
+
+.contribution-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+
+.contribution-content {
+  width: min(82%, 470px);
+  margin: 0 auto;
+  padding: clamp(44px, 7dvh, 62px) 0 clamp(22px, 4dvh, 32px);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.contribution-kicker {
+  color: #2d2926;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(17px, 2.1vw, 21px);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.contribution-heading {
+  margin-top: clamp(6px, 1.2dvh, 10px);
+  color: #ad451c;
+  font-size: clamp(22px, 2.7vw, 28px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.contribution-accent {
+  width: 37px;
+  height: 2px;
+  margin: clamp(9px, 1.7dvh, 13px) auto clamp(10px, 1.8dvh, 14px);
+  border-radius: 999px;
+  background: #bd602c;
+}
+
+.contribution-description {
+  color: #37302c;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(13px, 1.6vw, 16px);
+  line-height: 1.35;
+}
+
+.contribution-forward {
+  margin-top: 20px;
+  color: #a9401b;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.contribution-support {
+  display: flex;
+  align-items: center;
+  min-height: clamp(88px, 13dvh, 108px);
+  width: min(100%, 385px);
+  margin: clamp(12px, 2.2dvh, 18px) auto 0;
+  padding: clamp(10px, 1.8dvh, 14px) clamp(12px, 2vw, 18px);
+  border-radius: 11px;
+  background: rgb(248 221 195 / 67%);
+  color: #463b34;
+  text-align: left;
+}
+
+.contribution-support p {
+  color: #392d26;
+  font-size: clamp(11.5px, 1.3vw, 13px);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.contribution-support-copy {
+  flex: 1;
+}
+
+.contribution-support-button {
+  display: inline-flex;
+  flex: 0 0 49px;
+  width: 49px;
+  height: 49px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #bc521f;
+  cursor: pointer;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.contribution-support-button:hover {
+  background: rgb(185 71 25 / 10%);
+}
+
+.contribution-support-button:active {
+  transform: scale(0.94);
+}
+
+.contribution-support-button svg {
+  width: 36px;
+  height: 36px;
+  stroke-width: 1.7;
+}
+
+.contribution-support-button svg path:last-child {
+  transition: fill 180ms ease, stroke 180ms ease;
+}
+
+.contribution-support-button[aria-pressed="true"] {
+  background: rgb(202 30 30 / 10%);
+}
+
+.contribution-support-button[aria-pressed="true"] svg path:last-child {
+  fill: #cf2027;
+  stroke: #cf2027;
+}
+
+.contribution-support-divider {
+  width: 1px;
+  height: 58px;
+  margin: 0 16px 0 4px;
+  background: rgb(176 91 47 / 40%);
+}
+
+.contribution-request {
+  width: min(100%, 410px);
+  margin: clamp(12px, 1.8dvh, 16px) auto 0;
+  color: #a6401d;
+  font-size: clamp(13px, 1.45vw, 15px);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.contribution-rule {
+  width: 222px;
+  height: 1px;
+  margin: clamp(10px, 1.8dvh, 15px) auto;
+  background: rgb(128 87 62 / 18%);
+}
+
+.contribution-contact-label {
+  color: #332d29;
+  font-size: clamp(11px, 1.3vw, 13px);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.contribution-contact-name {
+  margin-top: clamp(5px, 1.1dvh, 9px);
+  color: #a6401d;
+  font-size: clamp(14px, 1.6vw, 16px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.contribution-contact-role {
+  margin-top: 2px;
+  color: #3e3732;
+  font-size: clamp(10px, 1.2vw, 12px);
+  line-height: 1.25;
+}
+
+.contribution-phone {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  border-radius: 6px;
+  padding: 2px 6px;
+  color: #352d28;
+  font-size: clamp(13px, 1.5vw, 15px);
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.contribution-phone span {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #b94719;
+  color: #fff8ee;
+}
+
+.contribution-phone svg {
+  width: 11px;
+  height: 11px;
+  fill: currentColor;
+  stroke-width: 1.5;
+}
+
+.contribution-phone:hover {
+  color: #9b3714;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.contribution-close {
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 3;
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% !important;
+  background: rgb(225 224 221 / 82%) !important;
+  color: #5e5f60 !important;
+  opacity: 1 !important;
+}
+
+.contribution-close:hover {
+  background: rgb(213 211 207 / 95%) !important;
+  color: #363636 !important;
+}
+
+.contribution-close svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.25;
+}
+
+.contribution-dialog :focus-visible {
+  outline: 2px solid #990000 !important;
+  outline-offset: 2px;
+  box-shadow: none !important;
+}
+
+@media (max-width: 640px) {
+  .contribution-dialog {
+    left: max(6px, env(safe-area-inset-left)) !important;
+    right: max(6px, env(safe-area-inset-right)) !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 12px) !important;
+    transform: translateY(-50%) !important;
+    border-radius: 8px !important;
+  }
+
+  .contribution-paper {
+    width: 100%;
+    max-height: calc(100dvh - 14px);
+  }
+
+  .contribution-content {
+    box-sizing: border-box;
+    width: 88%;
+    max-width: 100%;
+    padding: clamp(38px, 6dvh, 46px) 0 clamp(18px, 3dvh, 23px);
+  }
+
+  .contribution-kicker {
+    font-size: 16px;
+  }
+
+  .contribution-heading {
+    margin-top: 5px;
+    font-size: 21px;
+    overflow-wrap: anywhere;
+  }
+
+  .contribution-accent {
+    margin-top: 9px;
+    margin-bottom: 10px;
+  }
+
+  .contribution-description {
+    font-size: 13px;
+  }
+
+  .contribution-forward {
+    margin-top: 8px;
+    font-size: 17px;
+  }
+
+  .contribution-support {
+    box-sizing: border-box;
+    min-height: 0;
+    width: 100%;
+    margin-top: 11px;
+    padding: 8px 12px;
+  }
+
+  .contribution-support p {
+    font-size: 11px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .contribution-support-button {
+    flex-basis: 39px;
+    width: 39px;
+    height: 44px;
+  }
+
+  .contribution-support-button svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .contribution-support-divider {
+    height: 58px;
+    margin-right: 11px;
+  }
+
+  .contribution-request {
+    margin-top: 10px;
+    font-size: 12px;
+  }
+
+  .contribution-rule {
+    width: 58%;
+    margin-top: 11px;
+    margin-bottom: 10px;
+  }
+
+  .contribution-contact-label {
+    font-size: 11px;
+  }
+
+  .contribution-contact-name {
+    margin-top: 4px;
+    font-size: 14px;
+  }
+
+  .contribution-contact-role {
+    font-size: 10px;
+  }
+
+  .contribution-phone {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .contribution-content {
+    width: 91%;
+  }
+
+  .contribution-support {
+    padding-inline: 8px;
+  }
+
+  .contribution-support-button {
+    flex-basis: 34px;
+    width: 34px;
+  }
+
+  .contribution-support-button svg {
+    width: 27px;
+    height: 27px;
+  }
+
+  .contribution-support-divider {
+    margin-left: 2px;
+    margin-right: 8px;
+  }
+
+  .contribution-support p {
+    font-size: 10.5px;
+  }
+}
+
+@media (max-height: 620px) {
+  .contribution-content {
+    padding-top: 38px;
+    padding-bottom: 18px;
+  }
+
+  .contribution-support {
+    margin-top: 10px;
+  }
+
+  .contribution-rule {
+    margin-block: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contribution-dialog,
+  .contribution-dialog * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

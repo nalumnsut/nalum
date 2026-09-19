@@ -57,16 +57,6 @@ const ForgotPassword = () => {
       setEmailSent(true);
       toast.success("Reset Link Sent!", {
         description: "Check your email for the password reset link.",
-        style: {
-          background: "#800000",
-          color: "white",
-          border: "2px solid #FFD700",
-          fontSize: "16px",
-        },
-        classNames: {
-          title: "text-xl font-bold text-white",
-          description: "text-base text-white",
-        },
       });
     } catch (error) {
       console.error("Forgot password error:", error);
@@ -76,16 +66,6 @@ const ForgotPassword = () => {
       setEmailSent(true);
       toast.success("Reset Link Sent!", {
         description: "If this email exists in our system, you'll receive a reset link.",
-        style: {
-          background: "#800000",
-          color: "white",
-          border: "2px solid #FFD700",
-          fontSize: "16px",
-        },
-        classNames: {
-          title: "text-xl font-bold text-white",
-          description: "text-base text-white",
-        },
       });
     } finally {
       setIsLoading(false);

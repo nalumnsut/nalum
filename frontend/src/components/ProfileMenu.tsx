@@ -1,11 +1,10 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { PreloadLink } from "@/components/PreloadLink";
 import { X, FileText, Calendar, HelpCircle, Heart, LogOut, Settings } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import { useProfile } from "@/context/ProfileContext";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
+import { useContributionPopup } from "@/context/ContributionPopupContext";
 
 interface ProfileMenuProps {
   isOpen: boolean;
@@ -14,14 +13,15 @@ interface ProfileMenuProps {
 
 const ProfileMenu = ({ isOpen, onClose }: ProfileMenuProps) => {
   const { profile } = useProfile();
-  const { logout } = useAuth();
-  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+  const openContributionPopup = useContributionPopup();
   
   if (!profile?.user) return null;
 
   const canCreate = ["alumni", "faculty", "admin"].includes(
-    (profile.user as any)?.role ?? ""
+    user?.role ?? profile.user.role ?? ""
   );
+  const isAlumni = (user?.role ?? profile.user.role) === "alumni";
 
   const menuItems = [
     {
@@ -44,13 +44,6 @@ const ProfileMenu = ({ isOpen, onClose }: ProfileMenuProps) => {
       href: "/dashboard/queries",
       show: true,
       description: "Ask questions",
-    },
-    {
-      icon: Heart,
-      label: "Giving",
-      href: "/dashboard/giving",
-      show: true,
-      description: "Support NSUT",
     },
   ];
 
@@ -156,6 +149,22 @@ const ProfileMenu = ({ isOpen, onClose }: ProfileMenuProps) => {
                 </PreloadLink>
               );
             })}
+            {isAlumni && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  openContributionPopup();
+                }}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-all group"
+              >
+                <Heart className="h-5 w-5 text-gray-400 group-hover:text-blue-400 transition-colors flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium">Contribute</div>
+                  <div className="text-xs text-gray-500">Support NSUT</div>
+                </div>
+              </button>
+            )}
           </nav>
 
           {/* Logout Button */}
