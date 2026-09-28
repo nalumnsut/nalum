@@ -344,3 +344,16 @@ still fails. Real Neon credentials are never needed locally for this.
 **First `npm run dev:up` after cloning feels slow.**
 Normal — it's building images and installing dependencies for the first time.
 Every run after that is fast.
+
+---
+
+## PR Database Isolation
+
+Every Pull Request automatically gets its own isolated MongoDB database
+(`nalum_pr_<PR_NUMBER>`), managed by GitHub Actions. The database is created and
+seeded when the PR is opened, reused across commits, and dropped when the PR is
+closed or merged.
+
+For full details — including required secrets, MongoDB Atlas setup, how seeding
+works, and how to troubleshoot — see
+[docs/PR_DATABASE_ISOLATION.md](docs/PR_DATABASE_ISOLATION.md).

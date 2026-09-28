@@ -1,0 +1,315 @@
+name: PR Database Lifecycle
+
+# Manages per-PR MongoDB databases:
+# - opened/reopened: create DB + seed + set Vercel env var
+# - synchronize: reuse existing DB + re-run seed (idempotent)
+# - closed: drop DB + remove Vercel env var
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  contents: read
+  pull-requests: write  # Needed to post PR comments
+
+concurrency:
+  group: pr-database-${{ github.event.pull_request.number }}
+  cancel-in-progress: false  # Don't cancel DB operations mid-flight
+
+env:
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  DB_NAME: nalum_pr_${{ github.event.pull_request.number }}
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────
+  # JOB 1: Create/seed the PR database (on open, reopen, or push)
+  # ───────────────────────────────────────────────────────────────────
+  setup-pr-database:
+    name: Setup PR Database
+    if: >-
+      github.event.action == 'opened' ||
+      github.event.action == 'reopened' ||
+      github.event.action == 'synchronize'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Build PR-specific MONGODB_URI
+        id: build-uri
+        run: |
+          # Take the base Atlas URI and replace/append the PR database name.
+          # MONGODB_ATLAS_URI should be in the form:
+          #   mongodb+srv://user:pass@cluster.mongodb.net
+          # or:
+          #   mongodb+srv://user:pass@cluster.mongodb.net/somedb
+          #
+          # We strip any existing DB name and append the PR-specific one.
+
+          BASE_URI="${{ secrets.MONGODB_ATLAS_URI }}"
+
+          if [ -z "$BASE_URI" ]; then
+            echo "❌ MONGODB_ATLAS_URI secret is not set"
+            exit 1
+          fi
+
+          # Remove trailing slash if present
+          BASE_URI="${BASE_URI%/}"
+
+          # Check if URI already has a database name (path component after the host)
+          # For mongodb+srv:// URIs, the path comes after the host
+          if echo "$BASE_URI" | grep -qP '\.net/[^?]+'; then
+            # Has a DB name — replace it
+            PR_URI=$(echo "$BASE_URI" | sed -E 's|(\.net)/[^?]*|\1/'"${{ env.DB_NAME }}"'|')
+          elif echo "$BASE_URI" | grep -qP '\.net\?'; then
+            # Has query params but no DB name — insert DB name before ?
+            PR_URI=$(echo "$BASE_URI" | sed -E 's|(\.net)\?|\1/'"${{ env.DB_NAME }}"'?|')
+          else
+            # No DB name and no query params — just append
+            PR_URI="${BASE_URI}/${{ env.DB_NAME }}"
+          fi
+
+          # If the URI has query params, ensure retryWrites and w are set
+          if echo "$PR_URI" | grep -q '?'; then
+            echo "PR_MONGODB_URI=${PR_URI}" >> "$GITHUB_OUTPUT"
+          else
+            echo "PR_MONGODB_URI=${PR_URI}?retryWrites=true&w=majority" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "✅ PR MongoDB URI constructed for database: ${{ env.DB_NAME }}"
+
+      # For opened/reopened: create the database
+      - name: Create PR database
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        working-directory: ./backend
+        env:
+          MONGODB_URI: ${{ steps.build-uri.outputs.PR_MONGODB_URI }}
+        run: node scripts/pr-db-manage.js create
+
+      # For synchronize: just verify the database exists
+      - name: Verify PR database exists
+        if: github.event.action == 'synchronize'
+        working-directory: ./backend
+        env:
+          MONGODB_URI: ${{ steps.build-uri.outputs.PR_MONGODB_URI }}
+        run: node scripts/pr-db-manage.js verify
+
+      # Always run seed (idempotent — safe on every push)
+      - name: Seed PR database
+        working-directory: ./backend
+        env:
+          MONGODB_URI: ${{ steps.build-uri.outputs.PR_MONGODB_URI }}
+        run: node scripts/seed/seed-mongo-only.js
+
+      # Set Vercel preview environment variable
+      - name: Set Vercel preview MONGODB_URI
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "⚠️  Vercel secrets not configured — skipping Vercel env var setup."
+            echo "   Set VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID to enable this."
+            exit 0
+          fi
+
+          npm install -g vercel@latest
+
+          # Set MONGODB_URI for preview deployments
+          echo "${{ steps.build-uri.outputs.PR_MONGODB_URI }}" | \
+            vercel env add MONGODB_URI preview \
+              --token "$VERCEL_TOKEN" \
+              --scope "$VERCEL_ORG_ID" \
+              2>/dev/null || \
+          echo "⚠️  MONGODB_URI may already be set for preview — updating..."
+
+          # If it already exists, remove and re-add
+          vercel env rm MONGODB_URI preview -y \
+            --token "$VERCEL_TOKEN" \
+            --scope "$VERCEL_ORG_ID" \
+            2>/dev/null || true
+
+          echo "${{ steps.build-uri.outputs.PR_MONGODB_URI }}" | \
+            vercel env add MONGODB_URI preview \
+              --token "$VERCEL_TOKEN" \
+              --scope "$VERCEL_ORG_ID"
+
+          echo "✅ Vercel preview MONGODB_URI set for ${{ env.DB_NAME }}"
+
+      # Post PR comment with database info
+      - name: Comment on PR
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const action = context.payload.action;
+            const dbName = '${{ env.DB_NAME }}';
+            const prNumber = ${{ env.PR_NUMBER }};
+
+            const body = [
+              `## 🗄️ PR Database Ready`,
+              ``,
+              `| Property | Value |`,
+              `|----------|-------|`,
+              `| **Database** | \`${dbName}\` |`,
+              `| **PR** | #${prNumber} |`,
+              `| **Action** | ${action} |`,
+              `| **Status** | ✅ Created & Seeded |`,
+              ``,
+              `### What's happening:`,
+              `- An isolated MongoDB database \`${dbName}\` has been created for this PR`,
+              `- Seed data (users, profiles, events, posts, connections) has been loaded`,
+              `- New commits to this PR will reuse the same database`,
+              `- The database will be automatically deleted when this PR is closed/merged`,
+              ``,
+              `> **Note**: The database is isolated — it cannot affect production or other PRs.`,
+            ].join('\n');
+
+            // Check for existing bot comment to update instead of creating a new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const botComment = comments.find(
+              (c) => c.user.type === 'Bot' && c.body.includes('PR Database')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
+
+  # ───────────────────────────────────────────────────────────────────
+  # JOB 2: Cleanup — drop the PR database when the PR is closed
+  # ───────────────────────────────────────────────────────────────────
+  cleanup-pr-database:
+    name: Cleanup PR Database
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Build PR-specific MONGODB_URI
+        id: build-uri
+        run: |
+          BASE_URI="${{ secrets.MONGODB_ATLAS_URI }}"
+
+          if [ -z "$BASE_URI" ]; then
+            echo "❌ MONGODB_ATLAS_URI secret is not set"
+            exit 1
+          fi
+
+          BASE_URI="${BASE_URI%/}"
+
+          if echo "$BASE_URI" | grep -qP '\.net/[^?]+'; then
+            PR_URI=$(echo "$BASE_URI" | sed -E 's|(\.net)/[^?]*|\1/'"${{ env.DB_NAME }}"'|')
+          elif echo "$BASE_URI" | grep -qP '\.net\?'; then
+            PR_URI=$(echo "$BASE_URI" | sed -E 's|(\.net)\?|\1/'"${{ env.DB_NAME }}"'?|')
+          else
+            PR_URI="${BASE_URI}/${{ env.DB_NAME }}"
+          fi
+
+          if echo "$PR_URI" | grep -q '?'; then
+            echo "PR_MONGODB_URI=${PR_URI}" >> "$GITHUB_OUTPUT"
+          else
+            echo "PR_MONGODB_URI=${PR_URI}?retryWrites=true&w=majority" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Drop PR database
+        working-directory: ./backend
+        env:
+          MONGODB_URI: ${{ steps.build-uri.outputs.PR_MONGODB_URI }}
+        run: node scripts/pr-db-manage.js drop
+
+      # Remove Vercel preview environment variable
+      - name: Remove Vercel preview MONGODB_URI
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "⚠️  Vercel secrets not configured — skipping Vercel env var removal."
+            exit 0
+          fi
+
+          npm install -g vercel@latest
+
+          vercel env rm MONGODB_URI preview -y \
+            --token "$VERCEL_TOKEN" \
+            --scope "$VERCEL_ORG_ID" \
+            2>/dev/null || true
+
+          echo "✅ Vercel preview MONGODB_URI removed"
+
+      # Post cleanup comment on PR
+      - name: Comment on PR (cleanup)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const dbName = '${{ env.DB_NAME }}';
+            const prNumber = ${{ env.PR_NUMBER }};
+            const merged = ${{ github.event.pull_request.merged }};
+
+            const body = [
+              `## 🧹 PR Database Cleaned Up`,
+              ``,
+              `| Property | Value |`,
+              `|----------|-------|`,
+              `| **Database** | \`${dbName}\` |`,
+              `| **PR** | #${prNumber} |`,
+              `| **Action** | ${merged ? 'Merged' : 'Closed'} |`,
+              `| **Status** | 🗑️ Dropped |`,
+              ``,
+              `The isolated database \`${dbName}\` has been deleted.`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body,
+            });
