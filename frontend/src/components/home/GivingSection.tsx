@@ -1,7 +1,8 @@
-import { Heart, Briefcase, Award, MessageSquare, BookOpen, ArrowRight, Lock } from 'lucide-react';
-import { PreloadLink } from "@/components/PreloadLink";
+import { Heart, Briefcase, Award, MessageSquare, BookOpen } from 'lucide-react';
+import { useContributionPopup } from "@/context/ContributionPopupContext";
 
 const GivingSection = () => {
+  const openContributionPopup = useContributionPopup();
   const contributionTypes = [
     {
       icon: Briefcase,
@@ -49,7 +50,7 @@ const GivingSection = () => {
           <div className="flex items-center justify-center gap-4 mb-4">
             <Heart className="w-10 h-10 text-nsut-maroon" />
             <h2 className="font-serif text-4xl md:text-5xl font-bold text-gray-900">
-              Giving Back to NSUT
+              Contributing Back to NSUT
             </h2>
           </div>
           <p className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed text-gray-600">
@@ -84,22 +85,15 @@ const GivingSection = () => {
         </div>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <PreloadLink
-            to="/login"
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={openContributionPopup}
             className="group bg-nsut-yellow hover:bg-nsut-yellow/90 text-nsut-maroon px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
           >
-            <Lock className="w-5 h-5" />
-            Login to Start Giving
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </PreloadLink>
-          <PreloadLink
-            to="/giving"
-            className="group bg-white hover:bg-gray-50 text-nsut-maroon border-2 border-nsut-maroon/30 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105"
-          >
-            Learn More
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </PreloadLink>
+            <Heart className="w-5 h-5" />
+            Contribute
+          </button>
         </div>
 
         {/* Trust indicator */}

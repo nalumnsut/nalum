@@ -15,6 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import { useConversations } from "@/hooks/useConversations";
 import { cn } from "@/lib/utils";
+import { useContributionPopup } from "@/context/ContributionPopupContext";
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -31,9 +32,10 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
   const { logout, user } = useAuth();
   const location = useLocation();
   const { conversations } = useConversations();
+  const openContributionPopup = useContributionPopup();
 
   const unreadCount = conversations.reduce(
-    (acc: number, conv: any) => acc + (conv.unreadCount || 0),
+    (acc: number, conv: { unreadCount?: number }) => acc + (conv.unreadCount || 0),
     0,
   );
 
@@ -105,14 +107,17 @@ const Sidebar = ({ onNavigate }: SidebarProps) => {
       {/* Footer */}
       <div className="p-4 border-t border-border space-y-3">
         {isAlumni && (
-          <PreloadLink
-            to="/dashboard/giving"
-            onClick={onNavigate}
+          <button
+            type="button"
+            onClick={() => {
+              onNavigate?.();
+              openContributionPopup();
+            }}
             className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-hover transition-colors"
           >
             <Heart className="h-4 w-4" />
-            <span>Give</span>
-          </PreloadLink>
+            <span>Contribute</span>
+          </button>
         )}
 
         <button

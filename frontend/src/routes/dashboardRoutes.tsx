@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedVerificationRoute from "@/components/ProtectedVerificationRoute";
+import ContributionRedirect from "@/components/ContributionRedirect";
 import { ChatProvider } from "@/context/ChatContext";
 import { ProfileProvider } from "@/context/ProfileContext";
 import {
@@ -21,7 +22,6 @@ import {
   loadPostEditor,
   loadViewPost,
   loadQueries,
-  loadGiving,
   loadMobileNotifications,
   loadChangePassword,
   loadResources,
@@ -43,7 +43,6 @@ const Posts = lazy(loadPosts);
 const PostEditor = lazy(loadPostEditor);
 const ViewPost = lazy(loadViewPost);
 const Queries = lazy(loadQueries);
-const Giving = lazy(loadGiving);
 const MobileNotifications = lazy(loadMobileNotifications);
 const ChangePassword = lazy(loadChangePassword);
 const Resources = lazy(loadResources);
@@ -123,7 +122,10 @@ export function DashboardRoutes() {
         <Route path="/dashboard/host-event" element={<HostEvent />} />
         <Route path="/dashboard/resources" element={<Resources />} />
         <Route path="/dashboard/queries" element={<Queries />} />
-        <Route path="/dashboard/giving" element={<Giving />} />
+        <Route
+          path="/dashboard/giving"
+          element={<ContributionRedirect destination="/dashboard" />}
+        />
       </Route>
     </>
   );

@@ -4,7 +4,11 @@ import { cleanup } from "@testing-library/react";
 
 afterEach(() => {
   cleanup();
-  localStorage.clear();
+  if (typeof window !== 'undefined' && window.localStorage) window.localStorage.clear();
+  // fallback for global localStorage (vitest v4 / node)
+  if (typeof globalThis !== 'undefined' && (globalThis as any).localStorage) {
+    try { (globalThis as any).localStorage.clear(); } catch {}
+  }
   vi.clearAllMocks();
 });
 

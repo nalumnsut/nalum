@@ -22,7 +22,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard/posts": "Posts",
   "/dashboard/resources": "Resources",
   "/dashboard/posts/new": "Create Post",
-  "/dashboard/giving": "Give",
   "/dashboard/profile": "Profile",
   "/dashboard/update-profile": "Account Settings",
   "/dashboard/change-password": "Reset Password",
@@ -127,7 +126,7 @@ const Header = () => {
         </div>
 
         {/* Mobile: bottom nav is all primary destinations now, so the avatar opens
-            the profile sheet (Logout, Queries, Giving, etc.) instead of linking out */}
+            the profile sheet (Logout, Queries, Contribute, etc.) instead of linking out */}
         <button
           type="button"
           onClick={() => setIsProfileMenuOpen(true)}

@@ -1,5 +1,6 @@
 
 import { PreloadLink } from "@/components/PreloadLink";
+import { useContributionPopup } from "@/context/ContributionPopupContext";
 import { Facebook, Instagram, Youtube, Linkedin } from 'lucide-react';
 
 const XLogo = ({ size = 20, className }: { size?: number; className?: string }) => (
@@ -16,11 +17,12 @@ const XLogo = ({ size = 20, className }: { size?: number; className?: string }) 
 );
 
 const Footer = () => {
+  const openContributionPopup = useContributionPopup();
   const quickNav = [
     { text: "Communities", link: "/communities/explore" }, // UPDATE THIS LINK
     { text: "Events", link: "/events/attend" }, // UPDATE THIS LINK
     { text: "Benefits", link: "/benefits/learning" }, // UPDATE THIS LINK
-    { text: "Giving", link: "/giving" }, // ✓ Already configured
+    { text: "Contribute", link: null },
     { text: "Stories", link: "/stories/notable-alumni" },
   ];
   const secondaryNav = [
@@ -151,13 +153,23 @@ const Footer = () => {
                   <ul className="space-y-3">
                     {quickNav.map(item => (
                       <li key={item.text}>
-                        <PreloadLink 
-                          to={item.link} 
-                          className="footer-link text-gray-200"
-                          onClick={() => window.scrollTo(0, 0)}
-                        >
-                          {item.text}
-                        </PreloadLink>
+                        {item.link ? (
+                          <PreloadLink
+                            to={item.link}
+                            className="footer-link text-gray-200"
+                            onClick={() => window.scrollTo(0, 0)}
+                          >
+                            {item.text}
+                          </PreloadLink>
+                        ) : (
+                          <button
+                            type="button"
+                            className="footer-link text-gray-200"
+                            onClick={openContributionPopup}
+                          >
+                            {item.text}
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -199,12 +211,13 @@ const Footer = () => {
 
             {/* Call to Action & Social */}
             <div className="space-y-6">
-              <PreloadLink
-                to="/giving"
+              <button
+                type="button"
+                onClick={openContributionPopup}
                 className="gift-button-footer block w-full text-center bg-nsut-yellow text-nsut-maroon font-bold py-3 px-6 rounded-lg relative z-10"
               >
-                Make a Gift
-              </PreloadLink>
+                Contribute
+              </button>
               <div>
                 <h3 className="font-serif text-lg font-semibold mb-4 text-center footer-heading">Connect With Us</h3>
                 <div className="flex justify-center space-x-3">

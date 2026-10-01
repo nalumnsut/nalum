@@ -80,7 +80,7 @@ export const routeImportMap: Record<string, () => void> = {
   "/benefits/alumni-directory": preloadPublicPage(
     loaders.loadAlumniDirectoryHome,
   ),
-  "/giving": preloadPublicPage(loaders.loadGivingHome),
+  "/giving": preloadPublicPage(loaders.loadHomePage),
   "/events": preloadPublicPage(loaders.loadEventsHome),
   "/events/attend": preloadPublicPage(loaders.loadAttendAnEvent),
   "/about": preloadPublicPage(loaders.loadAboutPage),
@@ -122,7 +122,7 @@ export const routeImportMap: Record<string, () => void> = {
   "/dashboard/host-event": preloadDashboardPage(loaders.loadHostEvent),
   "/dashboard/resources": preloadDashboardPage(loaders.loadResources),
   "/dashboard/queries": preloadDashboardPage(loaders.loadQueries),
-  "/dashboard/giving": preloadDashboardPage(loaders.loadGiving),
+  "/dashboard/giving": preloadDashboardPage(loaders.loadDashboardHome),
   "/dashboard/verify-alumni": () => preloadRoute(loaders.loadVerifyAlumni),
 
   // Admin pages
@@ -157,7 +157,7 @@ export function preloadPath(path: string) {
   // 2. Dynamic route pattern matching (e.g. /dashboard/alumni/123 -> /dashboard/alumni/:userId)
   for (const [pattern, loader] of Object.entries(routeImportMap)) {
     if (pattern.includes(":")) {
-      const regexStr = "^" + pattern.replace(/:[^\/]+/g, "[^/]+") + "$";
+      const regexStr = "^" + pattern.replace(/:[^/]+/g, "[^/]+") + "$";
       if (new RegExp(regexStr).test(normalized)) {
         loader();
         return;
