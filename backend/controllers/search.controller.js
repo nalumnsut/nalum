@@ -3,6 +3,10 @@ const User = require("../models/user/user.model");
 const Connection = require("../models/chat/connections.model");
 const escapeRegex = require("../utils/escapeRegex");
 
+const escapeRegex = (string) => {
+  return string ? string.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&") : "";
+};
+
 const searchProfiles = async (req, res) => {
   try {
     const { name, graduationYear, skills, campus, branch, company, role, city, country, } = req.query;
