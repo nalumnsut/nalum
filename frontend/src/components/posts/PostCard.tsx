@@ -42,7 +42,6 @@ import {
   PostVisibility,
   VISIBILITY_LABELS,
   getPostImageUrl,
-  isPostPinned,
   likeIds,
 } from "@/lib/posts";
 import { cn } from "@/lib/utils";
@@ -127,7 +126,7 @@ export const PostCard = ({
   const comments = post.commentCount ?? 0;
   const status: PostStatus = post.status || "pending";
   const rejected = status === "rejected";
-  const pinned = isPostPinned(post);
+  const isAdminPost = post.userId?.role === "admin";
   const clickable = context === "feed";
   const visibility: PostVisibility = post.visibility || "everyone";
   const AudienceIcon = AUDIENCE_ICON[visibility];
@@ -212,11 +211,9 @@ export const PostCard = ({
           : undefined
       }
       className={cn(
-        "rounded-card border p-5 shadow-card transition-colors sm:p-6 bg-card",
-        pinned ? "border-4 border-primary" : "border-border",
+        "rounded-card border border-border p-5 shadow-card transition-colors sm:p-6 bg-card",
         rejected && context !== "feed" && "bg-accent",
-        clickable && !pinned && "cursor-pointer hover:border-primary/25",
-        clickable && pinned && "cursor-pointer",
+        clickable && "cursor-pointer hover:border-primary/25",
         isHighlighted && "border-4 border-tertiary animate-blink-twice"
       )}
     >
@@ -252,7 +249,7 @@ export const PostCard = ({
         {post.title}
       </h3>
 
-      <div className="mt-1.5">
+      <div className={cn("mt-1.5", !isAdminPost && "line-clamp-4")}>
         <PostMarkdown content={post.content} attachments={attachmentUrls} compact />
       </div>
 
