@@ -77,8 +77,10 @@ export const routeImportMap: Record<string, () => void> = {
   "/communities/explore": preloadPublicPage(loaders.loadExploreCommunities),
   "/benefits/learning": preloadPublicPage(loaders.loadLearningPage),
   "/benefits/career": preloadPublicPage(loaders.loadCareerPage),
-  "/benefits/alumni-directory": preloadPublicPage(loaders.loadAlumniDirectoryHome),
-  "/giving": preloadPublicPage(loaders.loadGivingHome),
+  "/benefits/alumni-directory": preloadPublicPage(
+    loaders.loadAlumniDirectoryHome,
+  ),
+  "/giving": preloadPublicPage(loaders.loadHomePage),
   "/events": preloadPublicPage(loaders.loadEventsHome),
   "/events/attend": preloadPublicPage(loaders.loadAttendAnEvent),
   "/about": preloadPublicPage(loaders.loadAboutPage),
@@ -96,24 +98,31 @@ export const routeImportMap: Record<string, () => void> = {
   "/dashboard": preloadDashboardPage(loaders.loadDashboardHome),
   "/dashboard/profile": preloadDashboardPage(loaders.loadShowProfile),
   "/dashboard/update-profile": preloadDashboardPage(loaders.loadUpdateProfile),
-  "/dashboard/change-password": preloadDashboardPage(loaders.loadChangePassword),
+  "/dashboard/change-password": preloadDashboardPage(
+    loaders.loadChangePassword,
+  ),
   "/dashboard/alumni": preloadDashboardPage(loaders.loadAlumniDirectory),
   "/dashboard/alumni/:userId": preloadDashboardPage(loaders.loadViewProfile),
   "/dashboard/connections": preloadDashboardPage(loaders.loadAlumniDirectory),
-  "/dashboard/notifications": preloadDashboardPage(loaders.loadMobileNotifications),
+  "/dashboard/notifications": preloadDashboardPage(
+    loaders.loadMobileNotifications,
+  ),
   "/dashboard/chat": preloadDashboardPage(loaders.loadChatPage),
   "/dashboard/chat/:conversationId": preloadDashboardPage(loaders.loadChatPage),
   "/dashboard/events": preloadDashboardPage(loaders.loadEvents),
   "/dashboard/events/:eventId": preloadDashboardPage(loaders.loadEventDetails),
-  "/dashboard/events/:eventId/edit": preloadDashboardPage(loaders.loadEditEvent),
+  "/dashboard/events/:eventId/edit": preloadDashboardPage(
+    loaders.loadEditEvent,
+  ),
   "/dashboard/posts": preloadDashboardPage(loaders.loadPosts),
   "/dashboard/posts/new": preloadDashboardPage(loaders.loadPostEditor),
   "/dashboard/posts/:postId": preloadDashboardPage(loaders.loadViewPost),
   "/dashboard/posts/:postId/edit": preloadDashboardPage(loaders.loadPostEditor),
   "/dashboard/my-posts": preloadDashboardPage(loaders.loadPosts),
   "/dashboard/host-event": preloadDashboardPage(loaders.loadHostEvent),
+  "/dashboard/resources": preloadDashboardPage(loaders.loadResources),
   "/dashboard/queries": preloadDashboardPage(loaders.loadQueries),
-  "/dashboard/giving": preloadDashboardPage(loaders.loadGiving),
+  "/dashboard/giving": preloadDashboardPage(loaders.loadDashboardHome),
   "/dashboard/verify-alumni": () => preloadRoute(loaders.loadVerifyAlumni),
 
   // Admin pages
@@ -137,7 +146,7 @@ export const routeImportMap: Record<string, () => void> = {
 /** Preload route chunks for a normalized or raw path. */
 export function preloadPath(path: string) {
   const normalized = normalizePath(path);
-  
+
   // 1. Direct match
   const directMatch = routeImportMap[normalized];
   if (directMatch) {
@@ -148,7 +157,7 @@ export function preloadPath(path: string) {
   // 2. Dynamic route pattern matching (e.g. /dashboard/alumni/123 -> /dashboard/alumni/:userId)
   for (const [pattern, loader] of Object.entries(routeImportMap)) {
     if (pattern.includes(":")) {
-      const regexStr = "^" + pattern.replace(/:[^\/]+/g, "[^/]+") + "$";
+      const regexStr = "^" + pattern.replace(/:[^/]+/g, "[^/]+") + "$";
       if (new RegExp(regexStr).test(normalized)) {
         loader();
         return;
@@ -169,7 +178,11 @@ export function preloadPaths(paths: string[]) {
 /** Nav dropdown child paths keyed by section title. */
 export const navDropdownPaths: Record<string, string[]> = {
   Communities: ["/communities/clubs", "/communities/industries"],
-  Benefits: ["/benefits/career", "/benefits/learning", "/benefits/alumni-directory"],
+  Benefits: [
+    "/benefits/career",
+    "/benefits/learning",
+    "/benefits/alumni-directory",
+  ],
   Stories: [
     "/stories/notable-alumni",
     "/stories/alumni-stories",

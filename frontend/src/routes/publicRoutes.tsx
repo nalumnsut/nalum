@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import { Route } from "react-router-dom";
+import ContributionRedirect from "@/components/ContributionRedirect";
 import {
   loadRoot,
   loadHomePage,
@@ -13,7 +14,6 @@ import {
   loadLearningPage,
   loadCareerPage,
   loadAlumniDirectoryHome,
-  loadGivingHome,
   loadAttendAnEvent,
   loadEventsHome,
   loadExploreCommunities,
@@ -33,7 +33,6 @@ const RecentGradsPage = lazy(loadRecentGradsPage);
 const LearningPage = lazy(loadLearningPage);
 const CareerPage = lazy(loadCareerPage);
 const AlumniDirectoryHome = lazy(loadAlumniDirectoryHome);
-const GivingHome = lazy(loadGivingHome);
 const AttendAnEvent = lazy(loadAttendAnEvent);
 const EventsHome = lazy(loadEventsHome);
 const ExploreCommunities = lazy(loadExploreCommunities);
@@ -54,7 +53,7 @@ export function PublicRoutes() {
       <Route path="/benefits/learning" element={<LearningPage />} />
       <Route path="/benefits/career" element={<CareerPage />} />
       <Route path="/benefits/alumni-directory" element={<AlumniDirectoryHome />} />
-      <Route path="/giving" element={<GivingHome />} />
+      <Route path="/giving" element={<ContributionRedirect />} />
       <Route path="/events" element={<EventsHome />} />
       <Route path="/events/attend" element={<AttendAnEvent />} />
       <Route path="/communities/explore" element={<ExploreCommunities />} />

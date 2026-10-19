@@ -2,10 +2,16 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { PreloadLink } from "@/components/PreloadLink";
 import { navDropdownPaths, preloadPaths } from "@/lib/preloadRoutes";
+import { useContributionPopup } from "@/context/ContributionPopupContext";
 import { Menu, X } from "lucide-react";
 import nsutLogo from "@/assets/nsut-logo.svg";
 
-const Header = ({ setHeaderHeight }) => {
+interface HeaderProps {
+  setHeaderHeight: (height: number) => void;
+}
+
+const Header = ({ setHeaderHeight }: HeaderProps) => {
+  const openContributionPopup = useContributionPopup();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [localHeaderHeight, setLocalHeaderHeight] = useState(0);
@@ -23,7 +29,7 @@ const Header = ({ setHeaderHeight }) => {
       "Alumni Directory",
     ],
     Events: [],
-    Giving: [],
+    Contribute: [],
     Stories: ["Notable Alumni", "Alumni Stories", "Giving Stories", "Campus News"],
   };
 
@@ -62,6 +68,7 @@ const Header = ({ setHeaderHeight }) => {
         ref={headerRef}
         className="w-full fixed top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm transition-all duration-300"
       >
+
         {/* === MAIN NAVBAR === */}
         <div className="container mx-auto px-4 md:px-8 py-3.5 flex justify-between items-center">
           {/* Logo */}
@@ -90,6 +97,15 @@ const Header = ({ setHeaderHeight }) => {
                 >
                   {title}
                 </PreloadLink>
+              ) : title === "Contribute" ? (
+                <button
+                  key={title}
+                  type="button"
+                  onClick={openContributionPopup}
+                  className="font-medium text-[15px] lg:text-base text-gray-800 transition-colors duration-200 hover:text-nsut-maroon relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-nsut-maroon after:transition-all after:duration-300 hover:after:w-full"
+                >
+                  {title}
+                </button>
               ) : (
                 <div
                   key={title}
@@ -132,7 +148,14 @@ const Header = ({ setHeaderHeight }) => {
             </PreloadLink>
 
             {/* Mobile Menu Toggle */}
-            <div className="md:hidden">
+            <div className="flex items-center gap-2 md:hidden">
+              <button
+                type="button"
+                onClick={openContributionPopup}
+                className="min-h-10 rounded-md bg-nsut-maroon px-2.5 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#6e0000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nsut-maroon focus-visible:ring-offset-2 sm:px-3 sm:text-sm"
+              >
+                Contribute
+              </button>
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="text-gray-700 hover:text-nsut-maroon p-1.5 transition-colors"
@@ -196,13 +219,16 @@ const Header = ({ setHeaderHeight }) => {
                 >
                   Login
                 </PreloadLink>
-                <PreloadLink
-                  to="/giving"
+                <button
+                  type="button"
                   className="flex-1 bg-nsut-yellow text-nsut-maroon font-semibold py-2 px-3 rounded-lg text-sm hover:shadow-lg hover:scale-105 transition-all duration-300 text-center"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    openContributionPopup();
+                  }}
                 >
-                  Give
-                </PreloadLink>
+                  Contribute
+                </button>
               </div>
             </div>
 
@@ -210,7 +236,18 @@ const Header = ({ setHeaderHeight }) => {
             <nav className="p-4 space-y-1">
               {Object.entries(navLinks).map(([title, sublinks]) => (
                 <div key={title} className="mb-4">
-                  {(title === "Giving" || title === "Events") && sublinks.length === 0 ? (
+                  {title === "Contribute" ? (
+                    <button
+                      type="button"
+                      className="block w-full py-3 px-4 text-left font-serif text-base font-semibold text-nsut-maroon bg-gradient-to-r from-amber-50 to-transparent rounded-lg hover:from-amber-100 transition-all duration-200"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        openContributionPopup();
+                      }}
+                    >
+                      {title}
+                    </button>
+                  ) : title === "Events" && sublinks.length === 0 ? (
                     <PreloadLink
                       to={`/${title.toLowerCase()}`}
                       className="block py-3 px-4 font-serif text-base font-semibold text-nsut-maroon bg-gradient-to-r from-amber-50 to-transparent rounded-lg hover:from-amber-100 transition-all duration-200"
