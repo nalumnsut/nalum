@@ -13,12 +13,12 @@ const HomePage = () => {
     <main>
       <Hero />
       <ExploreLoginCta />
-      <IconCtaSection />
       <WhereWeWorkSection />
       <NotableAlumniSection />
+      <AlumniMapTeaser />
       <AlumniDirectorySection />
       <NewsSection />
-      <AlumniMapTeaser />
+      <IconCtaSection />
       <GivingSection />
     </main>
   );
