@@ -52,11 +52,11 @@ router.post("/create", protect, uploadEventImage.single("event_image"), compress
       });
     }
 
-    // Only alumni can create events
-    if (user.role !== "alumni") {
+    // Alumni and faculty can create events
+    if (!["alumni", "faculty"].includes(user.role)) {
       return res.status(403).json({
         success: false,
-        message: "Only alumni can host events",
+        message: "Only alumni and faculty can host events",
       });
     }
 

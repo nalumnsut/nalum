@@ -158,7 +158,10 @@ const Giving = () => {
     }
   };
 
-  if (user?.role === "student") {
+  // Giving submissions are alumni-only (backend 403s every other role), so
+  // gate students and faculty here instead of showing a form that can never
+  // succeed. Alumni fall through to the form + contributions list below.
+  if (user?.role === "student" || user?.role === "faculty") {
     return (
       <div className="animate-in fade-in slide-in-from-bottom-4 text-foreground duration-500">
         <div className="mx-auto max-w-7xl pb-12">
@@ -166,7 +169,11 @@ const Giving = () => {
           <EmptyState
             icon={<Heart className="mx-auto h-14 w-14 text-muted-foreground/50" />}
             title="Alumni Only"
-            description="The Giving feature is exclusively available for verified alumni. You'll have access once you graduate and verify your alumni status."
+            description={
+              user?.role === "faculty"
+                ? "The Giving feature is exclusively available for verified alumni."
+                : "The Giving feature is exclusively available for verified alumni. You'll have access once you graduate and verify your alumni status."
+            }
           />
         </div>
       </div>

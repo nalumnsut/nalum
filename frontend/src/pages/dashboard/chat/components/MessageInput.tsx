@@ -24,6 +24,7 @@ export const MessageInput = ({
   const { socket } = useChatContext();
   const { emitTyping } = useTypingIndicator(socket, conversationId);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resolverRef = useRef<(text: string) => string>((t) => t);
 
   const handleInputChange = (value: string) => {
     setMessage(value);
@@ -52,7 +53,8 @@ export const MessageInput = ({
 
   const handleSend = () => {
     if (message.trim() && !disabled) {
-      onSendMessage(message.trim());
+      const resolvedContent = resolverRef.current(message.trim());
+      onSendMessage(resolvedContent);
       setMessage("");
       emitTyping(false, receiverId);
       if (typingTimeoutRef.current) {
@@ -89,6 +91,7 @@ export const MessageInput = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
+          onResolverReady={(fn) => { resolverRef.current = fn; }}
           placeholder="Type a message... (@mention)"
           className="flex-1 min-w-0 min-h-[44px] resize-none bg-background border-input focus:border-primary focus:ring-ring/20 rounded-lg transition-all shadow-sm text-sm text-foreground placeholder:text-muted-foreground pr-2"
           disabled={disabled}

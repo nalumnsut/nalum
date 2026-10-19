@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, ArrowLeft } from "lucide-react";
+import { Mail, ArrowLeft, Home } from "lucide-react";
 import { toast } from "sonner";
 import nsutLogo from "@/assets/nsut-logo.svg";
 import nsutCampusHero from "@/assets/hero.webp";
@@ -15,7 +15,19 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [cooldown, setCooldown] = useState(0);
   const navigate = useNavigate();
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (cooldown <= 0) return;
+
+    const interval = setInterval(() => {
+      setCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [cooldown]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -28,14 +40,20 @@ const ForgotPassword = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!validateForm()) return;
+
+    if (cooldown > 0) {
+      toast.error(`Please wait ${cooldown}s before requesting another reset link.`);
+      return;
+    }
 
     setIsLoading(true);
     try {
       await apiClient.post("/auth/forget-password", { email });
-      
+
+      setCooldown(60);
       setEmailSent(true);
       toast.success("Reset Link Sent!", {
         description: "Check your email for the password reset link.",
@@ -52,8 +70,9 @@ const ForgotPassword = () => {
       });
     } catch (error) {
       console.error("Forgot password error:", error);
-      
+
       // Always show success message to prevent email enumeration
+      setCooldown(60);
       setEmailSent(true);
       toast.success("Reset Link Sent!", {
         description: "If this email exists in our system, you'll receive a reset link.",
@@ -108,6 +127,12 @@ const ForgotPassword = () => {
 
         {/* Right Column: Success Message */}
         <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
+          <button onClick={() => navigate(-1)} className="absolute top-4 left-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go back">
+            <ArrowLeft className="h-6 w-6 text-red-600" />
+          </button>
+          <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go home">
+            <Home className="h-6 w-6 text-red-600" />
+          </Link>
           <div className="absolute inset-0 opacity-5">
             <div className="absolute inset-0" style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
@@ -149,24 +174,27 @@ const ForgotPassword = () => {
               >
                 Back to Sign In
               </Button>
-              
+
+              <Button
+                onClick={() => handleSubmit()}
+                disabled={cooldown > 0 || isLoading}
+                variant="outline"
+                className="w-full h-12 border-nsut-maroon text-nsut-maroon hover:bg-nsut-maroon/10 font-semibold text-lg disabled:opacity-50"
+              >
+                {cooldown > 0 ? `Resend link in ${cooldown}s` : "Resend Reset Link"}
+              </Button>
+
               <Button
                 onClick={() => setEmailSent(false)}
-                variant="outline"
-                className="w-full h-12 border-nsut-maroon text-nsut-maroon hover:bg-nsut-maroon/10 font-semibold text-lg"
+                variant="ghost"
+                className="w-full text-gray-600 hover:text-gray-900"
               >
                 Try Different Email
               </Button>
             </div>
 
             <div className="text-center text-sm text-gray-600">
-              Didn't receive the email? Check your spam folder or{" "}
-              <button
-                onClick={() => setEmailSent(false)}
-                className="font-medium text-nsut-maroon hover:text-nsut-maroon/80"
-              >
-                try again
-              </button>
+              Didn't receive the email? Check your spam folder.
             </div>
           </div>
         </div>
@@ -208,6 +236,12 @@ const ForgotPassword = () => {
 
       {/* Right Column: Form */}
       <div className="flex-1 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 lg:h-full lg:overflow-y-auto">
+        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go back">
+          <ArrowLeft className="h-6 w-6 text-red-600" />
+        </button>
+        <Link to="/" className="absolute top-4 right-4 z-20 p-2 text-nsut-maroon hover:text-nsut-maroon/80 transition-colors bg-white/80 rounded-full shadow-sm" aria-label="Go home">
+          <Home className="h-6 w-6 text-red-600" />
+        </Link>
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`

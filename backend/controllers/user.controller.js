@@ -1,6 +1,8 @@
 const User = require("../models/user/user.model"); // Mongoose model
 const Profile = require("../models/user/profile.model");
 
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // Create User
 exports.create = async (userData) => {
   // Required fields for User + required profile fields
@@ -26,6 +28,11 @@ exports.create = async (userData) => {
       userPayload.location = userData.location;
     }
 
+    // Add authProvider if provided (schema still defaults to 'local' otherwise)
+    if (userData.authProvider) {
+      userPayload.authProvider = userData.authProvider;
+    }
+
     const user = await User.create(userPayload);
     return { error: false, data: user };
   } catch (err) {
@@ -40,7 +47,7 @@ exports.findOne = async (email) => {
   }
   try {
     const data = await User.findOne({
-      email: { $regex: new RegExp(`^${email}$`, "i") }, // case-insensitive
+      email: { $regex: new RegExp(`^${escapeRegex(email)}$`, "i") }, // case-insensitive
     });
     return { error: false, data };
   } catch (err) {
@@ -74,7 +81,7 @@ exports.update = async (email, changes) => {
   }
   try {
     await User.updateOne(
-      { email: { $regex: new RegExp(`^${email}$`, "i") } },
+      { email: { $regex: new RegExp(`^${escapeRegex(email)}$`, "i") } },
       { $set: changes }
     );
     return { error: false, message: "User updated successfully" };

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { MapPin } from "lucide-react";
 import { COUNTRIES } from "@/constants/countries";
 import { toast } from "sonner";
 import { validateTextInput } from "@/lib/validation";
+import api from "@/lib/api";
 
 interface LocationSelectorProps {
   city: string;
@@ -33,10 +34,32 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
   variant = "dark",
 }) => {
   const [cityInput, setCityInput] = useState(city || "");
-  const [countryInput, setCountryInput] = useState(country || "");
+  const [countryInput, setCountryInput] = useState(
+    (country || "").toLowerCase().trim(),
+  );
   const [isLoading, setIsLoading] = useState(false);
 
+  // Synchronize internal inputs if parent props change (e.g. async profile load)
+  useEffect(() => {
+    setCityInput((prev) => {
+      const cleanPropCity = (city || "").trim();
+      return cleanPropCity.toLowerCase() !== prev.trim().toLowerCase()
+        ? cleanPropCity
+        : prev;
+    });
+  }, [city]);
+
+  useEffect(() => {
+    setCountryInput((prev) => {
+      const cleanPropCountry = (country || "").toLowerCase().trim();
+      return cleanPropCountry !== prev.toLowerCase().trim()
+        ? cleanPropCountry
+        : prev;
+    });
+  }, [country]);
+
   const handleUseMyLocation = () => {
+    if (isLoading) return;
     setIsLoading(true);
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your browser");
@@ -45,52 +68,116 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
-        // Pass GPS coordinates directly to profile form state. City/Country
-        // will be resolved asynchronously by the server-side queue if missing.
-        onLocationChange(
-          cityInput.toLowerCase(),
-          countryInput.toLowerCase(),
-          latitude,
-          longitude,
-        );
-        toast.success("Current GPS coordinates captured!");
-        setIsLoading(false);
+        try {
+          // Reverse geocode through the queue-backed backend route — it
+          // enqueues onto the same paced (1 req/sec) queue forward geocoding
+          // uses, and this call waits for that specific item to be processed
+          // before resolving, so we get a real result in one request.
+          const response = await api.post("/geocode/reverse", {
+            lat: latitude,
+            lng: longitude,
+          });
+
+          const data = response.data || {};
+          const detectedCity = (data.city || "").trim();
+          const detectedCountry = (data.country || "").trim();
+          const lowerCity = detectedCity.toLowerCase();
+          const lowerCountry = detectedCountry.toLowerCase();
+
+          if (lowerCity) {
+            setCityInput(lowerCity);
+          }
+          if (lowerCountry) {
+            setCountryInput(lowerCountry);
+          }
+
+          onLocationChange(
+            lowerCity,
+            lowerCountry,
+            latitude,
+            longitude,
+          );
+
+          if (detectedCity && detectedCountry) {
+            toast.success(`Location detected: ${detectedCity}, ${detectedCountry}`);
+          } else if (detectedCity && !detectedCountry) {
+            toast.warning(
+              `City detected: ${detectedCity}. Please select your country manually.`,
+            );
+          } else if (!detectedCity && detectedCountry) {
+            toast.warning(
+              `Country detected: ${detectedCountry}. Please enter your city manually.`,
+            );
+          } else {
+            toast.error(
+              "Could not determine your city or country. Please enter them manually.",
+            );
+          }
+        } catch (error: unknown) {
+          console.error("Reverse geocoding error:", error);
+          let message =
+            "Failed to detect location name. Please enter city and country manually.";
+          if (
+            error &&
+            typeof error === "object" &&
+            "response" in error &&
+            error.response &&
+            typeof error.response === "object" &&
+            "data" in error.response &&
+            error.response.data &&
+            typeof error.response.data === "object" &&
+            "error" in error.response.data &&
+            typeof (error.response.data as { error: unknown }).error === "string"
+          ) {
+            message = (error.response.data as { error: string }).error;
+          }
+          toast.error(message);
+        } finally {
+          setIsLoading(false);
+        }
       },
       (error) => {
         console.error("Geolocation error:", error);
-        toast.error("Location permission denied. Please type your location manually.");
+        toast.error("Location permission denied. Please enter your location manually.");
         setIsLoading(false);
       },
+      { timeout: 10000, enableHighAccuracy: true },
     );
   };
 
   const handleManualUpdate = (overrideCity?: string, overrideCountry?: string) => {
-    const effectiveCity = overrideCity !== undefined ? overrideCity : cityInput;
-    const effectiveCountry = overrideCountry !== undefined ? overrideCountry : countryInput;
+    const effectiveCity = (overrideCity !== undefined ? overrideCity : cityInput).trim();
+    const effectiveCountry = (overrideCountry !== undefined ? overrideCountry : countryInput).trim().toLowerCase();
 
-    if (effectiveCity && effectiveCountry) {
+    if (effectiveCity) {
       const cityValidation = validateTextInput(effectiveCity);
-      const countryValidation = validateTextInput(effectiveCountry);
-
       if (!cityValidation.isValid) {
         toast.error(cityValidation.message);
         return;
       }
+    }
 
+    if (effectiveCountry) {
+      const countryValidation = validateTextInput(effectiveCountry);
       if (!countryValidation.isValid) {
         toast.error(countryValidation.message);
         return;
       }
-
-      // Pass city and country to profile form state. The server-side
-      // geocoding queue will resolve lat/lng asynchronously at 1 req/sec.
-      onLocationChange(effectiveCity.toLowerCase(), effectiveCountry.toLowerCase());
     }
+
+    // Pass city and country to profile form state. The server-side
+    // geocoding queue will resolve lat/lng asynchronously at 1 req/sec.
+    onLocationChange(effectiveCity.toLowerCase(), effectiveCountry);
   };
 
-  const sortedCountries = ["india", ...COUNTRIES.filter((c) => c !== "india")];
+  const lowerCountryInput = countryInput.toLowerCase().trim();
+  const countryList =
+    lowerCountryInput && !COUNTRIES.includes(lowerCountryInput)
+      ? [lowerCountryInput, ...COUNTRIES]
+      : COUNTRIES;
+  const sortedCountries = ["india", ...countryList.filter((c) => c !== "india")];
 
   return (
     <div className="space-y-4">
@@ -104,7 +191,13 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
         <Input
           id="city"
           value={cityInput}
-          onChange={(e) => setCityInput(e.target.value)}
+          onChange={(e) => {
+            setCityInput(e.target.value);
+            onLocationChange(
+              e.target.value.trim().toLowerCase(),
+              countryInput.trim().toLowerCase(),
+            );
+          }}
           onBlur={(e) => handleManualUpdate(e.target.value, undefined)}
           placeholder="Enter your city"
           className={
@@ -125,11 +218,13 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
         <Select
           value={countryInput}
           onValueChange={(val) => {
-            setCountryInput(val);
-            handleManualUpdate(undefined, val);
+            const lowerVal = val.toLowerCase().trim();
+            setCountryInput(lowerVal);
+            handleManualUpdate(undefined, lowerVal);
           }}
         >
           <SelectTrigger
+            id="country"
             className={
               variant === "light"
                 ? "bg-background border-input text-foreground focus:border-ring focus:ring-ring"

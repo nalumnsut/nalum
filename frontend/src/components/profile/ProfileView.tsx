@@ -36,6 +36,7 @@ export interface ProfileViewData {
   };
   batch?: string;
   branch?: string;
+  department?: string;
   campus?: string;
   bio?: string;
   current_company?: string;
@@ -156,7 +157,6 @@ const ProfileView = ({
   bioFallback,
   children,
 }: ProfileViewProps) => {
-  const isStudent = profile.user.role === "student";
   const social = profile.social_media ?? {};
   const skills = profile.skills ?? [];
   const experience = profile.experience ?? [];
@@ -167,11 +167,8 @@ const ProfileView = ({
       ? `${profile.current_role} at ${profile.current_company}`
       : profile.current_role || profile.current_company || "";
 
-  const classLabel = profile.batch
-    ? isStudent
-      ? `Class of ${profile.batch} (expected)`
-      : `Class of ${profile.batch}`
-    : "";
+  const classLabel = profile.user.role === "faculty" ? "" : profile.batch || "";
+  const departmentLabel = profile.department || "";
 
   const hasCurrentPosition = Boolean(
     profile.current_role || profile.current_company,
@@ -244,11 +241,11 @@ const ProfileView = ({
                 className="h-24 w-24 md:h-28 md:w-28 text-3xl border-0 ring-4 ring-primary/10 shadow-card shrink-0"
               />
               <div className="text-center md:text-left min-w-0">
-                <h2 className="text-headline-lg-mobile md:text-headline-lg text-foreground">
+                <h2 className="[overflow-wrap:anywhere] text-headline-lg-mobile md:text-headline-lg text-foreground">
                   {profile.user.name}
                 </h2>
                 {headline && (
-                  <p className="text-body-lg text-muted-foreground mt-1">
+                  <p className="[overflow-wrap:anywhere] text-body-lg text-muted-foreground mt-1">
                     {headline}
                   </p>
                 )}
@@ -259,8 +256,10 @@ const ProfileView = ({
                       {classLabel}
                     </span>
                   )}
-                  {profile.branch && (
-                    <span className="ap-chip">{profile.branch}</span>
+                  {departmentLabel ? (
+                    <span className="ap-chip">{departmentLabel}</span>
+                  ) : (
+                    profile.branch && <span className="ap-chip">{profile.branch}</span>
                   )}
                   {profile.campus && (
                     <span className="ap-chip">
@@ -292,7 +291,7 @@ const ProfileView = ({
           <div className="md:col-span-8 space-y-6 min-w-0">
             {profile.bio ? (
               <SectionCard title="About">
-                <p className="text-body-md text-muted-foreground leading-relaxed whitespace-pre-line">
+                <p className="break-words text-body-md text-muted-foreground leading-relaxed whitespace-pre-line">
                   {profile.bio}
                 </p>
               </SectionCard>
@@ -306,7 +305,7 @@ const ProfileView = ({
                   {skills.map((skill) => (
                     <span
                       key={skill}
-                      className="px-3 py-1 rounded-full border border-primary/20 bg-primary/[0.07] text-primary text-label-md"
+                      className="max-w-full break-words px-3 py-1 rounded-full border border-primary/20 bg-primary/[0.07] text-primary text-label-md"
                     >
                       {skill}
                     </span>
@@ -332,12 +331,12 @@ const ProfileView = ({
                             Current
                           </span>
                           {profile.current_role && (
-                            <h4 className="text-headline-md text-foreground mt-1">
+                            <h4 className="[overflow-wrap:anywhere] text-headline-md text-foreground mt-1">
                               {profile.current_role}
                             </h4>
                           )}
                           {profile.current_company && (
-                            <p className="text-body-md font-medium text-primary">
+                            <p className="[overflow-wrap:anywhere] text-body-md font-medium text-primary">
                               {profile.current_company}
                             </p>
                           )}
@@ -378,7 +377,7 @@ const ProfileView = ({
                             )}
                           />
                           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4 mb-1">
-                            <h4 className="text-body-lg font-semibold text-foreground min-w-0">
+                            <h4 className="text-body-lg font-semibold text-foreground min-w-0 [overflow-wrap:anywhere]">
                               {exp.role || "—"}
                             </h4>
                             {exp.duration && (
@@ -390,7 +389,7 @@ const ProfileView = ({
                           {exp.company && (
                             <p
                               className={cn(
-                                "text-body-md font-medium",
+                                "break-words text-body-md font-medium",
                                 !hasCurrentPosition && index === 0
                                   ? "text-primary"
                                   : "text-muted-foreground",
@@ -456,17 +455,18 @@ const ProfileView = ({
               </SectionCard>
             )}
 
-            {/* Education — one entry, since the schema stores a single NSUT record. */}
-            {(profile.branch || profile.batch || profile.campus) && (
+            {/* Education — one entry, since the schema stores a single NSUT record. Hidden for faculty (department shown via hero chips instead). */}
+            {(profile.branch || profile.department || profile.batch || profile.campus) &&
+              profile.user.role !== "faculty" && (
               <SectionCard title="Education">
                 <div className="flex gap-3">
                   <div className="h-9 w-9 rounded-lg bg-primary-subtle text-primary-subtle-foreground flex items-center justify-center shrink-0">
                     <GraduationCap className="h-[18px] w-[18px]" />
                   </div>
                   <div className="min-w-0">
-                    {profile.branch && (
+                    {(profile.department || profile.branch) && (
                       <h4 className="text-label-md text-foreground">
-                        {profile.branch}
+                        {profile.department || profile.branch}
                       </h4>
                     )}
                     <p className="text-body-sm text-muted-foreground">

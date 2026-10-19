@@ -63,7 +63,7 @@ const DashboardContent = () => {
             className={cn(
               "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300",
               location.pathname === "/dashboard"
-                ? "bg-primary-subtle text-primary"
+                ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -76,7 +76,7 @@ const DashboardContent = () => {
             className={cn(
               "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300 relative",
               location.pathname === "/dashboard/alumni" || location.pathname.startsWith("/dashboard/alumni/")
-                ? "bg-primary-subtle text-primary"
+                ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -92,7 +92,7 @@ const DashboardContent = () => {
             className={cn(
               "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300 relative",
               isChatPage
-                ? "bg-primary-subtle text-primary"
+                ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -108,7 +108,7 @@ const DashboardContent = () => {
             className={cn(
               "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300",
               location.pathname.startsWith("/dashboard/events")
-                ? "bg-primary-subtle text-primary"
+                ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -121,7 +121,7 @@ const DashboardContent = () => {
             className={cn(
               "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300",
               location.pathname.startsWith("/dashboard/posts")
-                ? "bg-primary-subtle text-primary"
+                ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >

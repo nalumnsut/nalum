@@ -41,9 +41,7 @@ router.post("/", async (req, res) => {
     path: "/",
   };
 
-  if (data.data.remember_me) {
-    cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-  }
+  cookieOptions.maxAge = 3650 * 24 * 60 * 60 * 1000; // 10 years
 
   res.cookie("refresh_token", new_refresh_token, cookieOptions);
 
@@ -63,6 +61,7 @@ router.post("/", async (req, res) => {
         email_verified: user.email_verified,
         profileCompleted: user.profileCompleted,
         verified_alumni: user.verified_alumni,
+        hasPassword: !!user.password,
       },
     },
   });

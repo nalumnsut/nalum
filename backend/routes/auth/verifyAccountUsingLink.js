@@ -17,7 +17,7 @@ router.get("/", async (req, res) => {
   const { email, token } = req.query;
 
   // 2. Find the verification token
-  let tokenResponse = await verificationTokens.find(email, token);
+  let tokenResponse = await verificationTokens.find(email, token, "email_verification");
 
   // For debugging purposes
   console.log("Token Response:", tokenResponse);
@@ -37,7 +37,7 @@ router.get("/", async (req, res) => {
   }
 
   // 5. Delete the token so it can't be reused
-  await verificationTokens.remove(email, token);
+  await verificationTokens.remove(email, token, "email_verification");
 
   // 6. Return success response
   return res.status(200).json({

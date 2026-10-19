@@ -15,9 +15,14 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Eye,
+  Globe,
+  LogIn,
+  LogOut,
   Shield,
   MessageSquare,
-  Wallet
+  Wallet,
+  BarChart3
 } from 'lucide-react';
 import apiClient from '@/lib/api';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as ChartTooltip } from 'recharts';
@@ -28,6 +33,7 @@ interface DashboardStats {
     total: number;
     students: number;
     alumni: number;
+    faculty: number;
     verified_alumni: number;
     banned: number;
     recent_registrations: number;
@@ -50,6 +56,15 @@ interface DashboardStats {
   bans: {
     active: number;
     total: number;
+  };
+  website_visits?: {
+    total: number;
+    pre_login: number;
+    post_login: number;
+  };
+  posts?: {
+    total: number;
+    total_views: number;
   };
 }
 
@@ -212,13 +227,18 @@ const AdminDashboard = () => {
   const eventsCount = stats?.events.pending || 0;
   const queriesCount = pendingQueriesCount !== null ? pendingQueriesCount : 0;
   const givingsCount = pendingGivingsCount !== null ? pendingGivingsCount : 0;
+  const maxWebsiteVisitors = Math.max(
+    stats?.website_visits?.pre_login || 0,
+    stats?.website_visits?.post_login || 0
+  );
 
   const students = stats?.users.students || 0;
   const totalAlumni = stats?.users.alumni || 0;
+  const totalFaculty = stats?.users.faculty || 0;
   const verifiedAlumni = stats?.users.verified_alumni || 0;
-  const bannedUsers = stats?.users.banned || 0;
-
-  const totalUsers = stats?.users.total || (students + totalAlumni + bannedUsers);
+  const unverifiedAlumni = Math.max(0, totalAlumni - verifiedAlumni);
+  const totalUsers = stats?.users.total || (students + totalAlumni + totalFaculty);
+  const admins = Math.max(0, totalUsers - (students + totalAlumni + totalFaculty));
 
   const CustomTooltip = ({ active, payload, coordinate }: any) => {
     if (active && payload && payload.length && coordinate) {
@@ -264,10 +284,36 @@ const AdminDashboard = () => {
 
 
   const chartData = [
-    { name: 'Students', value: students, color: '#3b82f6', fill: 'url(#gradient-students)' },
-    { name: 'Alumni', value: totalAlumni, color: '#22c55e', fill: 'url(#gradient-alumni)' },
-    { name: 'Verified Alumni', value: verifiedAlumni, color: '#f97316', fill: 'url(#gradient-verified)' },
-    { name: 'Banned Users', value: bannedUsers, color: '#ef4444', fill: 'url(#gradient-banned)' },
+    {
+      name: 'Students',
+      value: students,
+      color: '#3b82f6',
+      fill: 'url(#gradient-students)',
+    },
+    {
+      name: 'Verified Alumni',
+      value: verifiedAlumni,
+      color: '#16a34a',
+      fill: 'url(#gradient-alumni)',
+    },
+    {
+      name: 'Unverified Alumni',
+      value: unverifiedAlumni,
+      color: '#f59e0b',
+      fill: 'url(#gradient-unverified)',
+    },
+    {
+      name: 'Faculty',
+      value: totalFaculty,
+      color: '#14b8a6',
+      fill: 'url(#gradient-faculty)',
+    },
+    ...(admins > 0 ? [{
+      name: 'Admins',
+      value: admins,
+      color: '#6366f1',
+      fill: 'url(#gradient-admins)',
+    }] : []),
   ];
 
   const activeChartData = chartData.filter(d => d.value > 0).length > 0
@@ -329,17 +375,65 @@ const AdminDashboard = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {user?.name}! 👋
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Here's what's happening with your alumni portal today.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Welcome back, {user?.name}! 👋
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Here's what's happening with your alumni portal today.
+            </p>
+          </div>
+          <Button
+            asChild
+            className="bg-gradient-to-r from-[#800000] to-[#5a0000] hover:from-[#950000] hover:to-[#6a0000] text-white shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer text-sm font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2 shrink-0 border-0"
+          >
+            <Link to="/admin-panel/analytics">
+              <BarChart3 className="w-5 h-5" />
+              <span>Analytics & Insights</span>
+            </Link>
+          </Button>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Website Visits */}
+          <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-indigo-600">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Website Visits
+              </CardTitle>
+              <Globe className="h-4 w-4 text-indigo-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-gray-900">
+                {maxWebsiteVisitors}
+              </div>
+              <p className="text-xs text-gray-500 mt-2 flex justify-between">
+                <span>Pre-login: <strong className="text-indigo-600">{stats?.website_visits?.pre_login || 0}</strong></span>
+                <span>Post-login: <strong className="text-emerald-600">{stats?.website_visits?.post_login || 0}</strong></span>
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Total Post Views */}
+          <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-cyan-600">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Total Post Views
+              </CardTitle>
+              <Eye className="h-4 w-4 text-cyan-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-gray-900">
+                {stats?.posts?.total_views || 0}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Across {stats?.posts?.total || 0} community posts
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Total Users */}
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -376,61 +470,92 @@ const AdminDashboard = () => {
               </p>
             </CardContent>
           </Card>
-
-          {/* Pending Verifications */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Pending Verifications
-              </CardTitle>
-              <Clock className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">
-                {stats?.verifications.pending || 0}
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-xs text-gray-500">
-                  {stats?.verifications.verified || 0} verified
-                </p>
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/admin-panel/verifications">
-                    View Queue
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pending Posts Approval */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                Pending Posts Approval
-              </CardTitle>
-              <FileText className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">
-                {pendingPostsCount !== null ? pendingPostsCount : 0}
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-xs text-gray-500">
-                  Posts awaiting approval
-                </p>
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/admin-panel/posts-approval">
-                    Review Pending
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Quick Actions Grid */}
+        {/* Detailed Analytics Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* User Stats */}
+          {/* Website Visitor Traffic Analysis */}
+          <Card className="border shadow-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-indigo-600" />
+                    Website Traffic (Pre vs Post Login)
+                  </CardTitle>
+                  <CardDescription>Visitor distribution before and after signing in</CardDescription>
+                </div>
+                <span className="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full font-semibold">
+                  Visits: {maxWebsiteVisitors}
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-5">
+                {/* Pre-login visitors */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <LogOut className="w-4 h-4 text-indigo-600" />
+                      <span className="font-medium text-gray-700">Visitors Before Login (Pre-login)</span>
+                    </div>
+                    <span className="font-bold text-gray-900">
+                      {stats?.website_visits?.pre_login || 0}{" "}
+                      <span className="text-xs text-gray-500 font-normal">
+                        ({stats?.website_visits?.total ? Math.round(((stats?.website_visits?.pre_login || 0) / stats.website_visits.total) * 100) : 0}%)
+                      </span>
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-indigo-600 h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${stats?.website_visits?.total ? Math.min(100, Math.round(((stats?.website_visits?.pre_login || 0) / stats.website_visits.total) * 100)) : 0}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Post-login visitors */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <LogIn className="w-4 h-4 text-emerald-600" />
+                      <span className="font-medium text-gray-700">Visitors After Login (Post-login)</span>
+                    </div>
+                    <span className="font-bold text-gray-900">
+                      {stats?.website_visits?.post_login || 0}{" "}
+                      <span className="text-xs text-gray-500 font-normal">
+                        ({stats?.website_visits?.total ? Math.round(((stats?.website_visits?.post_login || 0) / stats.website_visits.total) * 100) : 0}%)
+                      </span>
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-emerald-600 h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${stats?.website_visits?.total ? Math.min(100, Math.round(((stats?.website_visits?.post_login || 0) / stats.website_visits.total) * 100)) : 0}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 grid grid-cols-2 gap-4 text-center">
+                  <div className="p-3 bg-indigo-50/60 rounded-lg">
+                    <p className="text-xs text-indigo-700 font-medium">Public Visitors</p>
+                    <p className="text-2xl font-bold text-indigo-900">{stats?.website_visits?.pre_login || 0}</p>
+                  </div>
+                  <div className="p-3 bg-emerald-50/60 rounded-lg">
+                    <p className="text-xs text-emerald-700 font-medium">Logged-in Users</p>
+                    <p className="text-2xl font-bold text-emerald-900">{stats?.website_visits?.post_login || 0}</p>
+                  </div>
+                </div>
+                <CardDescription>Total Visits are counted since 17 August 2026</CardDescription>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* User Distribution Stats */}
           <Card>
             <CardHeader>
               <CardTitle>User Statistics</CardTitle>
@@ -456,14 +581,19 @@ const AdminDashboard = () => {
                     <stop offset="100%" stopColor="#16a34a" />
                   </linearGradient>
 
-                  <linearGradient id="gradient-verified" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f97316" />
-                    <stop offset="100%" stopColor="#c2410c" />
+                  <linearGradient id="gradient-unverified" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fbbf24" />
+                    <stop offset="100%" stopColor="#d97706" />
                   </linearGradient>
 
-                  <linearGradient id="gradient-banned" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f87171" />
-                    <stop offset="100%" stopColor="#dc2626" />
+                  <linearGradient id="gradient-admins" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#818cf8" />
+                    <stop offset="100%" stopColor="#4f46e5" />
+                  </linearGradient>
+
+                  <linearGradient id="gradient-faculty" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#5eead4" />
+                    <stop offset="100%" stopColor="#0d9488" />
                   </linearGradient>
                 </defs>
               </svg>
@@ -601,7 +731,35 @@ const AdminDashboard = () => {
         </div>
 
         {/* Additional Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Post Views Analytics */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Post Views</CardTitle>
+                  <CardDescription>Feed impressions & views</CardDescription>
+                </div>
+                <Eye className="h-8 w-8 text-cyan-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.posts?.total_views || 0}</div>
+              <div className="mt-3 text-xs text-gray-600">
+                <div className="flex justify-between">
+                  <span>Total Posts:</span>
+                  <span className="font-semibold">{stats?.posts?.total || 0}</span>
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span>Avg Views/Post:</span>
+                  <span className="font-semibold">
+                    {stats?.posts?.total ? Math.round((stats?.posts?.total_views || 0) / stats.posts.total) : 0}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Newsletters */}
           <Card>
             <CardHeader>

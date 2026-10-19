@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { Check, XCircle, RefreshCw, FileText } from "lucide-react";
 import api from "../../lib/api";
-import PostCardAdmin, { Post } from "../../components/posts/PostCardAdmin";
+import PostCard from "../../components/posts/PostCard";
+import { PostRecord } from "../../lib/posts";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,9 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const PostsApproval = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<PostRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [selectedPost, setSelectedPost] = useState<PostRecord | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,13 +79,13 @@ const PostsApproval = () => {
 
   // Manual refresh function
 
-  const handleApproveClick = (post: Post) => {
+  const handleApproveClick = (post: PostRecord) => {
     setSelectedPost(post);
     // Open approve dialog or call approve logic
     handleApprove(post._id);
   };
 
-  const handleRejectClick = (post: Post) => {
+  const handleRejectClick = (post: PostRecord) => {
     setSelectedPost(post);
     setShowRejectModal(true);
   };
@@ -237,16 +238,14 @@ const PostsApproval = () => {
           </div>
         ) : (
           <div className="grid gap-6">
-            {posts.map((post) => (
-              <PostCardAdmin
+            {posts.map((post, index) => (
+              <PostCard
                 key={post._id}
+                context="admin"
                 post={post}
-                onEdit={handleApproveClick}
-                onDelete={handleRejectClick}
-                primaryButtonLabel="Approve"
-                secondaryButtonLabel="Reject"
-                primaryButtonIcon={Check}
-                secondaryButtonIcon={XCircle}
+                index={index}
+                primaryAction={{ label: "Approve", icon: Check, onClick: handleApproveClick }}
+                secondaryAction={{ label: "Reject", icon: XCircle, onClick: handleRejectClick }}
               />
             ))}
           </div>

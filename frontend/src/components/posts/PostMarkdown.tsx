@@ -40,7 +40,8 @@ const urlTransform = (url: string) =>
 
 const LEGACY_MENTION = /@\[([^\]]+)\]\(([^)]+)\)/g;
 const MENTION_PREFIX = "/mention/";
-const MENTION_PATTERN = /@([A-Za-z0-9_][A-Za-z0-9_.-]*)/g;
+const MENTION_PATTERN =
+  /@([A-Za-z0-9_]+(?:[-.'][A-Za-z0-9_]+)*(?:\s+[A-Z][a-zA-Z0-9_]*(?:[-.'][a-zA-Z0-9_]+)*)*)(?=[.,!?;:]*(?:\s|$))/g;
 // ![alt](attachment:2) — a body reference to the post's own uploaded images,
 // written when the file itself has no URL yet (it uploads with the post).
 const ATTACHMENT_REF = /\(attachment:(\d+)\)/g;
@@ -119,11 +120,13 @@ const MentionLink = ({ name }: { name: string }) => {
   const handleClick = async (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
+    const cleanName = name.trim();
+    if (!cleanName) return;
     try {
-      const { data } = await api.get(`/mention?q=${encodeURIComponent(name)}`);
+      const { data } = await api.get(`/mention?q=${encodeURIComponent(cleanName)}`);
       const users: { _id: string; name: string }[] = data.users || [];
       const target =
-        users.find((user) => user.name.toLowerCase() === name.toLowerCase()) ??
+        users.find((user) => user.name.toLowerCase() === cleanName.toLowerCase()) ??
         users[0];
       if (target) navigate(`/dashboard/alumni/${target._id}`);
     } catch {
@@ -178,7 +181,7 @@ const PostMarkdown = ({
   return (
     <div
       className={cn(
-        "prose max-w-none text-muted-foreground",
+        "prose max-w-none [overflow-wrap:anywhere] text-muted-foreground",
         "prose-headings:text-foreground prose-headings:font-semibold",
         "prose-h1:text-headline-lg prose-h2:text-headline-md prose-h3:text-body-lg",
         "prose-p:text-muted-foreground prose-li:text-muted-foreground",

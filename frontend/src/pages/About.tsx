@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect } from 'react';
-import { Mail, Phone, MapPin, Users, Heart, Target, Award, Linkedin, Building2, GraduationCap } from 'lucide-react';
+import { Mail, MapPin, Users, Heart, Target, Award, Linkedin, Building2, GraduationCap } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 // ============================================
@@ -363,19 +363,6 @@ const AboutPage = () => {
                     </div>
                   </div>
 
-                  {/* Phone */}
-                  <div className="group flex items-start gap-4 p-6 rounded-xl bg-gradient-to-r from-nsut-beige/30 to-white hover:from-nsut-beige/50 hover:to-white transition-all duration-300 border border-gray-100 hover:border-nsut-yellow/50 hover:-translate-y-1">
-                    <div className="w-12 h-12 bg-gradient-to-br from-nsut-maroon to-nsut-yellow rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                      <Phone className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-serif text-lg font-bold text-nsut-maroon mb-2">Call Us</h3>
-                      <a href="tel:+919034064575" className="text-gray-700 hover:text-nsut-maroon transition-colors">
-                        +91 90340 64575
-                      </a>
-                    </div>
-                  </div>
-
                   {/* Address */}
                   <div className="group flex items-start gap-4 p-6 rounded-xl bg-gradient-to-r from-nsut-beige/30 to-white hover:from-nsut-beige/50 hover:to-white transition-all duration-300 border border-gray-100 hover:border-nsut-yellow/50 hover:-translate-y-1">
                     <div className="w-12 h-12 bg-gradient-to-br from-nsut-maroon to-nsut-yellow rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
@@ -388,24 +375,6 @@ const AboutPage = () => {
                         Azad Hind Fauj Marg, Sector 3<br />
                         Dwarka, New Delhi - 110078
                       </p>
-                    </div>
-                  </div>
-
-                  {/* Social Media */}
-                  <div className="group flex items-start gap-4 p-6 rounded-xl bg-gradient-to-r from-nsut-beige/30 to-white hover:from-nsut-beige/50 hover:to-white transition-all duration-300 border border-gray-100 hover:border-nsut-yellow/50 hover:-translate-y-1">
-                    <div className="w-12 h-12 bg-gradient-to-br from-nsut-maroon to-nsut-yellow rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                      <Linkedin className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-serif text-lg font-bold text-nsut-maroon mb-2">Connect on LinkedIn</h3>
-                      <a
-                        href="https://www.linkedin.com/school/nsut-delhi"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-700 hover:text-nsut-maroon transition-colors"
-                      >
-                        NSUT Alumni Network
-                      </a>
                     </div>
                   </div>
                 </div>

@@ -270,7 +270,7 @@
   /* ---- Chips & badges -------------------------------------------------- */
   /* Grad years, donation tiers: pill, subtle fill, dark text. */
   .ap-chip {
-    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1;
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 max-w-full break-words;
     @apply bg-secondary text-secondary-foreground;
     font-size: 12px;
     font-weight: 500;

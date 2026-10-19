@@ -27,7 +27,12 @@ jest.mock("../../controllers/session.controller.js", () => ({
 jest.mock("../../controllers/verificationToken.controller.js", () => ({
   create: jest.fn(),
   find: jest.fn(),
+  findByToken: jest.fn(),
   remove: jest.fn(),
+}));
+
+jest.mock("../../models/auth/session.model.js", () => ({
+  deleteMany: jest.fn().mockResolvedValue({ acknowledged: true, deletedCount: 1 }),
 }));
 
 jest.mock("../../controllers/otp.controller.js", () => ({
@@ -42,6 +47,10 @@ jest.mock("../../mail/mailService.js", () => ({
 
 jest.mock("../../models/user/user.model.js", () => ({
   findById: jest.fn(),
+}));
+
+jest.mock("../../models/auth/session.model.js", () => ({
+  deleteMany: jest.fn(),
 }));
 
 const bcrypt = require("bcrypt");
@@ -127,6 +136,7 @@ describe("auth routes", () => {
         email: "new@example.com",
         password: "hashed-password",
         role: "alumni",
+        authProvider: "local",
       });
     });
 
@@ -173,7 +183,64 @@ describe("auth routes", () => {
       expect(response.body).toMatchObject({
         err: true,
         code: 400,
-        message: "Students must use their @nsut.ac.in email address",
+        message: "Students/Faculty must use their @nsut.ac.in email address",
+      });
+    });
+
+    it("requires faculty signups to use an nsut email", async () => {
+      const response = await request(app).post("/api/auth/sign-up").send({
+        name: "Faculty User",
+        email: "faculty@example.com",
+        password: "password123",
+        role: "faculty",
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toMatchObject({
+        err: true,
+        code: 400,
+        message: "Students/Faculty must use their @nsut.ac.in email address",
+      });
+    });
+
+    it("creates a faculty user with a valid nsut email", async () => {
+      users.findOne.mockResolvedValue({ error: false, data: null });
+      bcrypt.hash.mockResolvedValue("hashed-password");
+      users.create.mockResolvedValue({
+        error: false,
+        data: {
+          _id: "faculty-123",
+          name: "Faculty User",
+          email: "faculty@nsut.ac.in",
+          role: "faculty",
+        },
+      });
+
+      const response = await request(app).post("/api/auth/sign-up").send({
+        name: "Faculty User",
+        email: "faculty@nsut.ac.in",
+        password: "password123",
+        role: "faculty",
+      });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toEqual({
+        err: false,
+        code: 201,
+        message: "User created successfully",
+        data: {
+          id: "faculty-123",
+          name: "Faculty User",
+          email: "faculty@nsut.ac.in",
+          role: "faculty",
+        },
+      });
+      expect(users.create).toHaveBeenCalledWith({
+        name: "Faculty User",
+        email: "faculty@nsut.ac.in",
+        password: "hashed-password",
+        role: "faculty",
+        authProvider: "local",
       });
     });
 
@@ -272,11 +339,10 @@ describe("auth routes", () => {
         "password123",
         "hashed-password",
       );
-      expect(sessions.getOrCreate).toHaveBeenCalledWith(
-        "test@example.com",
-        "user-123",
-        undefined,
-      );
+      expect(sessions.getOrCreate).toHaveBeenCalled();
+      const callArgs = sessions.getOrCreate.mock.calls[0];
+      expect(callArgs[0]).toBe("test@example.com");
+      expect(callArgs[1]).toBe("user-123");
     });
 
     it("rejects login when credentials are missing", async () => {
@@ -519,7 +585,13 @@ describe("auth routes", () => {
         error: false,
         data: verifiedUser({ email: "test@example.com" }),
       });
-      jwt.sign.mockReturnValue("reset-token-123");
+      verificationTokens.create.mockResolvedValue({
+        error: false,
+        data: {
+          token: "reset-token-123",
+          expires_at: new Date(Date.now() + 1000 * 60 * 5),
+        },
+      });
       mailer.send.mockResolvedValue({ error: false });
 
       const response = await request(app).post("/api/auth/forget-password").send({
@@ -528,10 +600,10 @@ describe("auth routes", () => {
 
       expect(response.status).toBe(200);
       expect(users.findOne).toHaveBeenCalledWith("test@example.com");
-      expect(jwt.sign).toHaveBeenCalledWith(
-        { email: "test@example.com" },
-        expect.any(String),
-        { expiresIn: "5m" },
+      expect(verificationTokens.create).toHaveBeenCalledWith(
+        "test@example.com",
+        "password_reset",
+        1000 * 60 * 5,
       );
       expect(mailer.send).toHaveBeenCalledWith({
         to: "test@example.com",
@@ -573,7 +645,11 @@ describe("auth routes", () => {
 
   describe("POST /api/auth/reset-password", () => {
     it("resets a password with a valid token", async () => {
-      jwt.verify.mockReturnValue({ email: "test@example.com" });
+      verificationTokens.findByToken.mockResolvedValue({
+        error: false,
+        data: { email: "test@example.com", token: "reset-token-123" },
+      });
+      verificationTokens.remove.mockResolvedValue({ error: false });
       bcrypt.hash.mockResolvedValue("new-hashed-password");
       users.update.mockResolvedValue({
         error: false,
@@ -586,11 +662,19 @@ describe("auth routes", () => {
       });
 
       expect(response.status).toBe(200);
-      expect(jwt.verify).toHaveBeenCalledWith("reset-token-123", expect.any(String));
+      expect(verificationTokens.findByToken).toHaveBeenCalledWith(
+        "reset-token-123",
+        "password_reset",
+      );
       expect(bcrypt.hash).toHaveBeenCalledWith("newPassword123", 10);
       expect(users.update).toHaveBeenCalledWith("test@example.com", {
         password: "new-hashed-password",
       });
+      expect(verificationTokens.remove).toHaveBeenCalledWith(
+        "test@example.com",
+        "reset-token-123",
+        "password_reset",
+      );
       expect(response.body).toEqual({
         error: false,
         message: "Password reset successfully",
@@ -610,8 +694,9 @@ describe("auth routes", () => {
     });
 
     it("rejects reset-password with an invalid token", async () => {
-      jwt.verify.mockImplementation(() => {
-        throw new Error("invalid token");
+      verificationTokens.findByToken.mockResolvedValue({
+        error: true,
+        message: "Invalid or expired token.",
       });
 
       const response = await request(app).post("/api/auth/reset-password").send({
@@ -622,12 +707,15 @@ describe("auth routes", () => {
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
         error: true,
-        message: "Invalid or expired token",
+        message: "Invalid or expired token.",
       });
     });
 
     it("rejects reset-password with a short password", async () => {
-      jwt.verify.mockReturnValue({ email: "test@example.com" });
+      verificationTokens.findByToken.mockResolvedValue({
+        error: false,
+        data: { email: "test@example.com", token: "reset-token-123" },
+      });
 
       const response = await request(app).post("/api/auth/reset-password").send({
         token: "reset-token-123",
@@ -664,7 +752,10 @@ describe("auth routes", () => {
 
       expect(response.status).toBe(200);
       expect(users.findOne).toHaveBeenCalledWith("test@example.com");
-      expect(verificationTokens.create).toHaveBeenCalledWith("test@example.com");
+      expect(verificationTokens.create).toHaveBeenCalledWith(
+        "test@example.com",
+        "email_verification",
+      );
       expect(mailer.send).toHaveBeenCalledWith({
         to: "test@example.com",
         subject: "Verify Your Account - NSUT AlumniNet",
@@ -786,6 +877,7 @@ describe("auth routes", () => {
       expect(verificationTokens.find).toHaveBeenCalledWith(
         "test@example.com",
         "verify-token-123",
+        "email_verification",
       );
       expect(users.update).toHaveBeenCalledWith("test@example.com", {
         email_verified: true,
@@ -793,6 +885,7 @@ describe("auth routes", () => {
       expect(verificationTokens.remove).toHaveBeenCalledWith(
         "test@example.com",
         "verify-token-123",
+        "email_verification",
       );
       expect(response.body).toEqual({
         error: false,

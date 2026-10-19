@@ -156,7 +156,7 @@ const GlobalSearchModal = ({ open, onOpenChange }: GlobalSearchModalProps) => {
             inputRef.current?.focus();
           }}
           className={cn(
-            "fixed left-1/2 top-[14vh] z-50 w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2",
+            "fixed left-1/2 top-[14vh] z-50 flex max-h-[calc(86vh-2rem)] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 flex-col",
             "overflow-hidden rounded-2xl border border-white/70",
             "bg-white/70 backdrop-blur-2xl backdrop-saturate-150",
             "shadow-overlay ring-1 ring-black/5",
@@ -171,7 +171,7 @@ const GlobalSearchModal = ({ open, onOpenChange }: GlobalSearchModalProps) => {
           </DialogPrimitive.Description>
 
           {/* Input */}
-          <div className="flex items-center gap-3 px-4 h-14">
+          <div className="flex shrink-0 items-center gap-3 px-4 h-14">
             <Search className="h-5 w-5 text-slate-500 shrink-0" />
             <input
               ref={inputRef}
@@ -186,7 +186,7 @@ const GlobalSearchModal = ({ open, onOpenChange }: GlobalSearchModalProps) => {
           </div>
 
           {/* Category picker — single select, "All" by default */}
-          <div className="flex items-center gap-1.5 px-4 pb-2.5">
+          <div className="flex shrink-0 items-center gap-1.5 px-4 pb-2.5">
             {CATEGORY_OPTIONS.map(({ id, label, icon: Icon }) => {
               const isActive = activeCategory === id;
               return (
@@ -209,9 +209,10 @@ const GlobalSearchModal = ({ open, onOpenChange }: GlobalSearchModalProps) => {
             })}
           </div>
 
-          {/* Results */}
+          {/* Results — the only region that scrolls; input, category picker,
+              and the footer hint below stay pinned in view. */}
           {hasQuery && (
-            <div className="border-t border-black/5">
+            <div className="min-h-0 flex-1 overflow-y-auto border-t border-black/5">
               {!hasResults && !isSearching && (
                 <p className="px-4 py-8 text-center text-sm text-slate-500">
                   No results for "{query}"
@@ -287,7 +288,7 @@ const GlobalSearchModal = ({ open, onOpenChange }: GlobalSearchModalProps) => {
 
           {/* Footer hint — only once there's something to act on */}
           {hasQuery && hasResults && (
-            <div className="flex items-center gap-1.5 px-4 py-2 border-t border-black/5 text-[11px] text-slate-500">
+            <div className="flex shrink-0 items-center gap-1.5 px-4 py-2 border-t border-black/5 text-[11px] text-slate-500">
               <CornerDownLeft className="h-3 w-3" />
               to open
               {(activeCategory === "all" || activeCategory === "people") && (

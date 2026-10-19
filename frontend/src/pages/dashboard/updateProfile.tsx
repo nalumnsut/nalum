@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { BRANCHES, CAMPUSES } from "@/constants/branches";
+import { BRANCHES, CAMPUSES, DEPARTMENTS } from "@/constants/branches";
 import {
   Select,
   SelectContent,
@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   Github,
   Globe,
+  KeyRound,
   Linkedin,
   Loader2,
   Lock,
@@ -170,12 +171,14 @@ const UpdateProfile = () => {
   const [deactivateConfirmation, setDeactivateConfirmation] = useState("");
   const [isDeactivating, setIsDeactivating] = useState(false);
 
-  // Check if user is alumni
+  // Check if user is alumni / faculty
   const isAlumni = user?.role === "alumni";
+  const isFaculty = user?.role === "faculty";
 
   const [formData, setFormData] = useState({
     batch: "",
     branch: "",
+    department: "",
     campus: "",
     bio: "",
     current_company: "",
@@ -254,6 +257,7 @@ const UpdateProfile = () => {
       const initialFormData = {
         batch: contextProfile.batch || "",
         branch: contextProfile.branch || "",
+        department: (contextProfile as any).department || "",
         campus: contextProfile.campus || "",
         bio: contextProfile.bio || "",
         current_company: contextProfile.current_company || "",
@@ -503,10 +507,15 @@ const UpdateProfile = () => {
         }>;
       }
 
-      const updateData: UpdateData = {};
+      const updateData: UpdateData & { department?: string } = {};
 
-      // Required fields - only if all three are present
-      if (formData.batch && formData.branch && formData.campus) {
+      // Required fields - faculty uses department+campus, others use batch+branch+campus
+      if (isFaculty) {
+        if (formData.department && formData.campus) {
+          (updateData as any).department = formData.department;
+          updateData.campus = formData.campus;
+        }
+      } else if (formData.batch && formData.branch && formData.campus) {
         updateData.batch = formData.batch;
         updateData.branch = formData.branch;
         updateData.campus = formData.campus;
@@ -703,7 +712,7 @@ const UpdateProfile = () => {
                 : "Manage your academic and public identity on the alumni portal."}
             </p>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <Button
               type="button"
               variant="outline"
@@ -859,93 +868,168 @@ const UpdateProfile = () => {
               }
             >
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-foreground">
-                      Full Name
-                    </Label>
-                    <Input
-                      id="name"
-                      value={contextProfile?.user.name || ""}
-                      readOnly
-                      disabled
-                      className={lockedClass}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="batch" className="text-foreground">
-                      {isAlumni ? "Class Year" : "Expected Graduation"}
-                    </Label>
-                    <Input
-                      id="batch"
-                      type="text"
-                      value={formData.batch}
-                      onChange={(e) =>
-                        handleInputChange("batch", e.target.value)
-                      }
-                      placeholder="e.g., 2020"
-                      readOnly
-                      disabled
-                      className={lockedClass}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="branch" className="text-foreground">
-                      Branch
-                    </Label>
-                    <Select
-                      value={formData.branch}
-                      onValueChange={(value) =>
-                        handleInputChange("branch", value)
-                      }
-                      disabled
-                    >
-                      <SelectTrigger className={lockedClass}>
-                        <SelectValue placeholder="Select branch" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border shadow-overlay">
-                        {BRANCHES.map((branch) => (
-                          <SelectItem
-                            key={branch}
-                            value={branch}
-                            className={selectItemClass}
-                          >
-                            {branch}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="campus" className="text-foreground">
-                      Campus
-                    </Label>
-                    <Select
-                      value={formData.campus}
-                      onValueChange={(value) =>
-                        handleInputChange("campus", value)
-                      }
-                      disabled
-                    >
-                      <SelectTrigger className={lockedClass}>
-                        <SelectValue placeholder="Select campus" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border shadow-overlay">
-                        {CAMPUSES.map((campus) => (
-                          <SelectItem
-                            key={campus}
-                            value={campus}
-                            className={selectItemClass}
-                          >
-                            {campus}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                {isFaculty ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-foreground">
+                          Full Name
+                        </Label>
+                        <Input
+                          id="name"
+                          value={contextProfile?.user.name || ""}
+                          readOnly
+                          disabled
+                          className={lockedClass}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="department" className="text-foreground">
+                          Department
+                        </Label>
+                        <Select
+                          value={formData.department}
+                          onValueChange={(value) =>
+                            handleInputChange("department", value)
+                          }
+                          disabled
+                        >
+                          <SelectTrigger className={lockedClass}>
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border-border shadow-overlay">
+                            {DEPARTMENTS.map((dep) => (
+                              <SelectItem
+                                key={dep}
+                                value={dep}
+                                className={selectItemClass}
+                              >
+                                {dep}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="campus" className="text-foreground">
+                        Campus
+                      </Label>
+                      <Select
+                        value={formData.campus}
+                        onValueChange={(value) =>
+                          handleInputChange("campus", value)
+                        }
+                        disabled
+                      >
+                        <SelectTrigger className={lockedClass}>
+                          <SelectValue placeholder="Select campus" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-border shadow-overlay">
+                          {CAMPUSES.map((campus) => (
+                            <SelectItem
+                              key={campus}
+                              value={campus}
+                              className={selectItemClass}
+                            >
+                              {campus}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-foreground">
+                          Full Name
+                        </Label>
+                        <Input
+                          id="name"
+                          value={contextProfile?.user.name || ""}
+                          readOnly
+                          disabled
+                          className={lockedClass}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="batch" className="text-foreground">
+                          {isAlumni ? "Class Year" : "Expected Graduation"}
+                        </Label>
+                        <Input
+                          id="batch"
+                          type="text"
+                          value={formData.batch}
+                          onChange={(e) =>
+                            handleInputChange("batch", e.target.value)
+                          }
+                          placeholder="e.g., 2020"
+                          readOnly
+                          disabled
+                          className={lockedClass}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="branch" className="text-foreground">
+                          Branch
+                        </Label>
+                        <Select
+                          value={formData.branch}
+                          onValueChange={(value) =>
+                            handleInputChange("branch", value)
+                          }
+                          disabled
+                        >
+                          <SelectTrigger className={lockedClass}>
+                            <SelectValue placeholder="Select branch" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border-border shadow-overlay">
+                            {BRANCHES.map((branch) => (
+                              <SelectItem
+                                key={branch}
+                                value={branch}
+                                className={selectItemClass}
+                              >
+                                {branch}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="campus" className="text-foreground">
+                          Campus
+                        </Label>
+                        <Select
+                          value={formData.campus}
+                          onValueChange={(value) =>
+                            handleInputChange("campus", value)
+                          }
+                          disabled
+                        >
+                          <SelectTrigger className={lockedClass}>
+                            <SelectValue placeholder="Select campus" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border-border shadow-overlay">
+                            {CAMPUSES.map((campus) => (
+                              <SelectItem
+                                key={campus}
+                                value={campus}
+                                className={selectItemClass}
+                              >
+                                {campus}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </FormCard>
 
@@ -1377,9 +1461,8 @@ const UpdateProfile = () => {
                                   handleExperienceChange(
                                     index,
                                     "duration",
-                                    `${
-                                      startPart ||
-                                      "Jan " + new Date().getFullYear()
+                                    `${startPart ||
+                                    "Jan " + new Date().getFullYear()
                                     } - ${newEnd}`,
                                   );
                                 }}
@@ -1423,9 +1506,8 @@ const UpdateProfile = () => {
                                     handleExperienceChange(
                                       index,
                                       "duration",
-                                      `${
-                                        startPart ||
-                                        "Jan " + new Date().getFullYear()
+                                      `${startPart ||
+                                      "Jan " + new Date().getFullYear()
                                       } - ${newEnd}`,
                                     );
                                   }}
@@ -1462,6 +1544,32 @@ const UpdateProfile = () => {
 
         {/* Deliberately outside the form: this is an account action, not a
             profile edit, and it must not be reachable by submitting. */}
+        <section className="mt-6 rounded-card border border-border bg-card shadow-card p-6">
+          <div className="flex items-center gap-2 pb-4 mb-5 border-b border-border">
+            <KeyRound className="h-5 w-5 text-primary" />
+            <h3 className="text-headline-md text-foreground">Password & Security</h3>
+          </div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h4 className="text-body-md font-medium text-foreground">
+                Reset Password
+              </h4>
+              <p className="text-body-sm text-muted-foreground mt-1 max-w-2xl">
+                Update your account password to keep your alumni portal access secure.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/dashboard/change-password")}
+              className="border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground shrink-0"
+            >
+              <KeyRound className="h-4 w-4 mr-2 text-primary" />
+              Reset Password
+            </Button>
+          </div>
+        </section>
+
         <section className="mt-6 rounded-card border border-destructive/30 bg-destructive/5 p-6">
           <div className="flex items-center gap-2 pb-4 mb-5 border-b border-destructive/20">
             <AlertTriangle className="h-5 w-5 text-destructive" />

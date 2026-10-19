@@ -3,7 +3,6 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import {
   GraduationCap,
   Trophy,
-  Sparkles,
   Users,
   ArrowRight,
   Music,
@@ -104,18 +103,6 @@ const eventTiles: EventTile[] = [
     endDate: new Date(2026, 2, 14),   // 14 Mar 2026
     location: 'NSUT Campus',
     gradient: 'from-amber-500 via-amber-600 to-amber-700',
-  },
-  {
-    id: 3,
-    title: 'Moksha 26',
-    subtitle: 'NSUT Annual Cultural Festival',
-    description:
-      'Celebrate art, music, dance, drama, and culture with thousands of NSUTians at the most vibrant gathering of the year.',
-    link: '#',
-    icon: Sparkles,
-    // no dates yet — will show as Coming Soon
-    location: 'NSUT Campus',
-    gradient: 'from-purple-600 via-purple-700 to-purple-800',
   },
   {
     id: 4,

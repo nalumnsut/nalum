@@ -68,6 +68,8 @@ const CITY_ALIASES = {
   prayagraj: "prayagraj",
   allahabad: "prayagraj",
   
+  calcutta: "kolkata",
+  
   // International aliases
   nyc: "new york",
   "new york city": "new york",
@@ -76,6 +78,7 @@ const CITY_ALIASES = {
   la: "los angeles",
   "los angeles city": "los angeles",
   kl: "kuala lumpur",
+  "city of westminster": "london",
 };
 
 // Canonical City coordinates dictionary

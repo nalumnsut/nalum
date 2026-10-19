@@ -79,7 +79,7 @@ export const ConnectionRequests = () => {
                     {request.requester?.email}
                   </p>
                   {request.requestMessage && (
-                    <p className="text-xs text-gray-400/80 italic mt-1 line-clamp-2 bg-white/5 p-1.5 rounded-md border border-white/5">
+                    <p className="break-words text-xs text-gray-400/80 italic mt-1 line-clamp-2 bg-white/5 p-1.5 rounded-md border border-white/5">
                       "{request.requestMessage}"
                     </p>
                   )}

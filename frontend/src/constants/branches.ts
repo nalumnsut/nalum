@@ -1,3 +1,4 @@
+
 export const BRANCH_ABBREVIATIONS: Record<string, string> = {
   "Bachelor of Architecture (B.Arch)": "B.Arch",
   "Bachelor of Business Administration (BBA)": "BBA",
@@ -32,6 +33,29 @@ export const BRANCH_ABBREVIATIONS: Record<string, string> = {
 export const BRANCHES = Object.keys(BRANCH_ABBREVIATIONS) as readonly string[];
 
 export const CAMPUSES = ["Main Campus", "East Campus", "West Campus"] as const;
+
+// Faculty departments — placeholder list until final names are provided
+// Covers the current NSUT faculty structure; replace/extend as needed.
+export const DEPARTMENTS = [
+  "Department of Applied Chemistry",
+  "Department of Applied Mathematics",
+  "Department of Applied Physics",
+  "Department of Architecture",
+  "Department of Biological Sciences & Engineering",
+  "Department of Civil Engineering",
+  "Department of Computer Science & Engineering",
+  "Department of Design",
+  "Department of Electrical Engineering",
+  "Department of Electronics & Communication Engineering",
+  "Department of Humanities & Social Sciences",
+  "Department of Information Technology",
+  "Department of Instrumentation & Control Engineering",
+  "Department of Management Studies",
+  "Department of Manufacturing Processes & Automation Engineering",
+  "Department of Mechanical Engineering",
+] as const;
+
+export type Department = (typeof DEPARTMENTS)[number];
 
 export type Branch = (typeof BRANCHES)[number];
 export type Campus = (typeof CAMPUSES)[number];

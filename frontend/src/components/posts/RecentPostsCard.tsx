@@ -1,15 +1,10 @@
-import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, MessagesSquare, ThumbsUp } from "lucide-react";
-import { PanelCard } from "@/components/dashboard/PanelCard";
+import { MessagesSquare } from "lucide-react";
 import { PreloadLink } from "@/components/PreloadLink";
-import UserAvatar from "@/components/UserAvatar";
+import PostCard from "@/components/posts/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import api from "@/lib/api";
-import { rowEntrance } from "@/lib/motion";
-import { PostRecord, likeIds, toPlainText } from "@/lib/posts";
+import { PostRecord } from "@/lib/posts";
 
 const LIMIT = 5;
 
@@ -27,12 +22,7 @@ const RowSkeleton = () => (
   </div>
 );
 
-// The home page's window onto the feed: the newest posts, bounded, with the
-// full searchable listing one click away at /dashboard/posts. Deliberately
-// read-only — liking and commenting happen on the post itself.
 export const RecentPostsCard = () => {
-  const navigate = useNavigate();
-
   const { data: posts = [], isLoading, isError } = useQuery({
     queryKey: ["posts", "recent", LIMIT],
     queryFn: async (): Promise<PostRecord[]> => {
@@ -43,98 +33,45 @@ export const RecentPostsCard = () => {
   });
 
   return (
-    <PanelCard
-      title="Recent Posts"
-      action={
+    <div>
+      <div className="flex items-baseline justify-between gap-4 border-b border-border pb-3">
+        <h2 className="text-headline-md text-foreground">Recent Posts</h2>
         <PreloadLink
           to="/dashboard/posts"
           className="shrink-0 text-label-md text-primary transition-colors hover:text-primary-hover"
         >
           View all
         </PreloadLink>
-      }
-      bodyClassName="px-4 py-0"
-    >
-      {isLoading ? (
-        <div className="divide-y divide-border">
-          <RowSkeleton />
-          <RowSkeleton />
-          <RowSkeleton />
-        </div>
-      ) : isError || posts.length === 0 ? (
-        <div className="py-10 text-center">
-          <MessagesSquare className="mx-auto mb-3 h-12 w-12 text-muted-foreground/50" />
-          <h3 className="text-headline-md text-foreground">
-            {isError ? "Couldn't load posts" : "No posts yet"}
-          </h3>
-          <p className="mt-1 text-body-sm text-muted-foreground">
-            {isError
-              ? "Try again in a moment."
-              : "Be the first to share an update with the alumni network."}
-          </p>
-        </div>
-      ) : (
-        <ul className="divide-y divide-border">
-          {posts.map((post, index) => {
-            const excerpt = toPlainText(post.content);
-            return (
-              <motion.li key={post._id} {...rowEntrance(index)}>
-                <article
-                  role="link"
-                  tabIndex={0}
-                  onClick={() => navigate(`/dashboard/posts/${post._id}`)}
-                  onKeyDown={(event) =>
-                    event.key === "Enter" &&
-                    navigate(`/dashboard/posts/${post._id}`)
-                  }
-                  className="group -mx-2 cursor-pointer rounded-lg px-2 py-3.5 transition-colors hover:bg-surface-low"
-                >
-                  {/* Byline */}
-                  <div className="flex items-center gap-3">
-                    <UserAvatar
-                      src={post.userId.profile_picture || undefined}
-                      name={post.userId.name}
-                      size="md"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-label-md text-foreground">
-                        {post.userId.name}
-                      </p>
-                      <p className="text-body-sm text-muted-foreground">
-                        {formatDistanceToNow(new Date(post.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </p>
-                    </div>
-                  </div>
+      </div>
 
-                  <h3 className="mt-2.5 text-headline-md text-foreground transition-colors group-hover:text-primary">
-                    {post.title}
-                  </h3>
-
-                  {excerpt && (
-                    <p className="mt-1 line-clamp-2 text-body-md text-muted-foreground">
-                      {excerpt}
-                    </p>
-                  )}
-
-                  <div className="mt-2.5 flex items-center gap-5 text-muted-foreground">
-                    <span className="flex items-center gap-1.5 text-label-sm">
-                      <ThumbsUp className="h-4 w-4" />
-                      {likeIds(post).length}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-label-sm">
-                      <MessageSquare className="h-4 w-4" />
-                      {post.commentCount ?? 0}
-                    </span>
-                  </div>
-                </article>
-              </motion.li>
-            );
-          })}
-        </ul>
-      )}
-    </PanelCard>
+      <div className="mt-4">
+        {isLoading ? (
+          <div className="divide-y divide-border rounded-card border border-border bg-card px-4">
+            <RowSkeleton />
+            <RowSkeleton />
+            <RowSkeleton />
+          </div>
+        ) : isError || posts.length === 0 ? (
+          <div className="rounded-card border border-border bg-card py-10 text-center">
+            <MessagesSquare className="mx-auto mb-3 h-12 w-12 text-muted-foreground/50" />
+            <h3 className="text-headline-md text-foreground">
+              {isError ? "Couldn't load posts" : "No posts yet"}
+            </h3>
+            <p className="mt-1 text-body-sm text-muted-foreground">
+              {isError
+                ? "Try again in a moment."
+                : "Be the first to share an update with the alumni network."}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {posts.map((post, index) => (
+              <PostCard key={post._id} context="feed" post={post} index={index} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

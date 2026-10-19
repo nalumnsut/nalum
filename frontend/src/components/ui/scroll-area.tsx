@@ -12,7 +12,12 @@ const ScrollArea = React.forwardRef<
     className={cn("relative overflow-hidden", className)}
     {...props}
   >
-    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+    {/* Radix wraps children in its own `display:table` div (to measure natural
+        content size for the scrollbar thumb) — that div sizes to fit its
+        content instead of the viewport, so anything relying on the viewport's
+        width downstream (flex `min-w-0`/`truncate`, wrapping text) silently
+        breaks unless that wrapper is forced back to a normal block box. */}
+    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] [&>div]:!block">
       {children}
     </ScrollAreaPrimitive.Viewport>
     <ScrollBar />

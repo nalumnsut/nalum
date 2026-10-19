@@ -19,21 +19,23 @@ const ProfileMenu = ({ isOpen, onClose }: ProfileMenuProps) => {
   
   if (!profile?.user) return null;
 
-  const isAlumni = (profile.user as any)?.role === "alumni";
+  const canCreate = ["alumni", "faculty", "admin"].includes(
+    (profile.user as any)?.role ?? ""
+  );
 
   const menuItems = [
     {
       icon: FileText,
       label: "My Posts",
       href: "/dashboard/posts?tab=my",
-      show: isAlumni,
+      show: canCreate,
       description: "Manage your posts",
     },
     {
       icon: Calendar,
       label: "My Events",
       href: "/dashboard/events?tab=my",
-      show: isAlumni,
+      show: canCreate,
       description: "Manage your events",
     },
     {
@@ -52,8 +54,8 @@ const ProfileMenu = ({ isOpen, onClose }: ProfileMenuProps) => {
     },
   ];
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     onClose();
   };
 
@@ -115,7 +117,7 @@ const ProfileMenu = ({ isOpen, onClose }: ProfileMenuProps) => {
                   <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
                     <span className="truncate">{profile.branch}</span>
                     <span>•</span>
-                    <span>Class of {profile.batch}</span>
+                    <span>{profile.batch}</span>
                   </div>
                 )}
               </div>

@@ -83,7 +83,7 @@ export const EventRow = ({
       <div className="flex flex-1 flex-col justify-between gap-4 p-6">
         <div>
           <div className="mb-3 flex items-start justify-between gap-4">
-            <h3 className="text-headline-md text-foreground transition-colors group-hover:text-primary">
+            <h3 className="min-w-0 flex-1 line-clamp-2 [overflow-wrap:anywhere] text-headline-md text-foreground transition-colors group-hover:text-primary">
               {event.title}
             </h3>
             <span className="ap-chip ap-chip-primary shrink-0">

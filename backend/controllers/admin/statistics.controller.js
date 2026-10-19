@@ -4,20 +4,36 @@ const Event = require("../../models/admin/event.model");
 const Newsletter = require("../../models/admin/newsletter.model");
 const VerificationQueue = require("../../models/verificationQueue.model");
 const AdminActivity = require("../../models/admin/adminActivity.model");
+const Post = require("../../models/posts/post.model");
+const PageVisit = require("../../models/pageVisit.model");
+const escapeRegex = require("../../utils/escapeRegex");
 
 // Get dashboard statistics
 exports.getDashboardStats = async (req, res) => {
   try {
     console.log('[Dashboard Stats] Fetching statistics...');
     
-    // User statistics
-    const totalUsers = await User.countDocuments();
-    const totalStudents = await User.countDocuments({ role: "student" });
-    const totalAlumni = await User.countDocuments({ role: "alumni" });
-    const verifiedAlumni = await User.countDocuments({ role: "alumni", verified_alumni: true });
+    // User statistics (excluding banned users from user statistics counts)
+    const totalUsers = await User.countDocuments({ banned: { $ne: true } });
+    const totalStudents = await User.countDocuments({ role: "student", banned: { $ne: true } });
+    const totalAlumni = await User.countDocuments({ role: "alumni", banned: { $ne: true } });
+    const totalFaculty = await User.countDocuments({ role: "faculty", banned: { $ne: true } });
+    const verifiedAlumni = await User.countDocuments({ role: "alumni", verified_alumni: true, banned: { $ne: true } });
     const bannedUsers = await User.countDocuments({ banned: true });
 
-    console.log('[Dashboard Stats] User stats:', { totalUsers, totalStudents, totalAlumni, verifiedAlumni, bannedUsers });
+    console.log('[Dashboard Stats] User stats:', { totalUsers, totalStudents, totalAlumni, totalFaculty, verifiedAlumni, bannedUsers });
+
+    // Website Visit statistics (Pre-login vs Post-login)
+    const preLoginVisits = await PageVisit.countDocuments({ is_authenticated: false });
+    const postLoginVisits = await PageVisit.countDocuments({ is_authenticated: true });
+    const totalVisits = preLoginVisits + postLoginVisits;
+
+    // Post View statistics
+    const totalPosts = await Post.countDocuments();
+    const totalPostViewsAggregate = await Post.aggregate([
+      { $group: { _id: null, total: { $sum: "$view_count" } } },
+    ]);
+    const totalPostViews = totalPostViewsAggregate[0]?.total || 0;
 
     // Verification statistics
     const pendingVerifications = await VerificationQueue.countDocuments({status: "pending"});
@@ -74,6 +90,7 @@ exports.getDashboardStats = async (req, res) => {
         total: totalUsers,
         students: totalStudents,
         alumni: totalAlumni,
+        faculty: totalFaculty,
         verified_alumni: verifiedAlumni,
         banned: bannedUsers,
         recent_registrations: recentRegistrations,
@@ -96,6 +113,15 @@ exports.getDashboardStats = async (req, res) => {
       bans: {
         active: activeBans,
         total: bannedUsers,
+      },
+      website_visits: {
+        total: totalVisits,
+        pre_login: preLoginVisits,
+        post_login: postLoginVisits,
+      },
+      posts: {
+        total: totalPosts,
+        total_views: totalPostViews,
       },
     };
 
@@ -127,6 +153,7 @@ exports.getRegistrationGraph = async (req, res) => {
       {
         $match: {
           createdAt: { $gte: startDate },
+          banned: { $ne: true },
         },
       },
       {
@@ -174,8 +201,8 @@ exports.getAllUsers = async (req, res) => {
     if (banned !== undefined) query.banned = banned === "true";
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
+        { name: { $regex: escapeRegex(search), $options: "i" } },
+        { email: { $regex: escapeRegex(search), $options: "i" } },
       ];
     }
 

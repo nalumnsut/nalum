@@ -124,15 +124,27 @@ const ViewProfile = () => {
     return (
       <div className="flex-1 flex items-center justify-center py-24">
         <div className="rounded-card border border-border bg-card shadow-card p-8 text-center max-w-md">
-          <p className="text-body-md text-muted-foreground mb-4">
+          <p className="text-headline-sm text-foreground font-semibold mb-2">
             Profile not found
           </p>
-          <Button
-            onClick={() => navigate("/dashboard/alumni")}
-            className="bg-primary hover:bg-primary-hover text-primary-foreground"
-          >
-            Back to Directory
-          </Button>
+          <p className="text-body-md text-muted-foreground mb-6">
+            This user profile may not exist or belongs to an administrative account. For questions or assistance, you can reach out via the Queries page.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button
+              onClick={() => navigate("/dashboard/alumni")}
+              variant="outline"
+              className="w-full sm:w-auto rounded-full border-border text-foreground hover:border-primary hover:text-primary"
+            >
+              Back to Directory
+            </Button>
+            <Button
+              onClick={() => navigate("/dashboard/queries")}
+              className="w-full sm:w-auto rounded-full bg-primary hover:bg-primary-hover text-primary-foreground"
+            >
+              Go to Queries
+            </Button>
+          </div>
         </div>
       </div>
     );

@@ -2,11 +2,13 @@
  * Profiles collection — seed data and loader.
  * Depends on users.js having already run (looks users up by email).
  * Location data sourced from the existing scripts/add_sample_locations.js.
+ * The 4 alumni added 2026-09-04 (users.js) get profiles automatically via
+ * the loop below — no separate entries needed here.
  */
 
 const User = require('../../models/user/user.model');
 const Profile = require('../../models/user/profile.model');
-const { alumniData, studentData } = require('./users');
+const { alumniData, studentData, facultyData } = require('./users');
 
 const sampleLocations = [
   { city: 'new delhi', country: 'india', lat: 28.6139, lng: 77.209 },
@@ -67,6 +69,27 @@ async function seedProfiles() {
       campus: s.campus,
     });
     console.log(`✅ profile: ${s.email}`);
+  }
+
+  // Faculty profiles — department instead of branch/batch, no location.
+  for (const f of facultyData) {
+    const user = await User.findOne({ email: f.email });
+    if (!user) {
+      console.log(`⚠️  no user for ${f.email}, skipping profile`);
+      continue;
+    }
+    const existing = await Profile.findOne({ user: user._id });
+    if (existing) {
+      console.log(`⚠️  profile for ${f.email} already exists, skipping`);
+      continue;
+    }
+    await Profile.create({
+      user: user._id,
+      department: f.department,
+      campus: f.campus,
+      current_role: f.designation,
+    });
+    console.log(`✅ profile: ${f.email}`);
   }
 
   // No profile created for the admin — intentional, see plan discussion.

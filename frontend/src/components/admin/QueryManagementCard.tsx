@@ -197,7 +197,7 @@ const QueryManagementCard = ({
         {/* Footer Info */}
         <div className="flex items-center gap-6 mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600">
           <span className="font-medium text-gray-900">
-            Author: {query.userId.name}
+            Author: {query.userId?.name || "Unknown user"}
           </span>
           <span>Created: {new Date(query.createdAt).toLocaleDateString()}</span>
         </div>

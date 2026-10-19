@@ -85,8 +85,8 @@ export const GivingRow = ({ giving, onDelete }: GivingRowProps) => {
           </div>
         </div>
 
-        <h3 className="text-headline-md text-foreground">{giving.title}</h3>
-        <p className="mt-1.5 whitespace-pre-wrap text-body-md text-muted-foreground">
+        <h3 className="break-words text-headline-md text-foreground">{giving.title}</h3>
+        <p className="mt-1.5 whitespace-pre-wrap break-words text-body-md text-muted-foreground">
           {giving.content}
         </p>
 
@@ -127,7 +127,7 @@ export const GivingRow = ({ giving, onDelete }: GivingRowProps) => {
                 Admin Response
               </span>
             </div>
-            <p className="whitespace-pre-wrap text-body-sm text-foreground">
+            <p className="whitespace-pre-wrap break-words text-body-sm text-foreground">
               {giving.answer}
             </p>
           </div>

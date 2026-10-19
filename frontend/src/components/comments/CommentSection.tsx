@@ -57,6 +57,7 @@ function CommentComposer({
   placeholder,
   autoFocus = false,
   onCancel,
+  onResolverReady,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -66,6 +67,7 @@ function CommentComposer({
   placeholder: string;
   autoFocus?: boolean;
   onCancel?: () => void;
+  onResolverReady?: (resolver: (text: string) => string) => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -88,6 +90,7 @@ function CommentComposer({
         ref={textareaRef}
         value={value}
         onChange={onChange}
+        onResolverReady={onResolverReady}
         placeholder={placeholder}
         className="min-h-[96px] rounded-lg border-input bg-card px-4 py-3 text-body-md"
       />
@@ -135,6 +138,8 @@ function CommentCard({
   const [isSaving, setIsSaving] = useState(false);
   const [showReplies, setShowReplies] = useState(true);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const replyResolverRef = useRef<(text: string) => string>((t) => t);
+  const editResolverRef = useRef<(text: string) => string>((t) => t);
 
   const currentUserId = user?.id;
   const commentAuthorId = comment.author?._id ?? comment.authorId;
@@ -150,7 +155,8 @@ function CommentCard({
     if (!replyValue.trim()) return;
     try {
       setIsReplying(true);
-      await createCommentReply(postId, comment._id, replyValue.trim());
+      const resolved = replyResolverRef.current(replyValue.trim());
+      await createCommentReply(postId, comment._id, resolved);
       setReplyValue("");
       setReplyOpen(false);
       setShowReplies(true);
@@ -167,7 +173,8 @@ function CommentCard({
     if (!editValue.trim()) return;
     try {
       setIsSaving(true);
-      await updatePostComment(postId, comment._id, editValue.trim());
+      const resolved = editResolverRef.current(editValue.trim());
+      await updatePostComment(postId, comment._id, resolved);
       setIsEditing(false);
       await onChanged();
     } catch (error) {
@@ -201,23 +208,41 @@ function CommentCard({
   };
 
   const authorId = comment.author?._id || comment.authorId;
+  const isAuthorAdmin = comment.author?.role === "admin";
 
   return (
     <div className={cn("flex flex-col gap-2", depth > 0 && "mt-4")}>
       <div className="flex gap-3">
-        <Link to={`/dashboard/alumni/${authorId}`} className="shrink-0">
-          <UserAvatar src={undefined} name={comment.author?.name || "User"} size="sm" />
-        </Link>
+        {isAuthorAdmin ? (
+          <div className="shrink-0">
+            <UserAvatar src={undefined} name={comment.author?.name || "Admin"} size="sm" />
+          </div>
+        ) : (
+          <Link to={`/dashboard/alumni/${authorId}`} className="shrink-0">
+            <UserAvatar src={undefined} name={comment.author?.name || "User"} size="sm" />
+          </Link>
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="rounded-card border border-border bg-card p-4 shadow-card">
             <div className="mb-1 flex items-center justify-between gap-3">
-              <Link
-                to={`/dashboard/alumni/${authorId}`}
-                className="min-w-0 truncate text-label-md text-foreground hover:text-primary"
-              >
-                {comment.author?.name || "Unknown user"}
-              </Link>
+              {isAuthorAdmin ? (
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="min-w-0 truncate text-label-md font-semibold text-foreground">
+                    {comment.author?.name || "Administrator"}
+                  </span>
+                  <span className="rounded bg-primary-subtle px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                    Admin
+                  </span>
+                </div>
+              ) : (
+                <Link
+                  to={`/dashboard/alumni/${authorId}`}
+                  className="min-w-0 truncate text-label-md text-foreground hover:text-primary"
+                >
+                  {comment.author?.name || "Unknown user"}
+                </Link>
+              )}
 
               <div className="flex shrink-0 items-center gap-1">
                 <span className="text-body-sm text-muted-foreground">
@@ -269,6 +294,7 @@ function CommentCard({
                   value={editValue}
                   onChange={setEditValue}
                   onSubmit={handleUpdate}
+                  onResolverReady={(fn) => { editResolverRef.current = fn; }}
                   submitLabel="Save"
                   isSubmitting={isSaving}
                   placeholder="Edit your comment…"
@@ -280,7 +306,13 @@ function CommentCard({
                 {displayContent}
               </p>
             ) : (
-              <PostMarkdown content={displayContent} compact className="mt-1" />
+              <div className="whitespace-pre-line">
+                <PostMarkdown
+                  content={displayContent}
+                  compact
+                  className="mt-1"
+                />
+              </div>
             )}
           </div>
 
@@ -332,6 +364,7 @@ function CommentCard({
             value={replyValue}
             onChange={setReplyValue}
             onSubmit={handleReply}
+            onResolverReady={(fn) => { replyResolverRef.current = fn; }}
             submitLabel="Reply"
             isSubmitting={isReplying}
             placeholder={`Replying to @${comment.author?.name || "user"}…`}
@@ -363,19 +396,44 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [commentValue, setCommentValue] = useState("");
-
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const commentResolverRef = useRef<(text: string) => string>((t) => t);
 
   const loadComments = async () => {
     try {
       setIsLoading(true);
       const data = await fetchPostComments(postId);
       setComments(normalizeCommentThread(data.comments || []));
+      setPage(1);
+      setTotalPages(data.pagination?.pages || 1);
     } catch (error) {
       console.error("Failed to load comments:", error);
       toast.error("Failed to load comments");
       setComments([]);
+      setTotalPages(1);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Root comments come back newest-first, so the next page is strictly older
+  // — appending it to the end of the list is what "load more" means here.
+  const loadMoreComments = async () => {
+    if (page >= totalPages || isLoadingMore) return;
+    const nextPage = page + 1;
+    try {
+      setIsLoadingMore(true);
+      const data = await fetchPostComments(postId, nextPage);
+      setComments((prev) => [...prev, ...normalizeCommentThread(data.comments || [])]);
+      setPage(nextPage);
+      setTotalPages(data.pagination?.pages || totalPages);
+    } catch (error) {
+      console.error("Failed to load more comments:", error);
+      toast.error("Failed to load more comments");
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -389,7 +447,8 @@ export default function CommentSection({ postId }: CommentSectionProps) {
 
     try {
       setIsSubmitting(true);
-      await createPostComment(postId, commentValue.trim());
+      const resolved = commentResolverRef.current(commentValue.trim());
+      await createPostComment(postId, resolved);
       setCommentValue("");
       await loadComments();
     } catch (error) {
@@ -414,6 +473,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         value={commentValue}
         onChange={setCommentValue}
         onSubmit={handleCreateComment}
+        onResolverReady={(fn) => { commentResolverRef.current = fn; }}
         submitLabel="Post Comment"
         isSubmitting={isSubmitting}
         placeholder="Add a comment to the discussion…"
@@ -444,6 +504,20 @@ export default function CommentSection({ postId }: CommentSectionProps) {
               onChanged={loadComments}
             />
           ))}
+
+          {page < totalPages && (
+            <div className="flex justify-center pt-2">
+              <Button
+                variant="outline"
+                onClick={loadMoreComments}
+                disabled={isLoadingMore}
+                className="gap-2 rounded-full border-border px-5 text-label-md text-muted-foreground hover:border-primary hover:text-primary"
+              >
+                {isLoadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
+                Load more comments
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </section>

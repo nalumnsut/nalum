@@ -15,7 +15,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import ProfilePictureUpload from "@/components/profile/ProfilePictureUpload";
 import LocationSelector from "@/components/profile/LocationSelector";
-import { BRANCHES, CAMPUSES } from "@/constants/branches";
+import { BRANCHES, CAMPUSES, DEPARTMENTS } from "@/constants/branches";
 import BatchYearSelect from "@/components/BatchYearSelect";
 import XIcon from "@/components/icons/XIcon";
 import { POPULAR_COMPANIES, POPULAR_ROLES } from "@/lib/suggestions";
@@ -52,8 +52,9 @@ const ProfileForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Check if user is alumni
+  // Check if user is alumni / faculty
   const isAlumni = user?.role === "alumni";
+  const isFaculty = user?.role === "faculty";
   const [wantsAdditionalInfo, setWantsAdditionalInfo] = useState(false);
 
   // Form state - Profile Picture
@@ -64,6 +65,7 @@ const ProfileForm = () => {
   const [branch, setBranch] = useState("");
   const [campus, setCampus] = useState("");
   const [batch, setBatch] = useState("2025");
+  const [department, setDepartment] = useState("");
   const [currentCompany, setCurrentCompany] = useState("");
   const [currentRole, setCurrentRole] = useState("");
   const [showCompanySuggestions, setShowCompanySuggestions] = useState(false);
@@ -186,9 +188,16 @@ const ProfileForm = () => {
   };
 
   const nextStep = () => {
-    if (currentStep === 2 && (!branch || !campus || !batch)) {
-      toast.error("Please fill all required fields");
-      return;
+    if (currentStep === 2) {
+      if (isFaculty) {
+        if (!department || !campus) {
+          toast.error("Please fill all required fields");
+          return;
+        }
+      } else if (!branch || !campus || !batch) {
+        toast.error("Please fill all required fields");
+        return;
+      }
     }
     if (currentStep === 4 && isAlumni && (!city || !country)) {
       toast.error("Please provide your City and Country");
@@ -204,6 +213,15 @@ const ProfileForm = () => {
   const totalSteps = wantsAdditionalInfo ? 5 : 4;
 
   const handleSubmit = async () => {
+    if (isFaculty) {
+      if (!department || !campus) {
+        toast.error("Please fill all required fields");
+        return;
+      }
+    } else if (!branch || !campus || !batch) {
+      toast.error("Please fill all required fields");
+      return;
+    }
     if (isAlumni && (!city || !country)) {
       toast.error("Please provide your City and Country");
       return;
@@ -213,9 +231,13 @@ const ProfileForm = () => {
 
     // Use FormData for file upload
     const formData = new FormData();
-    formData.append("branch", branch);
+    if (isFaculty) {
+      formData.append("department", department);
+    } else {
+      formData.append("branch", branch);
+      formData.append("batch", batch);
+    }
     formData.append("campus", campus);
-    formData.append("batch", batch);
 
     if (currentCompany) formData.append("current_company", currentCompany);
     if (currentRole) formData.append("current_role", currentRole);
@@ -290,23 +312,43 @@ const ProfileForm = () => {
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="branch" className="text-base text-gray-900">
-                Branch/Department <span className="text-red-500">*</span>
-              </Label>
-              <Select onValueChange={setBranch} value={branch}>
-                <SelectTrigger id="branch" className="h-12 text-base">
-                  <SelectValue placeholder="Select your branch" />
-                </SelectTrigger>
-                <SelectContent>
-                  {BRANCHES.map((branch) => (
-                    <SelectItem key={branch} value={branch}>
-                      {branch}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {isFaculty ? (
+              <div className="space-y-2">
+                <Label htmlFor="department" className="text-base text-gray-900">
+                  Department <span className="text-red-500">*</span>
+                </Label>
+                <Select onValueChange={setDepartment} value={department}>
+                  <SelectTrigger id="department" className="h-12 text-base">
+                    <SelectValue placeholder="Select your department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEPARTMENTS.map((dep) => (
+                      <SelectItem key={dep} value={dep}>
+                        {dep}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="branch" className="text-base text-gray-900">
+                  Branch/Department <span className="text-red-500">*</span>
+                </Label>
+                <Select onValueChange={setBranch} value={branch}>
+                  <SelectTrigger id="branch" className="h-12 text-base">
+                    <SelectValue placeholder="Select your branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BRANCHES.map((branch) => (
+                      <SelectItem key={branch} value={branch}>
+                        {branch}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="campus" className="text-base text-gray-900">
@@ -326,16 +368,18 @@ const ProfileForm = () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="batch" className="text-base text-gray-900">
-                Year of Graduation <span className="text-red-500">*</span>
-              </Label>
-              <BatchYearSelect
-                value={batch}
-                onValueChange={setBatch}
-                mode={isAlumni ? "alumni" : "student"}
-              />
-            </div>
+            {!isFaculty && (
+              <div className="space-y-2">
+                <Label htmlFor="batch" className="text-base text-gray-900">
+                  Year of Graduation <span className="text-red-500">*</span>
+                </Label>
+                <BatchYearSelect
+                  value={batch}
+                  onValueChange={setBatch}
+                  mode={isAlumni ? "alumni" : "student"}
+                />
+              </div>
+            )}
 
             {isAlumni && (
               <>

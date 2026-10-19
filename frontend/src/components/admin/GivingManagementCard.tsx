@@ -137,7 +137,7 @@ const GivingManagementCard = ({
               {getStatusBadge()}
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>By {giving.userId.name}</span>
+              <span>By {giving.userId?.name || "Unknown user"}</span>
               <span>•</span>
               <span>{giving.userId.email}</span>
               <span>•</span>

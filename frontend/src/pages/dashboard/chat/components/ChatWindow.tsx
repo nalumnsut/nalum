@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, MoreVertical } from "lucide-react";
+import { ArrowLeft, Loader2, MoreVertical } from "lucide-react";
 import { MessageInput } from "./MessageInput";
 import { MessageBubble } from "./MessageBubble";
 import { TypingIndicator } from "./TypingIndicator";
@@ -89,6 +89,8 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
   useEffect(() => {
     readAcknowledgedRef.current = false;
     notificationsClearedRef.current = false;
+    isLoadingOlderRef.current = false;
+    anchorMessageIdRef.current = null;
   }, [activeConversationId]);
 
   // Reset firstUnreadMessageId when conversation changes
@@ -97,13 +99,34 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
   }, [activeConversationId]);
 
   // Custom hook to manage message state and socket events
-  const { messages, isLoading, sendMessage, deleteMessage } = useMessages(
+  const {
+    messages,
+    isLoading,
+    sendMessage,
+    deleteMessage,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useMessages(
     activeConversationId,
     socket,
     conversation.isConnectionOnly ? null : conversation.lastMessage,
     isCommunity
   );
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Older-history loading: a sentinel above the oldest loaded message triggers
+  // fetchNextPage when it scrolls into view. anchorMessageIdRef remembers
+  // which message was on top before the fetch so the view can be re-pinned to
+  // it afterward — without that, prepending older messages above the
+  // scrollTop would yank the whole conversation down. isLoadingOlderRef also
+  // tells the scroll-to-bottom effect below to sit out that same update.
+  const topSentinelRef = useRef<HTMLDivElement>(null);
+  const anchorMessageIdRef = useRef<string | null>(null);
+  const isLoadingOlderRef = useRef(false);
+  const messagesRef = useRef(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   // Snapshot unread boundaries for this open-chat session. Keep the divider
   // stable even after the backend confirms the messages as read.
@@ -134,10 +157,50 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
     }
   }, []);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive — but not when this
+  // update was an older-history page landing at the top (handled below).
   useEffect(() => {
+    if (isLoadingOlderRef.current) return;
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  // After older messages are prepended, re-pin the view to the message that
+  // was on top before the fetch instead of leaving the scroll position (now
+  // measured from a taller document) wherever it happened to land.
+  useEffect(() => {
+    if (!isLoadingOlderRef.current) return;
+    const anchorId = anchorMessageIdRef.current;
+    isLoadingOlderRef.current = false;
+    anchorMessageIdRef.current = null;
+    if (!anchorId) return;
+    const target = document.querySelector(`[data-message-id="${anchorId}"]`);
+    target?.scrollIntoView({ behavior: "auto", block: "start" });
+  }, [messages]);
+
+  // Loads older history as the user scrolls near the top. Gated on
+  // `hasNextPage` so a short conversation — where the sentinel is visible
+  // immediately because everything already fits on screen — never re-fetches
+  // a page that doesn't exist; `isFetchingNextPage` (and the ref mirror of
+  // it) stop a second request from firing while one is already in flight.
+  useEffect(() => {
+    const sentinel = topSentinelRef.current;
+    if (!sentinel || isLoading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        if (!hasNextPage || isFetchingNextPage || isLoadingOlderRef.current) return;
+
+        isLoadingOlderRef.current = true;
+        anchorMessageIdRef.current = messagesRef.current[0]?._id ?? null;
+        fetchNextPage();
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeConversationId, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Notification deep links target both the correct conversation and message.
   useEffect(() => {
@@ -504,6 +567,12 @@ export const ChatWindow = ({ conversation, onBack }: ChatWindowProps) => {
           </div>
         ) : (
           <div className="space-y-4 min-w-0">
+            <div ref={topSentinelRef} />
+            {isFetchingNextPage && (
+              <div className="flex justify-center py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
             {messages.map((message: any, index: number) => {
               const senderId = message.sender?._id || message.sender || message.senderId;
               const isOwn = message.isOptimistic || senderId === user?.id;

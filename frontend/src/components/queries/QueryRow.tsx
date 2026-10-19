@@ -116,8 +116,8 @@ export const QueryRow = ({ query, index = 0, onDelete }: QueryRowProps) => {
           </div>
         </div>
 
-        <h3 className="text-headline-md text-foreground">{query.title}</h3>
-        <p className="mt-1.5 whitespace-pre-wrap text-body-md text-muted-foreground">
+        <h3 className="break-words text-headline-md text-foreground">{query.title}</h3>
+        <p className="mt-1.5 whitespace-pre-wrap break-words text-body-md text-muted-foreground">
           {renderContent(query.content)}
         </p>
 
@@ -158,7 +158,7 @@ export const QueryRow = ({ query, index = 0, onDelete }: QueryRowProps) => {
                 Admin Response
               </span>
             </div>
-            <p className="whitespace-pre-wrap text-body-sm text-foreground">
+            <p className="whitespace-pre-wrap break-words text-body-sm text-foreground">
               {query.answer}
             </p>
           </div>

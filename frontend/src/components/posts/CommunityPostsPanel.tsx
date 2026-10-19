@@ -4,7 +4,7 @@ import { Loader2, MessagesSquare, Search, X } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SmartPagination } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import PostRow from "@/components/posts/PostRow";
+import PostCard from "@/components/posts/PostCard";
 import api from "@/lib/api";
 import { SPRING, chipEntrance, popVariants, switchVariants } from "@/lib/motion";
 import { PostRecord } from "@/lib/posts";
@@ -250,8 +250,9 @@ export const CommunityPostsPanel = ({
               swap silently and the filter would feel unresponsive. */}
           <div key={`${page}-${activeTag}-${query}`} className="space-y-4">
             {posts.map((post, index) => (
-              <PostRow
+              <PostCard
                 key={post._id}
+                context="feed"
                 post={post}
                 index={index}
                 onTagClick={selectTag}

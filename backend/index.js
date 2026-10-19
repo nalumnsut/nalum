@@ -20,11 +20,13 @@ const reportsRoutes = require("./routes/reports.js");
 const queriesRoutes = require("./routes/queries.js");
 const givingRoutes = require("./routes/givings.js");
 const notificationRoutes = require("./routes/notifications.js");
+const analyticsRoutes = require("./routes/analytics.js");
 const alumniMapRoutes = require("./routes/alumniMap.js");
 const geocodeRoutes = require("./routes/geocode.js");
 const mentionRoutes = require("./routes/mention.js");
 const { startProcessing } = require("./services/geocodingQueue");
 const { checkBanned } = require("./middleware/checkBanned.js");
+const { emailWorker } = require("./queues/emailQueue");
 const morgan = require("morgan");
 const redisConfig = require("./config/redis.config.js");
 const { initializeSocket } = require("./sockets/chatSocket.js");
@@ -36,7 +38,7 @@ const logStartupStep = (message) => {
 
 const listen = (port) =>
   new Promise((resolve, reject) => {
-    const host = process.env.HOST || "0.0.0.0";
+    const host = process.env.HOST;
     server.once("error", reject);
     server.listen(port, host, () => {
       server.off("error", reject);
@@ -56,11 +58,6 @@ app.use(
     origin: [
       "https://alumni.nsut.ac.in",
       "http://localhost:5173",
-      "http://127.0.0.1:5173",
-      "http://localhost:2478",
-      "http://127.0.0.1:2478",
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
       "http://localhost",
     ],
     credentials: true,
@@ -68,19 +65,23 @@ app.use(
     allowedHeaders: [
       "Content-Type",
       "Authorization",
-      "X-Requested-With",
-      "Accept",
       "ngrok-skip-browser-warning",
     ],
   }),
 );
-
-app.use(
-  helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    crossOriginEmbedderPolicy: false,
-  }),
-);
+if (process.env.NODE_ENV !== "production") {
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+      crossOriginEmbedderPolicy: false,
+      // Disable COOP for local development to allow Google OAuth popup communication
+      crossOriginOpenerPolicy: false,
+    })
+  );
+} else {
+  // Production: keep default Helmet (including COOP) for security
+  app.use(helmet());
+}
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -97,6 +98,7 @@ app.use("/api/reports", checkBanned, reportsRoutes);
 app.use("/api/queries", checkBanned, queriesRoutes);
 app.use("/api/givings", checkBanned, givingRoutes);
 app.use("/api/notifications", checkBanned, notificationRoutes);
+app.use("/api/analytics", analyticsRoutes);
 app.use("/api/alumni-map", alumniMapRoutes);
 app.use("/api/geocode", checkBanned, geocodeRoutes);
 app.use("/api/mention", checkBanned, mentionRoutes);
@@ -105,7 +107,6 @@ app.use("/api/mention", checkBanned, mentionRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Serve static files for newsletter uploads
-app.use("/uploads", express.static("uploads"));
 app.use("/api/uploads", express.static("uploads"));
 
 // a sample api call to check if the backend is working
@@ -130,19 +131,17 @@ async function startServer() {
     logStartupStep("Connecting to Postgres...");
     const postgresConnected = await initPostgres();
     if (!postgresConnected) {
-      if (process.env.NODE_ENV === "production" && process.env.POSTGRESQL_DATABASE_URL) {
-        throw new Error("Postgres connection check failed");
-      }
-      console.warn(
-        "[startup] Postgres unavailable — continuing startup (Postgres-backed features disabled)",
-      );
-    } else {
-      logStartupStep("Postgres initialization complete");
+      throw new Error("Postgres connection check failed");
     }
+    logStartupStep("Postgres initialization complete");
 
     logStartupStep("Starting geocoding queue worker...");
     startProcessing();
     logStartupStep("Geocoding queue worker started");
+
+    logStartupStep("Starting email queue worker...");
+    // Email worker is already initialized by requiring it
+    logStartupStep("Email queue worker started");
 
     logStartupStep("Initializing Socket.io...");
     const io = await initializeSocket(server);

@@ -9,8 +9,12 @@ uploads/posts/*
 uploads/event-images/*
 uploads/newsletters/*
 uploads/profile-pictures/*
+uploads/giving/*
+uploads/queries/*
 
 # Keep the directories themselves
 !uploads/event-images/.gitkeep
 !uploads/newsletters/.gitkeep
 !uploads/profile-pictures/.gitkeep
+!uploads/giving/.gitkeep
+!uploads/queries/.gitkeep

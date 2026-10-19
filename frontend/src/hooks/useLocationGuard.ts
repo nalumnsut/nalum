@@ -16,6 +16,8 @@ export const useLocationGuard = () => {
     if (location.pathname === '/dashboard/update-profile') return;
     if (location.pathname === '/profile-form') return;
 
+    if (user?.role === 'admin') return;
+
     // 1. If no profile exists, redirect to profile creation
     if (!profile) {
       toast.info("Please set up your profile to continue", {

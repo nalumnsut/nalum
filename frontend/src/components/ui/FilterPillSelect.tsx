@@ -39,7 +39,10 @@ export const FilterPillSelect = ({
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger
         className={cn(
-          "rounded-full border-border bg-card text-label-md text-foreground focus:ring-ring h-10",
+          "rounded-full border text-sm font-medium focus:ring-ring h-10 transition-colors",
+          value
+            ? "border-primary bg-primary-subtle text-primary hover:border-primary hover:text-primary"
+            : "border-border bg-card text-foreground hover:border-primary hover:text-primary hover:bg-card",
           triggerClassName
         )}
       >

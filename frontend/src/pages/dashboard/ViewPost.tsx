@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -33,6 +34,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import {
+  PostAuthor,
   PostRecord,
   authorHeadline,
   bodyWithoutTitle,
@@ -68,6 +70,7 @@ export default function ViewPost() {
   const { user } = useAuth();
   const { clearPostNotifications } = useNotifications();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [post, setPost] = useState<PostRecord | null>(null);
   const [similar, setSimilar] = useState<PostRecord[]>([]);
@@ -78,9 +81,11 @@ export default function ViewPost() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [hasReported, setHasReported] = useState(false);
+  const [showAdminQueryMessage, setShowAdminQueryMessage] = useState(false);
   const clearedForPostRef = useRef<string | null>(null);
+  const viewedForPostRef = useRef<string | null>(null);
 
-  const isOwner = !!post && post.userId._id === user?.id;
+  const isOwner = !!post && post.userId?._id === user?.id;
   const liked = !!user?.id && likes.includes(user.id);
 
   useEffect(() => {
@@ -112,6 +117,19 @@ export default function ViewPost() {
       })
       .catch((err) => console.error("Error fetching similar posts:", err));
   }, [postId]);
+
+  // Record a view once per post, but never for the post's own author.
+  useEffect(() => {
+    if (!postId || !post || post._id !== postId) return;
+    if (isOwner) return;
+    if (viewedForPostRef.current === postId) return;
+
+    viewedForPostRef.current = postId;
+    api.post(`/posts/${postId}/view`).catch((err) => {
+      console.error("Failed to record post view:", err);
+      viewedForPostRef.current = null; // allow retry on a future visit if this failed
+    });
+  }, [post, postId, isOwner]);
 
   // Reading a post clears any notification that pointed at it.
   useEffect(() => {
@@ -155,7 +173,13 @@ export default function ViewPost() {
 
     try {
       const { data } = await api.post(`/posts/${post._id}/like`);
-      if (data.success && Array.isArray(data.likes)) setLikes(data.likes);
+      if (data.success && Array.isArray(data.likes)) {
+        setLikes(data.likes);
+        setPost((current) => current ? { ...current, likes: data.likes } : current);
+        // The dashboard's recent-posts query may still contain the post state
+        // from before this detail view was opened.
+        void queryClient.invalidateQueries({ queryKey: ["posts"] });
+      }
     } catch (err) {
       console.error("Error toggling like:", err);
       setLikes(previous);
@@ -235,7 +259,8 @@ export default function ViewPost() {
     );
   }
 
-  const author = post.userId;
+  const author: PostAuthor = post.userId ?? { _id: "", name: "Unknown user" };
+  const isAdminPost = author.role === "admin";
   const allImages = post.images || [];
   const body = bodyWithoutTitle(post.content, post.title);
   const attachmentUrls = allImages.map(getPostImageUrl);
@@ -255,46 +280,81 @@ export default function ViewPost() {
           aria-label="Breadcrumb"
           className="mb-4 flex items-center gap-1 text-body-sm text-muted-foreground"
         >
-          <Link to="/dashboard/posts" className="hover:text-primary">
+          <Link to="/dashboard/posts" className="shrink-0 hover:text-primary">
             Posts
           </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="line-clamp-1 text-foreground">{post.title}</span>
+          <ChevronRight className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1 line-clamp-1 break-words text-foreground">
+            {post.title}
+          </span>
         </nav>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Article */}
           <article className="space-y-6 lg:col-span-2">
             <div className="rounded-card border border-border bg-card p-6 shadow-card md:p-8">
-              <h1 className="text-headline-lg-mobile text-foreground md:text-headline-xl">
+              <h1 className="break-words text-headline-lg-mobile text-foreground md:text-headline-xl">
                 {post.title}
               </h1>
 
               {/* Byline */}
               <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
-                <Link
-                  to={`/dashboard/alumni/${author._id}`}
-                  className="flex min-w-0 items-center gap-3"
-                >
-                  <UserAvatar
-                    src={author.profile_picture || undefined}
-                    name={author.name}
-                    size="md"
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate text-label-md text-foreground">
-                      {author.name}
+                {isAdminPost ? (
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setShowAdminQueryMessage((prev) => !prev)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        setShowAdminQueryMessage((prev) => !prev);
+                      }
+                    }}
+                    className="group/author flex min-w-0 cursor-pointer items-center gap-3"
+                  >
+                    <UserAvatar
+                      src={author.profile_picture || undefined}
+                      name={author.name}
+                      size="md"
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-label-md text-foreground transition-colors group-hover/author:text-primary">
+                        {author.name}
+                      </span>
+                      <span className="block text-body-sm text-muted-foreground">
+                        {new Date(post.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}{" "}
+                        • {readingTime(post.content)} min read
+                      </span>
                     </span>
-                    <span className="block text-body-sm text-muted-foreground">
-                      {new Date(post.createdAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}{" "}
-                      • {readingTime(post.content)} min read
+                  </div>
+                ) : (
+                  <Link
+                    to={`/dashboard/alumni/${author._id}`}
+                    className="group/author flex min-w-0 items-center gap-3"
+                  >
+                    <UserAvatar
+                      src={author.profile_picture || undefined}
+                      name={author.name}
+                      size="md"
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-label-md text-foreground transition-colors group-hover/author:text-primary">
+                        {author.name}
+                      </span>
+                      <span className="block text-body-sm text-muted-foreground">
+                        {new Date(post.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}{" "}
+                        • {readingTime(post.content)} min read
+                      </span>
                     </span>
-                  </span>
-                </Link>
+                  </Link>
+                )}
 
                 <div className="flex items-center gap-2">
                   <Button
@@ -365,6 +425,22 @@ export default function ViewPost() {
                 </div>
               </div>
 
+              {/* Admin Query Message Banner if toggled */}
+              {isAdminPost && showAdminQueryMessage && (
+                <div className="mt-4 flex flex-col gap-2 rounded-lg border border-warning/40 bg-warning-subtle p-4 text-body-sm text-foreground sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 shrink-0 text-warning" />
+                    <span>Got any queries for the admin? You can submit them on the Queries page.</span>
+                  </div>
+                  <Link
+                    to="/dashboard/queries"
+                    className="inline-flex shrink-0 items-center gap-1 text-label-sm font-semibold text-primary hover:underline"
+                  >
+                    Go to Queries →
+                  </Link>
+                </div>
+              )}
+
               {/* Moderation state — only the author ever sees this */}
               {isOwner && post.status && post.status !== "approved" && (
                 <div
@@ -396,24 +472,18 @@ export default function ViewPost() {
 
               {/* Attached images */}
               {images.length > 0 && (
-                <div
-                  className={cn(
-                    "mt-6 grid gap-4",
-                    images.length > 1 ? "sm:grid-cols-2" : "grid-cols-1"
-                  )}
-                >
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {images.map((image, index) => (
                     <button
                       key={image}
                       type="button"
                       onClick={() => setLightboxIndex(index)}
-                      className="overflow-hidden rounded-card border border-border"
+                      className="group relative overflow-hidden rounded-card border border-border bg-surface-low text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <img
                         src={getPostImageUrl(image)}
                         alt={`Attachment ${index + 1}`}
-                        loading="lazy"
-                        className="h-full max-h-[420px] w-full object-cover transition-transform duration-500 hover:scale-[1.02]"
+                        className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     </button>
                   ))}
@@ -421,9 +491,9 @@ export default function ViewPost() {
               )}
             </div>
 
-            {/* Discussion */}
+            {/* Comments */}
             <div
-              id="comments-section"
+              id="comments"
               className="rounded-card border border-border bg-card p-6 shadow-card md:p-8"
             >
               <CommentSection postId={post._id} />
@@ -434,38 +504,60 @@ export default function ViewPost() {
           <aside className="space-y-6">
             <SidebarCard title="About the Author">
               <div className="text-center">
-                <Link to={`/dashboard/alumni/${author._id}`} className="inline-block">
-                  <UserAvatar
-                    src={author.profile_picture || undefined}
-                    name={author.name}
-                    size="lg"
-                    className="mx-auto"
-                  />
-                </Link>
-                <p className="mt-3 text-headline-md text-foreground">
+                {isAdminPost ? (
+                  <div className="inline-block">
+                    <UserAvatar
+                      src={author.profile_picture || undefined}
+                      name={author.name}
+                      size="lg"
+                      className="mx-auto"
+                    />
+                  </div>
+                ) : (
+                  <Link to={`/dashboard/alumni/${author._id}`} className="inline-block">
+                    <UserAvatar
+                      src={author.profile_picture || undefined}
+                      name={author.name}
+                      size="lg"
+                      className="mx-auto"
+                    />
+                  </Link>
+                )}
+                <p className="mt-3 break-words text-headline-md text-foreground">
                   {author.name}
                 </p>
-                <p className="text-body-sm text-muted-foreground">
+                <p className="break-words text-body-sm text-muted-foreground">
                   {authorHeadline(author)}
                 </p>
                 {author.batch && (
                   <p className="mt-1 text-label-sm text-primary">
-                    Class of {author.batch}
+                    {author.batch}
                   </p>
                 )}
                 {author.bio && (
-                  <p className="mt-3 text-body-sm text-muted-foreground">
+                  <p className="mt-3 break-words text-body-sm text-muted-foreground">
                     {author.bio}
                   </p>
                 )}
-                <Link to={`/dashboard/alumni/${author._id}`} className="mt-4 block">
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-full border-border text-label-md text-foreground hover:border-primary hover:text-primary"
-                  >
-                    View Profile
-                  </Button>
-                </Link>
+                {isAdminPost ? (
+                  <Link to="/dashboard/queries" className="mt-4 block">
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-full border-border text-label-md text-foreground hover:border-primary hover:text-primary"
+                    >
+                      Ask a Query
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to={`/dashboard/alumni/${author._id}`} className="mt-4 block">
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-full border-border text-label-md text-foreground hover:border-primary hover:text-primary"
+                    >
+                      View Profile
+                    </Button>
+                  </Link>
+                )}
               </div>
             </SidebarCard>
 
@@ -478,15 +570,15 @@ export default function ViewPost() {
                         to={`/dashboard/posts/${item._id}`}
                         className="group block"
                       >
-                        <p className="text-label-md text-foreground group-hover:text-primary">
+                        <p className="line-clamp-1 break-words text-label-md text-foreground group-hover:text-primary">
                           {item.title}
                         </p>
-                        <p className="mt-1 line-clamp-2 text-body-sm text-muted-foreground">
+                        <p className="mt-1 line-clamp-2 whitespace-pre-line text-body-sm text-muted-foreground">
                           {toPlainText(item.content)}
                         </p>
                         <p className="mt-1 text-body-sm text-muted-foreground">
-                          {item.userId.name}
-                          {item.userId.batch && `, Class of ${item.userId.batch}`}
+                          {item.userId?.name ?? "Unknown user"}
+                          {item.userId?.batch && `, ${item.userId.batch}`}
                         </p>
                       </Link>
                     </li>
@@ -552,9 +644,7 @@ export default function ViewPost() {
                     type="button"
                     aria-label="Previous image"
                     onClick={() =>
-                      setLightboxIndex(
-                        (lightboxIndex - 1 + images.length) % images.length
-                      )
+                      setLightboxIndex((lightboxIndex - 1 + images.length) % images.length)
                     }
                     className="absolute left-4 rounded-full bg-surface-inverse/70 p-3 text-surface-inverse-foreground hover:bg-surface-inverse"
                   >

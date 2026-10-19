@@ -96,6 +96,7 @@ export const routeImportMap: Record<string, () => void> = {
   "/dashboard": preloadDashboardPage(loaders.loadDashboardHome),
   "/dashboard/profile": preloadDashboardPage(loaders.loadShowProfile),
   "/dashboard/update-profile": preloadDashboardPage(loaders.loadUpdateProfile),
+  "/dashboard/change-password": preloadDashboardPage(loaders.loadChangePassword),
   "/dashboard/alumni": preloadDashboardPage(loaders.loadAlumniDirectory),
   "/dashboard/alumni/:userId": preloadDashboardPage(loaders.loadViewProfile),
   "/dashboard/connections": preloadDashboardPage(loaders.loadAlumniDirectory),

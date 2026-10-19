@@ -47,10 +47,10 @@ const validateSignup = (req, res, next) => {
   }
 
   // Role validation
-  if (!["student", "alumni"].includes(role)) {
+  if (!["student", "alumni", "faculty"].includes(role)) {
     return res.status(400).json({
       success: false,
-      message: "Role must be either 'student' or 'alumni'"
+      message: "Role must be one of 'student', 'alumni', or 'faculty'"
     });
   }
 

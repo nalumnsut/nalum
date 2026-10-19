@@ -75,10 +75,10 @@ export const NotificationItem = ({ notification, onClose }: NotificationItemProp
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm line-clamp-1 text-foreground">
+          <p className="break-words font-medium text-sm line-clamp-1 text-foreground">
             {notification.title}
           </p>
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="break-words text-sm text-muted-foreground line-clamp-2">
             {notification.message}
           </p>
           <p className="text-xs text-muted-foreground/70 mt-1">

@@ -9,6 +9,7 @@ import {
   loadCurrentEvents,
   loadPostsApproval,
   loadCurrentPosts,
+  loadAdminPostEditor,
   loadNewsletters,
   loadBannedUsers,
   loadCodeManagement,
@@ -16,6 +17,7 @@ import {
   loadReports,
   loadQueryManagement,
   loadGivingManagement,
+  loadAdminAnalytics,
 } from "./loaders";
 
 // Lazy loaded admin components with shared loaders
@@ -27,6 +29,7 @@ const EventApprovals = lazy(loadEventApprovals);
 const CurrentEvents = lazy(loadCurrentEvents);
 const PostsApproval = lazy(loadPostsApproval);
 const CurrentPosts = lazy(loadCurrentPosts);
+const AdminPostEditor = lazy(loadAdminPostEditor);
 const Newsletters = lazy(loadNewsletters);
 const BannedUsers = lazy(loadBannedUsers);
 const CodeManagement = lazy(loadCodeManagement);
@@ -34,12 +37,15 @@ const AlumniDatabase = lazy(loadAlumniDatabase);
 const Reports = lazy(loadReports);
 const QueryManagement = lazy(loadQueryManagement);
 const GivingManagement = lazy(loadGivingManagement);
+const AdminAnalytics = lazy(loadAdminAnalytics);
 
 export function AdminRoutes() {
   return (
     <>
       <Route element={<AdminProtectedRoute />}>
         <Route path="/admin-panel/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin-panel/analytics" element={<AdminAnalytics />} />
+        <Route path="/admin-panel/verification" element={<VerificationQueue />} />
         <Route path="/admin-panel/verification" element={<VerificationQueue />} />
         <Route path="/admin-panel/verifications" element={<VerificationQueue />} />
         <Route path="/admin-panel/users" element={<UserManagement />} />
@@ -47,6 +53,14 @@ export function AdminRoutes() {
         <Route path="/admin-panel/current-events" element={<CurrentEvents />} />
         <Route path="/admin-panel/posts-approval" element={<PostsApproval />} />
         <Route path="/admin-panel/current-posts" element={<CurrentPosts />} />
+        <Route
+          path="/admin-panel/current-posts/new"
+          element={<AdminPostEditor mode="create" />}
+        />
+        <Route
+          path="/admin-panel/current-posts/:postId/edit"
+          element={<AdminPostEditor mode="edit" />}
+        />
         <Route path="/admin-panel/newsletters" element={<Newsletters />} />
         <Route path="/admin-panel/banned" element={<BannedUsers />} />
         <Route path="/admin-panel/codes" element={<CodeManagement />} />

@@ -37,7 +37,7 @@ const headline = (profile: SuggestionProfile) => {
     .filter(Boolean)
     .join(" at ");
   return (
-    [profile.batch && `Class of ${profile.batch}`, job || profile.branch]
+    [profile.batch, job || profile.branch]
       .filter(Boolean)
       .join(" • ") || "Alumni network"
   );

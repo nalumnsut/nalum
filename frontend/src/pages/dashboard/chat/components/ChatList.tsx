@@ -21,7 +21,7 @@ interface ChatListProps {
   chats: any[];
 }
 
-type RoleFilter = "all" | "alumni" | "student";
+type RoleFilter = "all" | "alumni" | "student" | "faculty";
 
 const formatMessageDate = (dateString: string) => {
   if (!dateString) return "";
@@ -42,7 +42,7 @@ const formatMessageDate = (dateString: string) => {
 export const ChatList = ({ onSelectConversation, selectedConversation, chats = [] }: ChatListProps) => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  type FilterType = "all" | "unread" | "alumni" | "student";
+  type FilterType = "all" | "unread" | "alumni" | "student" | "faculty";
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
   if (!user) {
@@ -59,7 +59,7 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
 
       if (activeFilter === "unread" && !(chat.unreadCount > 0)) return false;
 
-      if (activeFilter === "alumni" || activeFilter === "student") {
+      if (["alumni", "student", "faculty"].includes(activeFilter)) {
         if (chat.itemType === 'community') return false;
         if (chat.otherParticipant?.role !== activeFilter) return false;
       }
@@ -73,6 +73,7 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
     { id: "unread", label: "Unread" },
     { id: "student", label: "Students" },
     { id: "alumni", label: "Alumni" },
+    { id: "faculty", label: "Faculty" },
   ];
 
   return (
@@ -159,7 +160,7 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-medium text-sm truncate text-foreground">
+                        <p className="font-medium text-sm truncate text-foreground min-w-0 flex-1">
                           {chat.itemType === 'community' ? chat.name : (chat.otherParticipant?.name || "Unknown User")}
                         </p>
                         {(chat.lastMessage?.createdAt || chat.lastMessage?.timestamp) && (
@@ -174,7 +175,7 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
 
                       <div className="flex items-center justify-between gap-2 mt-0.5">
                         <p className={cn(
-                          "text-xs truncate max-w-[70%]",
+                          "truncate text-xs min-w-0 flex-1",
                           chat.unreadCount > 0 ? "text-foreground font-medium" : "text-muted-foreground"
                         )}>
                           {chat.isConnectionOnly ? (
@@ -184,7 +185,9 @@ export const ChatList = ({ onSelectConversation, selectedConversation, chats = [
                           ) : (
                             <>
                               {chat.lastMessage?.sender === user?.id && <span className="opacity-70 mr-1">You:</span>}
-                              {chat.lastMessage?.content || "No messages"}
+                              {chat.lastMessage?.content
+                                ? chat.lastMessage.content.replace(/@\[([^\]]+)\]\([^)]+\)/g, "@$1")
+                                : "No messages"}
                             </>
                           )}
                         </p>

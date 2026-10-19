@@ -1,44 +1,37 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { CheckCircle, XCircle, User } from "lucide-react";
+import { CheckCircle, XCircle, User, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminApi } from "@/hooks/useAdminApi";
-
-interface VerificationQueueItem {
-  _id: string;
-  user: {
-    _id: string;
-    name: string;
-    email: string;
-    role: string;
-    createdAt: string;
-  };
-  details_provided: {
-    name: string;
-    roll_no?: string;
-    batch: string;
-    branch: string;
-  };
-  contact_info?: {
-    phone?: string;
-    alternate_email?: string;
-    linkedin?: string;
-  };
-  createdAt: string;
-}
+import {
+  VerificationDetailsModal,
+  type VerificationQueueItem,
+} from "@/components/admin/VerificationDetailsModal";
 
 const VerificationQueue = () => {
   const adminApi = useAdminApi();
   const [queue, setQueue] = useState<VerificationQueueItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState<VerificationQueueItem | null>(null);
+  const [selectedItem, setSelectedItem] =
+    useState<VerificationQueueItem | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [detailsItem, setDetailsItem] = useState<VerificationQueueItem | null>(
+    null,
+  );
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  const handleViewDetails = (item: VerificationQueueItem) => {
+    setDetailsItem(item);
+    setShowDetailsModal(true);
+  };
 
   const fetchQueue = async () => {
     try {
-      const response = await adminApi.get<{ data: VerificationQueueItem[] }>("/admin/verification/queue");
+      const response = await adminApi.get<{ data: VerificationQueueItem[] }>(
+        "/admin/verification/queue",
+      );
       setQueue(response.data.data || []);
     } catch (err) {
       console.error("Failed to fetch queue:", err);
@@ -83,7 +76,7 @@ const VerificationQueue = () => {
     try {
       await adminApi.post(
         `/admin/verification/reject/${selectedItem.user._id}`,
-        { reason: rejectReason }
+        { reason: rejectReason },
       );
       toast.success("Verification rejected");
       setShowRejectModal(false);
@@ -112,7 +105,9 @@ const VerificationQueue = () => {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Verification Queue</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Verification Queue
+          </h1>
           <p className="text-gray-600 mt-2">
             {queue.length} pending verification{queue.length !== 1 && "s"}
           </p>
@@ -124,7 +119,9 @@ const VerificationQueue = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               No pending verifications
             </h3>
-            <p className="text-gray-600">All verification requests have been processed.</p>
+            <p className="text-gray-600">
+              All verification requests have been processed.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -139,68 +136,98 @@ const VerificationQueue = () => {
                       {item.user.name}
                     </h3>
                     <p className="text-sm text-gray-600">{item.user.email}</p>
-                    
+
                     <div className="mt-4 grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-gray-500">Provided Name</p>
-                        <p className="font-medium">{item.details_provided.name}</p>
+                        <p className="font-medium">
+                          {item.details_provided.name}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Batch</p>
-                        <p className="font-medium">{item.details_provided.batch}</p>
+                        <p className="font-medium">
+                          {item.details_provided.batch}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Branch</p>
-                        <p className="font-medium">{item.details_provided.branch}</p>
+                        <p className="font-medium">
+                          {item.details_provided.branch}
+                        </p>
                       </div>
                       {item.details_provided.roll_no && (
                         <div>
                           <p className="text-xs text-gray-500">Roll No</p>
-                          <p className="font-medium">{item.details_provided.roll_no}</p>
+                          <p className="font-medium">
+                            {item.details_provided.roll_no}
+                          </p>
                         </div>
                       )}
                     </div>
 
                     {/* Contact Information */}
-                    {item.contact_info && (item.contact_info.phone || item.contact_info.alternate_email || item.contact_info.linkedin) && (
-                      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                        <p className="text-xs font-semibold text-blue-900 mb-2">Contact Information</p>
-                        <div className="space-y-1">
-                          {item.contact_info.phone && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-blue-700 font-medium">Phone:</span>
-                              <span className="text-gray-700">{item.contact_info.phone}</span>
-                            </div>
-                          )}
-                          {item.contact_info.alternate_email && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-blue-700 font-medium">Alt Email:</span>
-                              <span className="text-gray-700">{item.contact_info.alternate_email}</span>
-                            </div>
-                          )}
-                          {item.contact_info.linkedin && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-blue-700 font-medium">LinkedIn:</span>
-                              <a 
-                                href={item.contact_info.linkedin} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
-                              >
-                                View Profile
-                              </a>
-                            </div>
-                          )}
+                    {item.contact_info &&
+                      (item.contact_info.phone ||
+                        item.contact_info.alternate_email ||
+                        item.contact_info.linkedin) && (
+                        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                          <p className="text-xs font-semibold text-blue-900 mb-2">
+                            Contact Information
+                          </p>
+                          <div className="space-y-1">
+                            {item.contact_info.phone && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-blue-700 font-medium">
+                                  Phone:
+                                </span>
+                                <span className="text-gray-700">
+                                  {item.contact_info.phone}
+                                </span>
+                              </div>
+                            )}
+                            {item.contact_info.alternate_email && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-blue-700 font-medium">
+                                  Alt Email:
+                                </span>
+                                <span className="text-gray-700">
+                                  {item.contact_info.alternate_email}
+                                </span>
+                              </div>
+                            )}
+                            {item.contact_info.linkedin && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-blue-700 font-medium">
+                                  LinkedIn:
+                                </span>
+                                <a
+                                  href={item.contact_info.linkedin}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  View Profile
+                                </a>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    
+                      )}
+
                     <p className="text-xs text-gray-500 mt-4">
                       Submitted: {new Date(item.createdAt).toLocaleString()}
                     </p>
                   </div>
 
                   <div className="flex space-x-2 ml-4">
+                    <button
+                      onClick={() => handleViewDetails(item)}
+                      className="flex items-center space-x-1.5 px-3.5 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 font-medium text-sm transition-colors"
+                    >
+                      <Eye size={16} />
+                      <span>View Details</span>
+                    </button>
                     <button
                       onClick={() => handleApprove(item.user._id)}
                       disabled={actionLoading === item.user._id}
@@ -228,9 +255,12 @@ const VerificationQueue = () => {
         {showRejectModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-semibold mb-4">Reject Verification</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                Reject Verification
+              </h3>
               <p className="text-sm text-gray-600 mb-4">
-                Provide a reason for rejecting {selectedItem?.user.name}'s verification:
+                Provide a reason for rejecting {selectedItem?.user.name}'s
+                verification:
               </p>
               <textarea
                 value={rejectReason}
@@ -256,6 +286,15 @@ const VerificationQueue = () => {
             </div>
           </div>
         )}
+        {/* Verification Details Modal */}
+        <VerificationDetailsModal
+          isOpen={showDetailsModal}
+          onClose={() => setShowDetailsModal(false)}
+          item={detailsItem}
+          onApprove={handleApprove}
+          onReject={handleRejectClick}
+          isActionLoading={!!actionLoading}
+        />
       </div>
     </AdminLayout>
   );

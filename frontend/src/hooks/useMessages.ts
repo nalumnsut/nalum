@@ -14,6 +14,7 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     fetchNextPage,
     hasNextPage,
     isLoading,
+    isFetchingNextPage,
   } = useInfiniteQuery({
     queryKey: messagesQueryKey,
     initialPageParam: 1,
@@ -57,7 +58,12 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     staleTime: 5000, // Prevent immediate refetch to protect optimistic updates on new conversations
   });
 
-  const messages = data?.pages.flatMap((page) => page.data) || [];
+  // Page 1 is the most recent window (backend sorts newest-first, then
+  // reverses within the page); each later page fetched via fetchNextPage is
+  // an older window further back in time. Pages therefore arrive in
+  // newest-to-oldest fetch order, so they need reversing before flattening
+  // to land in chronological (oldest-first) order for display.
+  const messages = data?.pages.slice().reverse().flatMap((page) => page.data) || [];
 
   useEffect(() => {
     if (!socket || !conversationId) return;
@@ -291,6 +297,7 @@ export const useMessages = (conversationId: string | null, socket: any, initialM
     isLoading,
     fetchNextPage,
     hasNextPage,
+    isFetchingNextPage,
     sendMessage,
     markAsRead,
     deleteMessage,

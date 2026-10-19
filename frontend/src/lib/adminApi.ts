@@ -22,6 +22,7 @@ export interface DashboardStats {
     total: number;
     students: number;
     alumni: number;
+    faculty: number;
     verified_alumni: number;
     banned: number;
     recent_registrations: number;
@@ -44,6 +45,15 @@ export interface DashboardStats {
   bans: {
     active: number;
     total: number;
+  };
+  website_visits?: {
+    total: number;
+    pre_login: number;
+    post_login: number;
+  };
+  posts?: {
+    total: number;
+    total_views: number;
   };
 }
 

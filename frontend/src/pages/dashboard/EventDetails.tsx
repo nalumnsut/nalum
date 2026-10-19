@@ -162,11 +162,13 @@ export default function EventDetails() {
           aria-label="Breadcrumb"
           className="mb-4 flex items-center gap-1 text-body-sm text-muted-foreground"
         >
-          <Link to="/dashboard/events" className="hover:text-primary">
+          <Link to="/dashboard/events" className="shrink-0 hover:text-primary">
             Events
           </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="line-clamp-1 text-foreground">{event.title}</span>
+          <ChevronRight className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1 line-clamp-1 break-words text-foreground">
+            {event.title}
+          </span>
         </nav>
 
         {/* Hero */}
@@ -185,7 +187,7 @@ export default function EventDetails() {
             <span className="mb-3 inline-block rounded-full bg-primary px-3 py-1 text-label-sm uppercase tracking-wide text-primary-foreground">
               {eventTypeLabel(event.event_type)}
             </span>
-            <h1 className="text-headline-lg-mobile text-white md:text-headline-xl">
+            <h1 className="break-words text-headline-lg-mobile text-white md:text-headline-xl">
               {event.title}
             </h1>
             {past && (
@@ -203,7 +205,7 @@ export default function EventDetails() {
               <h2 className="mb-4 text-headline-md text-foreground">
                 About the Event
               </h2>
-              <p className="whitespace-pre-line text-body-md leading-relaxed text-muted-foreground">
+              <p className="whitespace-pre-line break-words text-body-md leading-relaxed text-muted-foreground">
                 {event.description}
               </p>
 
@@ -243,7 +245,7 @@ export default function EventDetails() {
               <div className="flex items-center gap-4 rounded-card border border-border bg-card p-6 shadow-card">
                 <UserAvatar name={event.creator_name} size="lg" />
                 <div className="min-w-0">
-                  <p className="text-headline-md text-foreground">
+                  <p className="break-words text-headline-md text-foreground">
                     {event.creator_name}
                   </p>
                   <p className="text-body-sm text-muted-foreground">

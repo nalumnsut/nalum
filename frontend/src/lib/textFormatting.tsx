@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 
-// ── Mention token (legacy): @[Name](userId) → rendered as profile link ──────
+// ── Mention token (legacy / structured): @[Name](userId) → rendered as profile link ──────
 const MENTION_PATTERN = /@\[([^\]]+)\]\(([^)]+)\)/g;
 
 export const parseMentionSegment = (
@@ -18,7 +18,7 @@ export const parseMentionSegment = (
         <Link
           key={`mention-${lineIndex}-${partIndex}-${i}`}
           to={`/dashboard/alumni/${segments[i + 2]}`}
-          className="inline-flex items-center text-blue-400 hover:text-blue-300 font-medium"
+          className="inline-flex items-center text-primary hover:underline font-medium"
           onClick={(e) => e.stopPropagation()}
         >
           @{segments[i + 1]}
@@ -29,18 +29,27 @@ export const parseMentionSegment = (
   return result;
 };
 
-// ── Plain @mention: @Name → clickable, looks up profile by name on click ────
-const PLAIN_MENTION_PATTERN = /@(\w+)/g;
+// ── Plain @mention: @Name or @First Last → clickable, looks up profile by name on click ────
+const PLAIN_MENTION_PATTERN =
+  /@([A-Za-z0-9_]+(?:[-.'][A-Za-z0-9_]+)*(?:\s+[A-Z][a-zA-Z0-9_]*(?:[-.'][a-zA-Z0-9_]+)*)*)(?=[.,!?;:]*(?:\s|$))/g;
 
-const PlainMentionLink = ({ name, mentionKey }: { name: string; mentionKey: string }) => {
+const PlainMentionLink = ({
+  name,
+  mentionKey,
+}: {
+  name: string;
+  mentionKey: string;
+}) => {
   const navigate = useNavigate();
   const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    const cleanName = name.trim();
+    if (!cleanName) return;
     try {
-      const { data } = await api.get(`/mention?q=${encodeURIComponent(name)}`);
+      const { data } = await api.get(`/mention?q=${encodeURIComponent(cleanName)}`);
       const users: { _id: string; name: string }[] = data.users || [];
-      const exact = users.find(u => u.name.toLowerCase() === name.toLowerCase());
+      const exact = users.find(u => u.name.toLowerCase() === cleanName.toLowerCase());
       const target = exact ?? users[0];
       if (target) navigate(`/dashboard/alumni/${target._id}`);
     } catch { /* ignore */ }
@@ -48,7 +57,7 @@ const PlainMentionLink = ({ name, mentionKey }: { name: string; mentionKey: stri
   return (
     <span
       key={mentionKey}
-      className="text-blue-400 font-medium cursor-pointer hover:text-blue-300 hover:underline"
+      className="inline-flex items-center text-primary hover:underline font-medium cursor-pointer"
       onClick={handleClick}
     >
       @{name}
@@ -181,7 +190,7 @@ export const parseFormattedText = (text: string) => {
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300 underline"
+              className="text-primary hover:underline"
             >
               {segments[i + 1]}
             </a>

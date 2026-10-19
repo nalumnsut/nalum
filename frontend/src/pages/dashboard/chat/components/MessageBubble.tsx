@@ -49,7 +49,7 @@ export const MessageBubble = ({ message, isOwn, onDelete, isStacked, isLastInSta
             : "bg-card text-foreground border-border"
             } ${isStacked ? (isOwn ? "rounded-tr-md" : "rounded-tl-md") : ""} ${!isLastInStack ? (isOwn ? "rounded-br-md" : "rounded-bl-md") : (isOwn ? "rounded-br-none" : "rounded-bl-none")}`}
         >
-          <p className="whitespace-pre-wrap break-all leading-relaxed">{renderMentions(message.content)}</p>
+          <p className="whitespace-pre-wrap [overflow-wrap:anywhere] leading-relaxed">{renderMentions(message.content)}</p>
         </div>
 
         {/* Delete button for stacked messages (absolute to avoid layout shift) */}
