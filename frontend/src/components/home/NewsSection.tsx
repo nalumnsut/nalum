@@ -1,164 +1,158 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Calendar, LucideIcon } from 'lucide-react';
-
-interface NewsArticle {
-  badge?: string;
-  headline: string;
-  date?: string;
-  description: string;
-  details?: string[];
-  link?: string;
-  cta?: string;
-}
-
-const NewsCard = ({ article }: { article: NewsArticle }) => {
-  let badgeText = article.badge;
-  let isCompleted = false;
-
-  if (article.date) {
-    const eventDate = new Date(article.date);
-    const today = new Date();
-    // Reset time components for accurate date-only comparison
-    today.setHours(0, 0, 0, 0);
-
-    if (eventDate < today) {
-      badgeText = 'COMPLETED';
-      isCompleted = true;
-    }
-  }
-
-  return (
-    <div className="group h-full">
-      <div className="relative bg-white rounded-xl border-2 border-gray-100 hover:border-nsut-maroon/30 transition-all duration-300 overflow-hidden h-full flex flex-col">
-        {/* Accent line - change color if completed */}
-        <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${isCompleted ? 'from-gray-400 to-gray-200' : 'from-nsut-maroon to-nsut-yellow'} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
-
-        <div className="p-5 md:p-8 flex-grow flex flex-col">
-
-          {/* Content */}
-          <h3 className={`font-serif text-2xl font-bold ${isCompleted ? 'text-gray-600' : 'text-gray-900'} mb-3 group-hover:text-nsut-maroon transition-colors duration-300`}>
-            {article.headline}
-          </h3>
-
-          {/* Date/Badge */}
-          {badgeText && (
-            <span className={`inline-block text-xs font-semibold ${isCompleted ? 'text-gray-600 bg-gray-100' : 'text-nsut-maroon bg-nsut-yellow/20'} px-3 py-1 rounded-full mb-3 w-fit`}>
-              {badgeText}
-            </span>
-          )}
-
-          {article.date && (
-            <div className="flex items-center text-sm text-gray-500 mb-3">
-              <Calendar className="h-4 w-4 mr-2" />
-              {article.date}
-            </div>
-          )}
-
-          <p className="text-gray-600 leading-relaxed mb-4 flex-grow">
-            {article.description}
-          </p>
-
-          {/* Additional info for newsletter */}
-          {article.details && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-100">
-              <ul className="space-y-2 text-sm text-gray-700">
-                {article.details.map((detail: string, idx: number) => (
-                  <li key={idx} className="flex items-start">
-                    <span className="text-nsut-maroon mr-2">•</span>
-                    <span>{detail}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* CTA */}
-          {article.link && (
-            <a
-              href={article.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center text-nsut-maroon font-semibold text-sm group-hover:gap-2 transition-all duration-300 mt-auto"
-            >
-              <span>{article.cta || 'Learn more'}</span>
-              <ArrowRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform duration-300" />
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
+import { useState } from 'react';
+import { Check, Clock, Mail, Bell } from 'lucide-react';
+import { toast } from 'sonner';
 
 const NewsSection = () => {
-  const articles = [
-    {
-      badge: 'UPCOMING EVENT',
-      headline: 'Alumni Meetup',
-      date: 'December 27, 2025',
-      description: 'Join us in celebrating the achievements of our alumni at the annual Alumni Meetup. Reconnect with old friends, network with fellow graduates, and hear inspiring stories from distinguished speakers.',
-      link: null,
-      details: [
-        'Networking sessions with alumni from various industries',
-        'Keynote speeches from notable alumni',
-        'Workshops on career development and personal growth'
-      ],
-    },
-    {
-      badge: 'COMING SOON',
-      headline: 'Alumni Newsletter Launch',
-      description: 'We are excited to announce the upcoming launch of the official NSUT Alumni Newsletter! Stay informed about campus updates, alumni achievements, networking opportunities, and exclusive events.',
-      details: [
-        'Monthly digital newsletter featuring alumni stories and campus news',
-        'Exclusive invitations to reunions, webinars, and networking events',
-        'Career opportunities and mentorship programs',
-        'Updates on university developments and research breakthroughs'
-      ],
-      cta: 'Coming January 2025'
-    },
-  ];
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    setSubscribed(true);
+    toast.success('Thank you! We will notify you when the newsletter launches.');
+    setEmail('');
+  };
 
   return (
-    <div className="relative py-12 md:py-20 bg-white">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }} />
+    <section className="py-16 md:py-24 bg-gradient-to-b from-gray-50/80 via-white to-gray-50/50 overflow-hidden">
+      {/* Background subtle pattern */}
+      <div className="absolute inset-0 opacity-5 pointer-events-none">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Section header */}
-        <div className="text-center mb-12 max-w-3xl mx-auto">
-          <div className="inline-block mb-3">
-            <span className="text-nsut-maroon text-xs md:text-sm font-semibold tracking-wider uppercase">
-              News & Updates
-            </span>
-          </div>
-          <h2 className="text-2xl md:text-4xl font-serif font-bold text-gray-900 mb-4">
-            Stay Informed
+      <div className="container mx-auto px-4 max-w-7xl relative z-10">
+        {/* Section Header */}
+        <div className="mb-10 md:mb-14">
+          <p className="text-xs font-semibold tracking-[0.2em] uppercase text-gray-500 mb-2">
+            PULSE OF THE NETWORK
+          </p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#b91c1c] mb-3">
+            What's Happening
           </h2>
-          <p className="text-base md:text-lg text-gray-600 leading-relaxed">
-            Latest announcements and upcoming events from the NSUT alumni community
+          <p className="text-gray-700 text-sm sm:text-base md:text-lg max-w-xl leading-relaxed">
+            Stay tuned to recent gatherings, key milestones, and monthly briefings.
           </p>
         </div>
 
-        {/* News Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto mb-10">
-          {articles.map((article, index) => (
-            <NewsCard key={index} article={article} />
-          ))}
-        </div>
+        {/* Cards Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+          {/* Card 1: Annual Global Alumni Meetup */}
+          <div className="h-full bg-white rounded-2xl border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 p-6 md:p-8 flex flex-col justify-between">
+            <div>
+              {/* Top Row: Badge + Date */}
+              <div className="flex items-center justify-between mb-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  Complete
+                </span>
+                <span className="text-xs sm:text-sm text-gray-500 font-medium">
+                  December 27, 2025
+                </span>
+              </div>
 
-        {/* Bottom note */}
-        <div className="text-center">
-          <p className="text-gray-500 text-sm">
-            More stories and updates coming soon as we expand our alumni network
-          </p>
+              {/* Title */}
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 tracking-tight">
+                Annual Global Alumni Meetup
+              </h3>
+
+              {/* Description — short and punchy */}
+              <p className="text-gray-600 text-sm md:text-base leading-relaxed">
+                Flagship gathering bringing together graduates across batches and industries to reconnect and collaborate.
+              </p>
+
+              {/* Divider */}
+              <div className="border-t border-gray-100 my-4" />
+
+              {/* Highlights — concise 2 points */}
+              <ul className="space-y-2 text-sm text-gray-700 font-medium mb-4">
+                <li className="flex items-start gap-2">
+                  <span className="text-gray-400 mt-0.5">•</span>
+                  <span>Distinguished alumni keynotes & industry roundtables</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-gray-400 mt-0.5">•</span>
+                  <span>Cross-domain mentorship & networking sessions</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Bottom Row */}
+            <div>
+              <div className="border-t border-gray-100 pt-3 flex items-center justify-between text-xs sm:text-sm">
+                <span className="text-gray-500">
+                  Dwarka Main Campus
+                </span>
+                <span className="font-bold text-[#1e3a8a]">
+                  500+ Attendees
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Alumni Newsletter */}
+          <div className="h-full bg-white rounded-2xl border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 p-6 md:p-8 flex flex-col justify-between">
+            <div>
+              {/* Top Row: Badge + Frequency */}
+              <div className="flex items-center justify-between mb-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+                  <Clock className="w-3.5 h-3.5 text-blue-600" />
+                  Launching Soon
+                </span>
+                <span className="text-xs sm:text-sm text-gray-500 font-medium">
+                  Monthly Edition
+                </span>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 tracking-tight">
+                Alumni Newsletter
+              </h3>
+
+              {/* Description */}
+              <p className="text-gray-600 text-sm md:text-base leading-relaxed mb-6">
+                Get monthly alumni stories, campus news, and exclusive invitations straight to your inbox.
+              </p>
+
+              {/* Subscription Form */}
+              <form onSubmit={handleSubscribe} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50/70 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#b91c1c] focus:border-transparent transition-all"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-gradient-to-r from-[#b91c1c] via-[#b41b1b] to-[#991b1b] hover:from-[#a81919] hover:to-[#881313] text-white font-semibold text-sm rounded-xl shadow-md shadow-red-900/10 hover:shadow-lg transition-all"
+                >
+                  <Bell className="w-4 h-4" />
+                  {subscribed ? 'Notification Set!' : 'Notify Me'}
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

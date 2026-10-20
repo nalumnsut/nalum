@@ -64,14 +64,14 @@ const ExploreLoginCta = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10 md:mt-12 animate-fade-in animation-delay-400">
             <PreloadLink
               to="/signup"
-              className="w-full sm:w-auto inline-flex items-center justify-center bg-[#b91c1c] hover:bg-[#991b1b] text-white font-semibold px-8 py-3 rounded-full text-base shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
+              className="w-full sm:w-auto inline-flex items-center justify-center bg-gradient-to-b from-[#bd3f45] to-[#a61c22] hover:from-[#ab353b] hover:to-[#91141a] text-white font-semibold px-7 py-3 rounded-xl border border-[#b84248]/50 text-base shadow-[0_4px_12px_rgba(166,28,34,0.35)] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
             >
               Create Account
             </PreloadLink>
 
             <PreloadLink
               to="/benefits/alumni-directory"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-800 font-semibold border border-gray-400 hover:border-gray-600 px-8 py-3 rounded-full text-base shadow-sm hover:shadow transition-all duration-200 hover:scale-105 active:scale-95 group"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-800 font-semibold border border-gray-300 hover:border-gray-400 px-7 py-3 rounded-xl text-base shadow-xs transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group"
             >
               <span>Explore the Network</span>
               <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
@@ -79,7 +79,7 @@ const ExploreLoginCta = () => {
           </div>
 
           {/* === BY THE NUMBERS BANNER CARD === */}
-          <div className="relative bg-[#551419] rounded-[26px] md:rounded-[32px] p-2.5 sm:p-3.5 shadow-2xl overflow-hidden mt-16 md:mt-20 max-w-5xl mx-auto border border-[#420f13] text-white">
+          <div className="relative bg-[#731e2b] rounded-[26px] md:rounded-[32px] p-2.5 sm:p-3.5 shadow-2xl overflow-hidden mt-16 md:mt-20 max-w-5xl mx-auto border border-[#5c1722] text-white">
             {/* 3D Perspective Grid Background */}
             <svg
               className="absolute inset-0 w-full h-full pointer-events-none opacity-30"

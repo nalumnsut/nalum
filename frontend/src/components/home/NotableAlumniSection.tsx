@@ -18,9 +18,9 @@ const alumniData: AlumniProfile[] = [
     },
     {
         id: 2,
-        name: "Ankit Sobti",
-        folderName: "Ankit-Sobti",
-        title: "Co-Founder of Postman",
+        name: "Ira Singhal",
+        folderName: "Ira-Singhal",
+        title: "IAS Officer (Rank 1, 2014)",
     },
     {
         id: 3,
