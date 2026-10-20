@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect } = require("../middleware/auth");
 const User = require("../models/user/user.model");
 const Profile = require("../models/user/profile.model");
+const escapeRegex = require("../utils/escapeRegex");
 
 /**
  * GET /api/mention?q=name
@@ -20,7 +21,7 @@ router.get("/", protect, async (req, res) => {
     };
 
     if (q && q.length > 0) {
-      filter.name = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
+      filter.name = { $regex: escapeRegex(q), $options: "i" };
     }
 
     const users = await User.find(filter)

@@ -1,82 +1,141 @@
 import { PreloadLink } from "@/components/PreloadLink";
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronRight, Users, CheckCircle2 } from 'lucide-react';
+
+interface CtaItem {
+  title: string;
+  description: string;
+  link: string;
+  linkText: string;
+  highlights: string[];
+  filled: boolean;
+  badgeBg: string;
+  badgeTextColor: string;
+  checkColor: string;
+}
 
 const IconCtaSection = () => {
-  const ctaItems = [
+  const ctaItems: CtaItem[] = [
     {
-      text: "Attend an Event",
-      description: "Join upcoming reunions, workshops, and campus celebrations designed to reconnect alumni and inspire students.",
+      title: "Attend an Event",
+      description: "Reunions, workshops, and campus celebrations across chapters.",
       link: "/events/attend",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAP44Rre0Bvf4TVu2s1qNcTFyXwjNOCfnTglA0qGluSCEn4vE1teJn6LccEH1Ono_w3i1ei-TKcj4GpCVWvCjZqVXZygUn7UBG3Zy6YFV9QuMkCiTD8MUQjpAbniRVuR_JlxzA6FJq_hAGLe558ybOUt-rNmZA_kZiuOxPtNe7qQuUmaaNVd6hLmhKXUuR-c94I50DX2OOHJDY8QtETDCm7tZrb2o3E9CrghBClCcu25N7oTbxwH0XIW2v4Q6NGffFC3HWhcvW-_m3b",
-      overlayColor: "bg-nsut-maroon/10"
+      linkText: "See Upcoming Events",
+      highlights: [
+        "Annual Global Alumni Meet & Silver Jubilees",
+        "Industry Roundtables & Tech Keynotes",
+      ],
+      filled: true,
+      badgeBg: "bg-red-50",
+      badgeTextColor: "text-[#b91c1c]",
+      checkColor: "text-slate-400",
     },
     {
-      text: "Explore Communities",
-      description: "Connect with fellow alumni who share your interests through exclusive professional networks and social clubs.",
+      title: "Explore Communities",
+      description: "Interest-based groups and professional circles built by alumni.",
       link: "/communities/explore",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBWmF5t4TWzBg2ul-4Z2X5Pq_TstQmMVJ8wlYkV7Ep_jsleFgltI99MxhffPgLZjK_4bAX8bsIQo62szdA4Y0xJajYcWQo59ce86qJUPBU_9q4IByE3IP6qhxNt4oGozbhZ-ho4uW-fNjPSOIIHj0qzlv9Eg3HfykPsqYKAy1cnPPXldz9abW9WSuhgd_Sug-Er9SOMi7l_7PDJkDE8V9CV21Qm5ln_xuoSbVmBFCf73jAxiZE6Zaj8MLVaX7b6ssc3wKV5eGGW8VrA",
-      overlayColor: "bg-yellow-500/10"
+      linkText: "Browse Communities",
+      highlights: [
+        "Silicon Valley & Bay Area Founders Circle",
+        "Civil Services & Public Policy Guild",
+      ],
+      filled: false,
+      badgeBg: "bg-slate-100",
+      badgeTextColor: "text-slate-600",
+      checkColor: "text-red-400",
     },
   ];
 
   return (
-    <div className="relative bg-gradient-to-b from-white via-gray-50 to-white py-12 md:py-20">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }} />
+    <section className="py-16 md:py-24 bg-gradient-to-b from-gray-50/80 via-white to-gray-50/50 overflow-hidden">
+      {/* Background subtle pattern matching WhereWeWork & NotableAlumni */}
+      <div className="absolute inset-0 opacity-5 pointer-events-none">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Section header */}
-        <div className="text-center mb-12 md:mb-16">
-          <h2 className="text-2xl md:text-5xl font-serif font-bold text-gray-900 mb-4 tracking-tight">
+      <div className="container mx-auto px-4 max-w-7xl relative z-10">
+        {/* Section Header — matches typography & spacing of WhereOurAlumniWork */}
+        <div className="mb-10 md:mb-14">
+          <p className="text-xs font-semibold tracking-[0.2em] uppercase text-gray-500 mb-2">
+            COMMUNITY PATHWAYS
+          </p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#b91c1c] mb-3">
             Get Involved
           </h2>
-          <p className="text-lg md:text-xl text-gray-600 font-medium max-w-2xl mx-auto">
-            Stay connected and make an impact in the NSUT community
+          <p className="text-gray-700 text-sm sm:text-base md:text-lg max-w-xl leading-relaxed">
+            Ways to stay connected, give back, and grow with the NSUT community.
           </p>
         </div>
 
         {/* CTA Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           {ctaItems.map((item, index) => (
             <div
               key={index}
-              className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col sm:flex-row border border-gray-100 h-full"
+              className="group bg-white rounded-2xl border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 p-6 md:p-8 flex flex-col justify-between"
             >
-              {/* Image Container */}
-              <div className="w-full sm:w-2/5 h-64 sm:h-auto relative overflow-hidden">
-                <img
-                  src={item.image}
-                  alt={item.text}
-                  className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className={`absolute inset-0 ${item.overlayColor} group-hover:bg-transparent transition-colors duration-300`} />
-              </div>
+              {/* Card Content */}
+              <div>
+                {/* Icon Badge */}
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${item.badgeBg} ${item.badgeTextColor}`}
+                >
+                  <Users className="w-6 h-6" />
+                </div>
 
-              {/* Content Container */}
-              <div className="w-full sm:w-3/5 p-5 md:p-8 flex flex-col justify-center relative">
-                <h3 className="font-serif text-2xl font-bold text-gray-900 mb-3">
-                  {item.text}
+                {/* Title */}
+                <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 tracking-tight">
+                  {item.title}
                 </h3>
-                <p className="text-gray-600 mb-8 leading-relaxed">
+
+                {/* Short, punchy description */}
+                <p className="text-gray-600 text-sm md:text-base leading-relaxed">
                   {item.description}
                 </p>
-                <PreloadLink
-                  to={item.link}
-                  className="inline-flex items-center text-nsut-maroon font-semibold hover:text-red-700 transition-colors group/link"
-                >
-                  Learn more
-                  <ArrowRight className="ml-1 h-5 w-5 transform group-hover/link:translate-x-1 transition-transform" />
-                </PreloadLink>
+
+                {/* Divider Line from Figma */}
+                <div className="border-t border-gray-100 my-6" />
+
+                {/* Highlights List */}
+                <div className="space-y-3 mb-8">
+                  {item.highlights.map((highlight, idx) => (
+                    <div key={idx} className="flex items-start gap-2.5">
+                      <CheckCircle2
+                        className={`w-[18px] h-[18px] mt-0.5 flex-shrink-0 ${item.checkColor}`}
+                      />
+                      <span className="text-sm text-gray-700 font-medium leading-snug">
+                        {highlight}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {/* Full-width CTA Button */}
+              <PreloadLink
+                to={item.link}
+                className={`w-full flex items-center justify-between px-6 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 group/btn ${
+                  item.filled
+                    ? 'bg-gradient-to-r from-[#b91c1c] via-[#b41b1b] to-[#991b1b] text-white shadow-md shadow-red-900/10 hover:shadow-lg hover:from-[#a81919] hover:to-[#881313]'
+                    : 'bg-white text-gray-900 border border-gray-200 shadow-sm hover:border-gray-300 hover:bg-gray-50/80'
+                }`}
+              >
+                <span>{item.linkText}</span>
+                {item.filled ? (
+                  <ArrowRight className="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-gray-600 transform group-hover/btn:translate-x-1 transition-transform" />
+                )}
+              </PreloadLink>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

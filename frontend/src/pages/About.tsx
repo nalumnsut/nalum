@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect } from 'react';
-import { Mail, MapPin, Users, Heart, Target, Award, Linkedin, Building2, GraduationCap } from 'lucide-react';
+import { Mail, MapPin, Users, Heart, Target, Award, Linkedin, Building2, GraduationCap, Globe } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 // ============================================
@@ -17,7 +17,10 @@ interface TeamMember {
   year: string;    // ADD YEAR HERE (e.g., "2024", "2025")
   designation?: string;  // ADD DESIGNATION HERE (optional, for faculty/core team)
   image: string;
-  linkedinUrl: string;  // Add LinkedIn profile URL here
+  linkedinUrl?: string | null;  // Add LinkedIn profile URL here
+  websiteUrl?: string;
+  companyUrl?: string;
+  companyName?: string;
 }
 
 // FACULTY TEAM (3 members)
@@ -108,8 +111,18 @@ const developerMembers: TeamMember[] = [
 // OPERATIONS TEAM (0 members)
 const operationsMembers: TeamMember[] = [];
 
-// 2026 TEAM (4 members)
+// 2026 TEAM (5 members)
 const team2026Members: TeamMember[] = [
+  {
+    name: 'Arnav Gupta',
+    branch: 'Mech',
+    year: '2026',
+    image: '/about/team/2026/arnavgupta.webp',
+    linkedinUrl: 'https://www.linkedin.com/in/arnavgupta7144112',
+    websiteUrl: 'https://arnavgupta.net',
+    companyUrl: 'https://duvi.ai',
+    companyName: 'Duvi'
+  },
   {
     name: 'Aditi Gupta',
     branch: 'Mech',  // ADD BRANCH HERE
@@ -140,6 +153,60 @@ const team2026Members: TeamMember[] = [
   }
 ];
 // ============================================
+
+const TeamMemberLinks = ({ member }: { member: TeamMember }) => {
+  const links: Array<{
+    href: string;
+    label: string;
+    icon: typeof Linkedin;
+  }> = [];
+
+  if (member.linkedinUrl) {
+    links.push({
+      href: member.linkedinUrl,
+      label: `LinkedIn profile of ${member.name}`,
+      icon: Linkedin
+    });
+  }
+
+  if (member.websiteUrl) {
+    links.push({
+      href: member.websiteUrl,
+      label: `Personal website of ${member.name}`,
+      icon: Globe
+    });
+  }
+
+  if (member.companyUrl) {
+    links.push({
+      href: member.companyUrl,
+      label: member.companyName || `Company website of ${member.name}`,
+      icon: Building2
+    });
+  }
+
+  if (links.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-auto flex items-center justify-center gap-2">
+      {links.map(({ href, label, icon: Icon }) => (
+        <a
+          key={href}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-10 h-10 rounded-full bg-[#0077B5] hover:bg-[#005582] flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
+          aria-label={label}
+          title={label}
+        >
+          <Icon className="w-5 h-5 text-white" />
+        </a>
+      ))}
+    </div>
+  );
+};
 
 const AboutPage = () => {
   const [activeTab, setActiveTab] = useState<'about' | 'team'>('about');
@@ -481,16 +548,7 @@ const AboutPage = () => {
                       {member.branch} - {member.year}
                     </p>
 
-                    {/* LinkedIn Icon */}
-                    <a
-                      href={member.linkedinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-auto w-10 h-10 rounded-full bg-[#0077B5] hover:bg-[#005582] flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
-                      aria-label={`LinkedIn profile of ${member.name}`}
-                    >
-                      <Linkedin className="w-5 h-5 text-white" />
-                    </a>
+                    <TeamMemberLinks member={member} />
                   </div>
                 ))}
               </div>
@@ -535,16 +593,7 @@ const AboutPage = () => {
                       {member.branch} - {member.year}
                     </p>
 
-                    {/* LinkedIn Icon */}
-                    <a
-                      href={member.linkedinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-auto w-10 h-10 rounded-full bg-[#0077B5] hover:bg-[#005582] flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
-                      aria-label={`LinkedIn profile of ${member.name}`}
-                    >
-                      <Linkedin className="w-5 h-5 text-white" />
-                    </a>
+                    <TeamMemberLinks member={member} />
                   </div>
                 ))}
               </div>
@@ -590,16 +639,7 @@ const AboutPage = () => {
                       {member.branch} - {member.year}
                     </p>
 
-                    {/* LinkedIn Icon */}
-                    <a
-                      href={member.linkedinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-auto w-10 h-10 rounded-full bg-[#0077B5] hover:bg-[#005582] flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
-                      aria-label={`LinkedIn profile of ${member.name}`}
-                    >
-                      <Linkedin className="w-5 h-5 text-white" />
-                    </a>
+                    <TeamMemberLinks member={member} />
                   </div>
                 ))}
               </div>
@@ -651,16 +691,7 @@ const AboutPage = () => {
                         {member.branch} - {member.year}
                       </p>
 
-                      {/* LinkedIn Icon */}
-                      <a
-                        href={member.linkedinUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-auto w-10 h-10 rounded-full bg-[#0077B5] hover:bg-[#005582] flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
-                        aria-label={`LinkedIn profile of ${member.name}`}
-                      >
-                        <Linkedin className="w-5 h-5 text-white" />
-                      </a>
+                      <TeamMemberLinks member={member} />
                     </div>
                   ))}
                 </div>

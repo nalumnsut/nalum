@@ -150,11 +150,6 @@ export const useAlumniDirectory = () => {
       setAlumni([]);
       toast.error("Failed to load alumni", {
         description: "Please try again later",
-        style: {
-          background: "#800000",
-          color: "white",
-          border: "2px solid #FFD700",
-        },
       });
     } finally {
       setIsLoading(false);
@@ -299,25 +294,11 @@ export const useAlumniDirectory = () => {
       // Refresh the alumni list to update connection status
       fetchAlumni(currentPage);
 
-      toast.success("Connection request sent!", {
-        duration: 2000,
-        style: {
-          background: "#10b981",
-          color: "white",
-          border: "2px solid #059669",
-        },
-      });
+      toast.success("Connection request sent!", { duration: 2000 });
     } catch (error: any) {
       console.error("Error sending connection request:", error);
       toast.error(
-        error.response?.data?.message || "Failed to send connection request",
-        {
-          style: {
-            background: "#800000",
-            color: "white",
-            border: "2px solid #FFD700",
-          },
-        }
+        error.response?.data?.message || "Failed to send connection request"
       );
     }
   };

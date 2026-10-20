@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedVerificationRoute from "@/components/ProtectedVerificationRoute";
+import ContributionRedirect from "@/components/ContributionRedirect";
 import { ChatProvider } from "@/context/ChatContext";
 import { ProfileProvider } from "@/context/ProfileContext";
 import {
@@ -21,9 +22,9 @@ import {
   loadPostEditor,
   loadViewPost,
   loadQueries,
-  loadGiving,
   loadMobileNotifications,
   loadChangePassword,
+  loadResources,
 } from "./loaders";
 
 const DashboardLayout = lazy(loadDashboardLayout);
@@ -42,9 +43,9 @@ const Posts = lazy(loadPosts);
 const PostEditor = lazy(loadPostEditor);
 const ViewPost = lazy(loadViewPost);
 const Queries = lazy(loadQueries);
-const Giving = lazy(loadGiving);
 const MobileNotifications = lazy(loadMobileNotifications);
 const ChangePassword = lazy(loadChangePassword);
+const Resources = lazy(loadResources);
 
 export function DashboardRoutes() {
   return (
@@ -84,8 +85,11 @@ export function DashboardRoutes() {
           path="/dashboard/connections"
           element={<Navigate to="/dashboard/alumni?tab=my" replace />}
         />
-        <Route path="/dashboard/notifications" element={<MobileNotifications />} />
-        
+        <Route
+          path="/dashboard/notifications"
+          element={<MobileNotifications />}
+        />
+
         {/* Chat routes */}
         <Route
           path="/dashboard/chat/*"
@@ -96,12 +100,15 @@ export function DashboardRoutes() {
             </Routes>
           }
         />
-        
+
         <Route path="/dashboard/events" element={<Events />} />
         <Route path="/dashboard/events/:eventId" element={<EventDetails />} />
         <Route path="/dashboard/events/:eventId/edit" element={<EditEvent />} />
         <Route path="/dashboard/posts" element={<Posts />} />
-        <Route path="/dashboard/posts/new" element={<PostEditor mode="create" />} />
+        <Route
+          path="/dashboard/posts/new"
+          element={<PostEditor mode="create" />}
+        />
         <Route path="/dashboard/posts/:postId" element={<ViewPost />} />
         <Route
           path="/dashboard/posts/:postId/edit"
@@ -113,8 +120,12 @@ export function DashboardRoutes() {
           element={<Navigate to="/dashboard/posts?tab=my" replace />}
         />
         <Route path="/dashboard/host-event" element={<HostEvent />} />
+        <Route path="/dashboard/resources" element={<Resources />} />
         <Route path="/dashboard/queries" element={<Queries />} />
-        <Route path="/dashboard/giving" element={<Giving />} />
+        <Route
+          path="/dashboard/giving"
+          element={<ContributionRedirect destination="/dashboard" />}
+        />
       </Route>
     </>
   );

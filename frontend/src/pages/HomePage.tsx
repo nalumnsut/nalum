@@ -4,7 +4,6 @@ import ExploreLoginCta from '@/components/home/ExploreLoginCta';
 import NewsSection from '@/components/home/NewsSection';
 import GivingSection from '@/components/home/GivingSection';
 import WhereWeWorkSection from '@/components/home/WhereWeWorkSection';
-import AlumniDirectorySection from '@/components/home/AlumniDirectorySection';
 import NotableAlumniSection from '@/components/home/NotableAlumniSection';
 import AlumniMapTeaser from "@/components/home/AlumniMapTeaser";
 
@@ -13,12 +12,11 @@ const HomePage = () => {
     <main>
       <Hero />
       <ExploreLoginCta />
-      <IconCtaSection />
       <WhereWeWorkSection />
       <NotableAlumniSection />
-      <AlumniDirectorySection />
-      <NewsSection />
       <AlumniMapTeaser />
+      <IconCtaSection />
+      <NewsSection />
       <GivingSection />
     </main>
   );

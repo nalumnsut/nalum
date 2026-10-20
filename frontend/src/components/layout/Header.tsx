@@ -2,10 +2,16 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { PreloadLink } from "@/components/PreloadLink";
 import { navDropdownPaths, preloadPaths } from "@/lib/preloadRoutes";
+import { useContributionPopup } from "@/context/ContributionPopupContext";
 import { Menu, X } from "lucide-react";
 import nsutLogo from "@/assets/nsut-logo.svg";
 
-const Header = ({ setHeaderHeight }) => {
+interface HeaderProps {
+  setHeaderHeight: (height: number) => void;
+}
+
+const Header = ({ setHeaderHeight }: HeaderProps) => {
+  const openContributionPopup = useContributionPopup();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [localHeaderHeight, setLocalHeaderHeight] = useState(0);
@@ -23,7 +29,7 @@ const Header = ({ setHeaderHeight }) => {
       "Alumni Directory",
     ],
     Events: [],
-    Giving: [],
+    Contribute: [],
     Stories: ["Notable Alumni", "Alumni Stories", "Giving Stories", "Campus News"],
   };
 
@@ -60,127 +66,106 @@ const Header = ({ setHeaderHeight }) => {
       <header
         id="site-header"
         ref={headerRef}
-        className="w-full fixed top-0 z-50"
-        style={{ minHeight: scrolled ? '80px' : '96px' }}
+        className="w-full fixed top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm transition-all duration-300"
       >
-        {/* === TOP BAR === */}
-        <div
-          className={`hidden md:block bg-nsut-maroon text-white transition-all duration-300 ${scrolled ? "opacity-0 h-0 overflow-hidden" : "opacity-100 py-2"
-            }`}
-          style={{ willChange: scrolled ? 'auto' : 'height, opacity' }}
-        >
-          <div className="container mx-auto px-4 flex justify-between items-center border-b border-nsut-yellow/30">
-            <a
-              href="https://www.nsut.ac.in/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center space-x-2"
-            >
-              <span className="font-serif text-l">
-                Netaji Subhas University of Technology
-              </span>
-            </a>
-            <div className="hidden md:flex items-center space-x-6 text-m">
-              <PreloadLink to="/about" className="relative transition-colors duration-200 hover:text-nsut-yellow after:content-[''] after:absolute after:-bottom-0.5 after:left-0 after:w-0 after:h-px after:bg-nsut-yellow after:transition-all after:duration-300 hover:after:w-full">
-                About
-              </PreloadLink>
-              <PreloadLink to="/login" className="relative transition-colors duration-200 hover:text-nsut-yellow after:content-[''] after:absolute after:-bottom-0.5 after:left-0 after:w-0 after:h-px after:bg-nsut-yellow after:transition-all after:duration-300 hover:after:w-full">
-                myNSUT Login
-              </PreloadLink>
-              <PreloadLink
-                to="/giving"
-                className="bg-nsut-yellow text-nsut-maroon font-bold py-2 px-4 rounded text-xs relative z-10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-nsut-yellow/40"
-              >
-                Make a Gift
-              </PreloadLink>
-            </div>
-          </div>
-        </div>
 
         {/* === MAIN NAVBAR === */}
-        <div
-          className={`bg-white shadow-md transition-all duration-300 overflow-visible py-5 `}
-        >
-          <div className="container mx-auto px-4 flex justify-between items-center overflow-visible">
+        <div className="container mx-auto px-4 md:px-8 py-3.5 flex justify-between items-center">
+          {/* Logo */}
+          <PreloadLink
+            to="/"
+            className="flex items-center gap-3 group transition-transform duration-200 hover:opacity-95"
+          >
+            <img
+              ref={logoRef}
+              src={nsutLogo}
+              alt="NSUT Official Logo"
+              width="50"
+              height="50"
+              className="h-11 md:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            />
+          </PreloadLink>
+
+          {/* Nav Links */}
+          <div className="hidden md:flex items-center space-x-7 lg:space-x-9">
+            {Object.entries(navLinks).map(([title, sublinks]) => (
+              (title === "Giving" || title === "Events") ? (
+                <PreloadLink
+                  key={title}
+                  to={`/${title.toLowerCase()}`}
+                  className="font-medium text-[15px] lg:text-base text-gray-800 transition-colors duration-200 hover:text-nsut-maroon relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-nsut-maroon after:transition-all after:duration-300 hover:after:w-full"
+                >
+                  {title}
+                </PreloadLink>
+              ) : title === "Contribute" ? (
+                <button
+                  key={title}
+                  type="button"
+                  onClick={openContributionPopup}
+                  className="font-medium text-[15px] lg:text-base text-gray-800 transition-colors duration-200 hover:text-nsut-maroon relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-nsut-maroon after:transition-all after:duration-300 hover:after:w-full"
+                >
+                  {title}
+                </button>
+              ) : (
+                <div
+                  key={title}
+                  className="group relative"
+                  onMouseEnter={() => {
+                    const paths = navDropdownPaths[title];
+                    if (paths) preloadPaths(paths);
+                  }}
+                >
+                  <button className="font-medium text-[15px] lg:text-base text-gray-800 transition-colors duration-200 hover:text-nsut-maroon relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-nsut-maroon after:transition-all after:duration-300 hover:after:w-full">
+                    {title}
+                  </button>
+                  <div className={`absolute bg-white shadow-xl rounded-xl mt-2 py-2 w-48 z-[100] border border-gray-100 opacity-0 invisible -translate-y-2 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 ${title === "Stories" ? "right-0" : "left-0"}`}>
+                    {sublinks.map((link) => (
+                      <PreloadLink
+                        key={link}
+                        to={`/${title
+                          .toLowerCase()
+                          .replace(/ & /g, "-")}/${link
+                            .toLowerCase()
+                            .replace(/ /g, "-")}`}
+                        className="block px-4 py-2.5 text-sm text-gray-700 transition-all duration-150 hover:bg-rose-50/60 hover:text-nsut-maroon hover:pl-5"
+                      >
+                        {link}
+                      </PreloadLink>
+                    ))}
+                  </div>
+                </div>
+              )
+            ))}
+          </div>
+
+          {/* Right side CTA / Mobile Toggle */}
+          <div className="flex items-center gap-3">
             <PreloadLink
-              to="/"
-              className="flex items-center gap-3"
+              to="/login"
+              className="hidden md:inline-flex items-center justify-center bg-nsut-maroon hover:bg-[#800000] text-white font-medium px-5 py-2 rounded-full text-sm shadow-sm transition-all duration-200 hover:shadow hover:scale-105 active:scale-95"
             >
-              <img
-                ref={logoRef}
-                src={nsutLogo}
-                alt="Logo"
-                width="80"
-                height="80"
-                className="relative z-20 h-16 md:h-20 w-auto object-contain "
-              />
-              <div className="flex flex-col items-start">
-                <h1 className="text-xl md:text-2xl font-bold leading-none tracking-wide text-gray-800 whitespace-nowrap">
-                  <span className="text-red-600">N</span>SUT
-                  <span className="text-red-600"> ALUM</span>NI
-                </h1>
-                <span className="block text-[8px] md:text-xs text-gray-700 font-bold tracking-widest">
-                  ASSOCIATION
-                </span>
-              </div>
+              myNSUT Login
             </PreloadLink>
 
-            {/* Nav Links */}
-            <div className="hidden md:flex items-center space-x-8">
-              {Object.entries(navLinks).map(([title, sublinks], index) => (
-                (title === "Giving" || title === "Events") ? (
-                  <PreloadLink
-                    key={title}
-                    to={`/${title.toLowerCase()}`}
-                    className="font-serif relative text-lg text-gray-800 transition-colors duration-300 hover:text-nsut-maroon after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-0.5 after:bg-gradient-to-r after:from-nsut-maroon after:to-nsut-yellow after:transition-all after:duration-400 after:ease-out after:rounded-sm hover:after:w-full"
-                  >
-                    <span className="relative">{title}</span>
-                  </PreloadLink>
-                ) : (
-                  <div
-                    key={title}
-                    className="group relative"
-                    onMouseEnter={() => {
-                      const paths = navDropdownPaths[title];
-                      if (paths) preloadPaths(paths);
-                    }}
-                  >
-                    <button className="font-serif relative text-lg text-gray-800 transition-colors duration-300 hover:text-nsut-maroon after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-0.5 after:bg-gradient-to-r after:from-nsut-maroon after:to-nsut-yellow after:transition-all after:duration-400 after:ease-out after:rounded-sm hover:after:w-full">
-                      <span className="relative">{title}</span>
-                    </button>
-                    <div className={`absolute bg-white shadow-xl rounded-lg mt-2 py-2 w-48 z-[100] border border-gray-100 opacity-0 invisible -translate-y-2.5 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 ${title === "Stories" ? "right-0" : "left-0"}`}>
-                      {sublinks.map((link) => (
-                        <PreloadLink
-                          key={link}
-                          to={`/${title
-                            .toLowerCase()
-                            .replace(/ & /g, "-")}/${link
-                              .toLowerCase()
-                              .replace(/ /g, "-")}`}
-                          className="block px-4 py-2 text-sm text-gray-700 relative overflow-hidden transition-all duration-200 before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-0.5 before:bg-nsut-maroon before:-translate-x-full before:transition-transform before:duration-300 hover:before:translate-x-0 hover:pl-5 hover:bg-gradient-to-r hover:from-amber-50 hover:to-transparent"
-                        >
-                          {link}
-                        </PreloadLink>
-                      ))}
-                    </div>
-                  </div>
-                )
-              ))}
-            </div>
-
-            {/* Mobile Menu */}
-            <div className="md:hidden">
+            {/* Mobile Menu Toggle */}
+            <div className="flex items-center gap-2 md:hidden">
+              <button
+                type="button"
+                onClick={openContributionPopup}
+                className="min-h-10 rounded-md bg-nsut-maroon px-2.5 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#6e0000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nsut-maroon focus-visible:ring-offset-2 sm:px-3 sm:text-sm"
+              >
+                Contribute
+              </button>
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="text-gray-600 hover:text-nsut-maroon transition-all duration-300 hover:scale-110"
+                className="text-gray-700 hover:text-nsut-maroon p-1.5 transition-colors"
                 aria-label="Open mobile menu"
               >
-                <Menu />
+                <Menu size={26} />
               </button>
             </div>
           </div>
         </div>
-
       </header>
 
       {/* === MOBILE MENU (Portal) === */}
@@ -234,13 +219,16 @@ const Header = ({ setHeaderHeight }) => {
                 >
                   Login
                 </PreloadLink>
-                <PreloadLink
-                  to="/giving"
+                <button
+                  type="button"
                   className="flex-1 bg-nsut-yellow text-nsut-maroon font-semibold py-2 px-3 rounded-lg text-sm hover:shadow-lg hover:scale-105 transition-all duration-300 text-center"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    openContributionPopup();
+                  }}
                 >
-                  Give
-                </PreloadLink>
+                  Contribute
+                </button>
               </div>
             </div>
 
@@ -248,7 +236,18 @@ const Header = ({ setHeaderHeight }) => {
             <nav className="p-4 space-y-1">
               {Object.entries(navLinks).map(([title, sublinks]) => (
                 <div key={title} className="mb-4">
-                  {(title === "Giving" || title === "Events") && sublinks.length === 0 ? (
+                  {title === "Contribute" ? (
+                    <button
+                      type="button"
+                      className="block w-full py-3 px-4 text-left font-serif text-base font-semibold text-nsut-maroon bg-gradient-to-r from-amber-50 to-transparent rounded-lg hover:from-amber-100 transition-all duration-200"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        openContributionPopup();
+                      }}
+                    >
+                      {title}
+                    </button>
+                  ) : title === "Events" && sublinks.length === 0 ? (
                     <PreloadLink
                       to={`/${title.toLowerCase()}`}
                       className="block py-3 px-4 font-serif text-base font-semibold text-nsut-maroon bg-gradient-to-r from-amber-50 to-transparent rounded-lg hover:from-amber-100 transition-all duration-200"
@@ -263,7 +262,7 @@ const Header = ({ setHeaderHeight }) => {
                       </h3>
                       <div className="space-y-1 pl-2">
                         {sublinks.map((link) => (
-                          <PreloadLink
+                        <PreloadLink
                             key={link}
                             to={`/${title
                               .toLowerCase()
