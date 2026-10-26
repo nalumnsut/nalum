@@ -39,7 +39,8 @@ exports.getOrCreate = async (email, user_id) => {
 	}
 	try {
 		const lower = email.toLowerCase();
-		const existing = await Session.findOne({ email: lower });
+		// Never hand a mobile device's session to the web client
+		const existing = await Session.findOne({ email: lower, client_type: { $ne: "mobile" } });
 
 		if (existing) {
 			existing.refresh_token_expires_at = new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000);
@@ -61,6 +62,51 @@ exports.getOrCreate = async (email, user_id) => {
             refresh_token,
             refresh_token_expires_at: new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000)
 		});
+		const data = await session.save();
+		const raw = data.toObject();
+		const accessToken = generateAccessToken({
+			user_id: user_id,
+			email: email,
+			session_id: raw._id,
+		});
+		return { error: false, data: { ...raw, access_token: accessToken } };
+	} catch (err) {
+		return { error: true, message: err.message };
+	}
+};
+
+// Get or create the session for one mobile device. Signing in again on the
+// same device replaces that device's refresh token; other devices and the
+// web session are left untouched.
+exports.getOrCreateMobile = async (email, user_id, device = {}) => {
+	if (!email || !user_id) {
+		return { error: true, message: "Credentials are required" };
+	}
+	try {
+		const lower = email.toLowerCase();
+		const refresh_token = crypto.randomBytes(40).toString('hex');
+		const fields = {
+			email: lower,
+			user_id,
+			client_type: "mobile",
+			refresh_token,
+			refresh_token_expires_at: new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000),
+			device_name: device.device_name,
+			platform: device.platform,
+			app_version: device.app_version,
+			last_used_at: new Date(),
+		};
+
+		let session = device.device_id
+			? await Session.findOne({ user_id, client_type: "mobile", device_id: device.device_id })
+			: null;
+
+		if (session) {
+			session.set({ ...fields, previous_refresh_token: undefined, consumed_at: undefined });
+		} else {
+			session = new Session({ ...fields, device_id: device.device_id });
+		}
+
 		const data = await session.save();
 		const raw = data.toObject();
 		const accessToken = generateAccessToken({
@@ -134,8 +180,11 @@ exports.updateAccessToken = async (incoming_refresh_token) => {
 					}
 				};
 			} else {
-				await Session.deleteMany({ user_id: session.user_id });
-				return { error: true, code: 401, message: "Token reuse detected. All sessions invalidated." };
+				// Revoke only the session whose token was replayed, so one
+				// compromised device does not log the user out everywhere
+				await Session.deleteOne({ _id: session._id });
+				console.warn(`Refresh token reuse detected; revoked session ${session._id} for user ${session.user_id}`);
+				return { error: true, code: 401, message: "Token reuse detected. Session invalidated." };
 			}
 		}
 
@@ -157,6 +206,9 @@ exports.updateAccessToken = async (incoming_refresh_token) => {
         session.consumed_at = Date.now();
         session.refresh_token = new_refresh_token;
         session.refresh_token_expires_at = new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000);
+        if (session.client_type === "mobile") {
+            session.last_used_at = new Date();
+        }
 
         await session.save();
 

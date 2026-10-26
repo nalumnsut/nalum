@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 const router = express.Router();
 
 const users = require("../../controllers/user.controller.js");
-const sessions = require("../../controllers/session.controller.js");
+const { startSession, deliverRefreshToken, isMobileClient } = require("../../utils/sessionResponse.js");
 
 router.post("/", async (req, res) => {
   if (!req.body.email || !req.body.password) {
@@ -88,7 +88,7 @@ router.post("/", async (req, res) => {
     });
   }
 
-  const sessionData = await sessions.getOrCreate(email, data.data._id);
+  const sessionData = await startSession(req, email, data.data._id);
 
   if (sessionData.error) {
     return res.status(500).json(sessionData);
@@ -105,8 +105,8 @@ router.post("/", async (req, res) => {
 
   cookieOptions.maxAge = 3650 * 24 * 60 * 60 * 1000; // 10 years
 
-  // Set refresh token in httpOnly cookie
-  res.cookie("refresh_token", refresh_token, cookieOptions);
+  // Web: httpOnly cookie. Mobile app: token in the body instead.
+  const tokenFields = deliverRefreshToken(res, refresh_token, cookieOptions, isMobileClient(req));
 
   const access_token = sessionData.data.access_token;
 
@@ -114,6 +114,7 @@ router.post("/", async (req, res) => {
     error: false,
     data: {
       ...rest,
+      ...tokenFields,
       access_token,
       user: {
         id: data.data._id,

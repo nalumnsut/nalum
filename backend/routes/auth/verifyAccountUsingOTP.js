@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const otpController = require("../../controllers/otp.controller.js");
 const userController = require("../../controllers/user.controller.js");
-const sessions = require("../../controllers/session.controller.js");
+const { startSession, deliverRefreshToken, isMobileClient } = require("../../utils/sessionResponse.js");
 
 router.post("/", async (req, res) => {
   const { email, otp } = req.body;
@@ -35,7 +35,7 @@ router.post("/", async (req, res) => {
   await otpController.remove(email, otp);
 
   // Auto-login: create a session and return tokens so the user doesn't need to sign in manually
-  const sessionData = await sessions.getOrCreate(email, user.data._id);
+  const sessionData = await startSession(req, email, user.data._id);
   if (!sessionData || sessionData.error) {
     // Verification succeeded but auto-login failed (or mocked in tests)
     return res.status(200).json({ error: false, code: 200, message: "Account verified successfully" });
@@ -43,29 +43,34 @@ router.post("/", async (req, res) => {
 
   const { refresh_token, access_token, ...rest } = sessionData.data;
 
-  // Set refresh token in httpOnly cookie
-  res.cookie("refresh_token", refresh_token, {
+  const mobile = isMobileClient(req);
+
+  // Set refresh token in httpOnly cookie (mobile app: in the body instead)
+  const tokenFields = deliverRefreshToken(res, refresh_token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     path: "/",
     maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
-  });
+  }, mobile);
 
-  // Set access token in httpOnly cookie
-  res.cookie("access_token", access_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    path: "/",
-    maxAge: 30 * 60 * 1000, // 30 minutes
-  });
+  // Set access token in httpOnly cookie (mobile app uses the Bearer header)
+  if (!mobile) {
+    res.cookie("access_token", access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/",
+      maxAge: 30 * 60 * 1000, // 30 minutes
+    });
+  }
 
   return res.status(200).json({
     error: false,
     code: 200,
     message: "Account verified successfully",
     data: {
+      ...tokenFields,
       access_token,
       user: {
         id: user.data._id,
