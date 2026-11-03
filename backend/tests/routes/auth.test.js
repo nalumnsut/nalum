@@ -19,7 +19,7 @@ jest.mock("../../controllers/user.controller.js", () => ({
 }));
 
 jest.mock("../../controllers/session.controller.js", () => ({
-  getOrCreate: jest.fn(),
+  start: jest.fn(),
   updateAccessToken: jest.fn(),
   delete: jest.fn(),
 }));
@@ -297,7 +297,7 @@ describe("auth routes", () => {
         data: verifiedUser(),
       });
       bcrypt.compare.mockResolvedValue(true);
-      sessions.getOrCreate.mockResolvedValue({
+      sessions.start.mockResolvedValue({
         error: false,
         data: {
           _id: "session-123",
@@ -339,8 +339,8 @@ describe("auth routes", () => {
         "password123",
         "hashed-password",
       );
-      expect(sessions.getOrCreate).toHaveBeenCalled();
-      const callArgs = sessions.getOrCreate.mock.calls[0];
+      expect(sessions.start).toHaveBeenCalled();
+      const callArgs = sessions.start.mock.calls[0];
       expect(callArgs[0]).toBe("test@example.com");
       expect(callArgs[1]).toBe("user-123");
     });
@@ -412,7 +412,7 @@ describe("auth routes", () => {
         code: 401,
         message: "Incorrect credentials. Please try again.",
       });
-      expect(sessions.getOrCreate).not.toHaveBeenCalled();
+      expect(sessions.start).not.toHaveBeenCalled();
     });
 
     it("rejects login for banned users", async () => {

@@ -1,6 +1,6 @@
 const User = require("../../models/user/user.model.js");
 const bcrypt = require("bcrypt");
-const sessions = require("../../controllers/session.controller.js");
+const { startSession } = require("../../utils/sessionResponse.js");
 const { logAdminActivity } = require("../../middleware/adminAuth");
 
 // Admin login
@@ -51,7 +51,7 @@ exports.login = async (req, res) => {
     }
 
     // Create session using existing session system
-    const sessionData = await sessions.getOrCreate(email, user._id);
+    const sessionData = await startSession(req, email, user._id);
 
     if (sessionData.error) {
       return res.status(500).json({

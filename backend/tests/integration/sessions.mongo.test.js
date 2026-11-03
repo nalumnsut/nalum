@@ -1,5 +1,5 @@
 process.env.NODE_ENV = "test";
-process.env.JWT_SECRET = "mobile-sessions-test-secret";
+process.env.JWT_SECRET = "sessions-test-secret";
 
 jest.mock("../../mail/mailService.js", () => ({
   send: jest.fn().mockResolvedValue({ error: false }),
@@ -61,13 +61,17 @@ const expireGraceWindows = () =>
     { consumed_at: new Date(Date.now() - 60 * 1000) },
   );
 
-describe("mobile sessions", () => {
+describe("per-browser and per-device sessions", () => {
   let mongoServer;
   let app;
   let user;
 
-  const webSignIn = () =>
-    request(app).post("/api/auth/sign-in").send({ email: user.email, password: PASSWORD });
+  // A browser that still holds its refresh cookie sends it along on sign-in
+  const webSignIn = (cookieToken) => {
+    const req = request(app).post("/api/auth/sign-in");
+    if (cookieToken) req.set("Cookie", [`refresh_token=${cookieToken}`]);
+    return req.send({ email: user.email, password: PASSWORD });
+  };
 
   const mobileSignIn = (deviceId) =>
     request(app)
@@ -108,7 +112,7 @@ describe("mobile sessions", () => {
     await mongoServer?.stop();
   });
 
-  it("web sign-in is unchanged: cookie set, no refresh_token in the body", async () => {
+  it("web sign-in keeps the token in the cookie, never in the body", async () => {
     const res = await webSignIn();
 
     expect(res.status).toBe(200);
@@ -116,7 +120,79 @@ describe("mobile sessions", () => {
     expect(res.body.data.refresh_token).toBeUndefined();
 
     const session = await Session.findOne({ user_id: user._id });
-    expect(session.client_type).toBeUndefined();
+    expect(session.client_type).toBe("web");
+  });
+
+  it("two browsers get separate sessions and refreshing in turn never logs either out", async () => {
+    let laptop = cookieValue((await webSignIn()).headers, "refresh_token");
+    let phoneBrowser = cookieValue((await webSignIn()).headers, "refresh_token");
+    expect(phoneBrowser).not.toBe(laptop);
+
+    for (let round = 0; round < 3; round += 1) {
+      const a = await webRefresh(laptop);
+      const b = await webRefresh(phoneBrowser);
+      expect([a.status, b.status]).toEqual([200, 200]);
+      laptop = cookieValue(a.headers, "refresh_token");
+      phoneBrowser = cookieValue(b.headers, "refresh_token");
+      await expireGraceWindows();
+    }
+
+    await expect(Session.countDocuments({ user_id: user._id })).resolves.toBe(2);
+  });
+
+  it("signing in again from the same browser replaces its session's token", async () => {
+    const first = cookieValue((await webSignIn()).headers, "refresh_token");
+    const second = cookieValue((await webSignIn(first)).headers, "refresh_token");
+
+    expect(second).not.toBe(first);
+    await expect(Session.countDocuments({ user_id: user._id })).resolves.toBe(1);
+
+    // The replaced token just stops working; it is not treated as reuse
+    expect((await webRefresh(first)).status).toBe(401);
+    expect((await webRefresh(second)).status).toBe(200);
+  });
+
+  it("a browser on a legacy shared session gets its own and leaves the old one to other browsers", async () => {
+    const legacy = await Session.create({
+      email: user.email,
+      user_id: user._id,
+      refresh_token: "legacy-shared-token",
+    });
+
+    const res = await webSignIn("legacy-shared-token");
+    const own = cookieValue(res.headers, "refresh_token");
+
+    expect(own).not.toBe("legacy-shared-token");
+    await expect(Session.findById(legacy._id)).resolves.not.toBeNull();
+    expect((await webRefresh("legacy-shared-token")).status).toBe(200);
+  });
+
+  it("a cookie from another user's session is never reused", async () => {
+    const other = await createUser({ email: "other@example.com" });
+    await Session.create({
+      email: other.email,
+      user_id: other._id,
+      client_type: "web",
+      refresh_token: "other-users-token",
+    });
+
+    await webSignIn("other-users-token");
+
+    await expect(Session.findOne({ refresh_token: "other-users-token" })).resolves.toMatchObject({
+      user_id: other._id,
+    });
+    await expect(Session.countDocuments({ user_id: user._id })).resolves.toBe(1);
+  });
+
+  it("keeps at most 10 sessions per user, dropping the least recently used", async () => {
+    const tokens = [];
+    for (let i = 0; i < 11; i += 1) {
+      tokens.push(cookieValue((await webSignIn()).headers, "refresh_token"));
+    }
+
+    await expect(Session.countDocuments({ user_id: user._id })).resolves.toBe(10);
+    await expect(Session.findOne({ refresh_token: tokens[0] })).resolves.toBeNull();
+    await expect(Session.findOne({ refresh_token: tokens[10] })).resolves.not.toBeNull();
   });
 
   it("mobile sign-in returns the refresh token in the body and sets no cookie", async () => {
@@ -150,15 +226,6 @@ describe("mobile sessions", () => {
 
     expect(tokens.size).toBe(3);
     await expect(Session.countDocuments({ user_id: user._id })).resolves.toBe(3);
-  });
-
-  it("a later web sign-in reuses the web session, never a mobile one", async () => {
-    const firstWeb = cookieValue((await webSignIn()).headers, "refresh_token");
-    await mobileSignIn("device-a");
-    const secondWeb = cookieValue((await webSignIn()).headers, "refresh_token");
-
-    expect(secondWeb).toBe(firstWeb);
-    await expect(Session.countDocuments({ user_id: user._id })).resolves.toBe(2);
   });
 
   it("signing in again on the same device replaces that device's session", async () => {

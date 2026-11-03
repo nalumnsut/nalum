@@ -1,8 +1,10 @@
 const sessions = require("../controllers/session.controller.js");
 
-// The mobile app identifies itself with `X-NALUM-Client: mobile` and its
-// device with `X-Device-Id` (plus optional name/platform/version headers).
-// The website sends none of these, so it always takes the cookie path.
+// Sessions work the same for the website and the mobile app. The only
+// difference is where the refresh token travels: the website keeps it in an
+// httpOnly cookie, while the app (`X-NALUM-Client: mobile`) gets it in the
+// body. Optional `X-Device-Id`/name/platform/version headers describe the
+// device so signing in again on it reuses its session.
 
 const DEVICE_VALUE_PATTERN = /^[\w.:\- ]{1,128}$/;
 
@@ -35,15 +37,16 @@ function getDeviceInfo(req) {
 }
 
 /**
- * Start a session after a successful login: the shared web session for the
- * website, or a per-device session for the mobile app. Same return shape as
- * `sessions.getOrCreate`.
+ * Start this browser's or device's own session after a successful login.
+ * Same return shape as `sessions.start`.
  */
 async function startSession(req, email, user_id) {
-  if (isMobileClient(req)) {
-    return sessions.getOrCreateMobile(email, user_id, getDeviceInfo(req));
-  }
-  return sessions.getOrCreate(email, user_id);
+  const mobile = isMobileClient(req);
+  return sessions.start(email, user_id, {
+    client_type: mobile ? "mobile" : "web",
+    device: getDeviceInfo(req),
+    current_refresh_token: mobile ? undefined : req.cookies?.refresh_token,
+  });
 }
 
 /**

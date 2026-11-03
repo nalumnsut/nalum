@@ -36,8 +36,8 @@ const sessionSchema = new mongoose.Schema(
 		consumed_at: {
 			type: Date,
 		},
-		// Mobile app sessions are one per device; web sessions (and existing
-		// documents without this field) keep the one-per-email behaviour.
+		// One session per browser / app install. Documents created before
+		// per-browser sessions have no client_type (shared per email).
 		client_type: {
 			type: String,
 			enum: ["web", "mobile"],
@@ -61,7 +61,6 @@ const sessionSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-sessionSchema.index({ email: 1, client_type: 1 });
 sessionSchema.index({ user_id: 1, client_type: 1, device_id: 1 });
 
 module.exports = mongoose.model("Session", sessionSchema);
