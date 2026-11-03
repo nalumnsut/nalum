@@ -2,10 +2,13 @@ const express = require("express");
 const router = express.Router();
 const sessions = require("../../controllers/session.controller.js");
 const User = require("../../models/user/user.model.js");
+const { deliverRefreshToken } = require("../../utils/sessionResponse.js");
 
 router.post("/", async (req, res) => {
-  // get cookie
-  const refresh_token = req.cookies.refresh_token;
+  // Web sends the cookie; the mobile app sends the token in the body
+  const cookieToken = req.cookies.refresh_token;
+  const bodyToken = typeof req.body?.refresh_token === "string" ? req.body.refresh_token : undefined;
+  const refresh_token = cookieToken || bodyToken;
 
   if (!refresh_token) {
     return res.status(401).json({
@@ -43,7 +46,8 @@ router.post("/", async (req, res) => {
 
   cookieOptions.maxAge = 3650 * 24 * 60 * 60 * 1000; // 10 years
 
-  res.cookie("refresh_token", new_refresh_token, cookieOptions);
+  // A token that arrived in the body is returned in the body, never as a cookie
+  const tokenFields = deliverRefreshToken(res, new_refresh_token, cookieOptions, !cookieToken);
 
   const access_token = data.data.access_token;
 
@@ -51,6 +55,7 @@ router.post("/", async (req, res) => {
     error: false,
     data: {
       ...rest,
+      ...tokenFields,
       access_token,
       email: user.email,
       user: {

@@ -4,9 +4,19 @@ const router = express.Router();
 
 const User = require("../../models/user/user.model.js"); // To create new users
 const users = require("../../controllers/user.controller.js"); // To find existing users
-const sessions = require("../../controllers/session.controller.js"); // To generate tokens
+const { startSession, deliverRefreshToken, isMobileClient } = require("../../utils/sessionResponse.js"); // To generate tokens
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Client IDs whose ID tokens we accept: the website's GOOGLE_CLIENT_ID plus
+// any extra ones (Android/iOS apps) listed comma-separated in GOOGLE_CLIENT_IDS
+const allowedAudiences = () => [
+  ...new Set(
+    [process.env.GOOGLE_CLIENT_ID, ...(process.env.GOOGLE_CLIENT_IDS || "").split(",")]
+      .map((id) => id && id.trim())
+      .filter(Boolean),
+  ),
+];
 
 router.post("/", async (req, res) => {
   try {
@@ -20,7 +30,7 @@ router.post("/", async (req, res) => {
     // This ensures no one is faking the token
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: allowedAudiences(),
     });
 
     const payload = ticket.getPayload();
@@ -74,7 +84,7 @@ router.post("/", async (req, res) => {
     }
 
     // 4. CREATE SESSION AND RESPOND (Exact same logic as your signIn.js)
-    const sessionData = await sessions.getOrCreate(email, user._id);
+    const sessionData = await startSession(req, email, user._id);
     if (sessionData.error) return res.status(500).json(sessionData);
 
     const { refresh_token, ...rest } = sessionData.data;
@@ -87,12 +97,13 @@ router.post("/", async (req, res) => {
       maxAge: 3650 * 24 * 60 * 60 * 1000 // 10 years stay logged in
     };
 
-    res.cookie("refresh_token", refresh_token, cookieOptions);
+    const tokenFields = deliverRefreshToken(res, refresh_token, cookieOptions, isMobileClient(req));
 
     return res.status(200).json({
       error: false,
       data: {
         ...rest,
+        ...tokenFields,
         access_token: sessionData.data.access_token,
         user: {
           id: user._id,

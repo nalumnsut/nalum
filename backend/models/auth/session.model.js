@@ -35,9 +35,32 @@ const sessionSchema = new mongoose.Schema(
 		},
 		consumed_at: {
 			type: Date,
-		}
+		},
+		// One session per browser / app install. Documents created before
+		// per-browser sessions have no client_type (shared per email).
+		client_type: {
+			type: String,
+			enum: ["web", "mobile"],
+		},
+		device_id: {
+			type: String,
+		},
+		device_name: {
+			type: String,
+		},
+		platform: {
+			type: String,
+		},
+		app_version: {
+			type: String,
+		},
+		last_used_at: {
+			type: Date,
+		},
 	},
 	{ timestamps: true }
 );
+
+sessionSchema.index({ user_id: 1, client_type: 1, device_id: 1 });
 
 module.exports = mongoose.model("Session", sessionSchema);

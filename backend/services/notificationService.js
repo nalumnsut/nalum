@@ -1,6 +1,7 @@
 const Notification = require('../models/notification.model');
 const NotificationPreferences = require('../models/notificationPreferences.model');
 const PushSubscription = require('../models/pushSubscription.model');
+const mobilePushService = require('./mobilePushService');
 const webPush = require('web-push');
 const mailService = require('../mail/mailService');
 const escapeRegex = require('../utils/escapeRegex');
@@ -212,9 +213,21 @@ class NotificationService {
   }
 
   /**
-   * Send push notification
+   * Send push notification to the user's browsers (web-push) and mobile
+   * devices (FCM). True if either channel delivered it.
    */
   async sendPushNotification(notification) {
+    const [web, mobile] = await Promise.all([
+      this.sendWebPushNotification(notification),
+      mobilePushService.sendToUser(notification),
+    ]);
+    return web || mobile;
+  }
+
+  /**
+   * Send web-push notification to the user's browser subscriptions
+   */
+  async sendWebPushNotification(notification) {
     try {
       console.log('   🔍 Looking for active push subscriptions...');
       const subscriptions = await PushSubscription.find({

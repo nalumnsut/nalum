@@ -32,36 +32,56 @@ exports.create = async (email, user_id) => {
 	}
 };
 
-// Get existing session by email or create a new one if none exists
-exports.getOrCreate = async (email, user_id) => {
+// Most sessions a user can hold; the least recently used are removed beyond this
+const MAX_SESSIONS_PER_USER = 10;
+
+// Start a session after a successful login. Every browser and every app
+// install gets its own session, so they never share (and never invalidate)
+// each other's refresh token. Signing in again from the same browser (it
+// still sends its refresh cookie) or the same device (same device_id)
+// replaces that session's token instead of adding another session.
+exports.start = async (email, user_id, { client_type = "web", device = {}, current_refresh_token } = {}) => {
 	if (!email || !user_id) {
 		return { error: true, message: "Credentials are required" };
 	}
 	try {
-		const lower = email.toLowerCase();
-		const existing = await Session.findOne({ email: lower });
+		let session = null;
 
-		if (existing) {
-			existing.refresh_token_expires_at = new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000);
-			await existing.save();
-			const raw = existing.toObject();
-			const accessToken = generateAccessToken({
-				user_id: user_id,
-				email: email,
-				session_id: raw._id,
+		// Only reuse per-browser sessions; a legacy shared session (no
+		// client_type) is left to the other browsers still using it
+		if (typeof current_refresh_token === "string") {
+			session = await Session.findOne({
+				refresh_token: current_refresh_token,
+				user_id,
+				client_type: { $exists: true },
 			});
-			return { error: false, data: { ...raw, access_token: accessToken } };
+		}
+		if (!session && device.device_id) {
+			session = await Session.findOne({ user_id, client_type, device_id: device.device_id });
 		}
 
-		// no existing session; create a fresh one
-        const refresh_token = crypto.randomBytes(40).toString('hex');
-		const session = new Session({
-			email: lower,
+		const fields = {
+			email: email.toLowerCase(),
 			user_id,
-            refresh_token,
-            refresh_token_expires_at: new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000)
-		});
+			client_type,
+			refresh_token: crypto.randomBytes(40).toString('hex'),
+			refresh_token_expires_at: new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000),
+			device_name: device.device_name,
+			platform: device.platform,
+			app_version: device.app_version,
+			last_used_at: new Date(),
+		};
+
+		if (session) {
+			// Fresh token with no grace window: the old one simply stops working
+			session.set({ ...fields, previous_refresh_token: undefined, consumed_at: undefined });
+		} else {
+			session = new Session({ ...fields, device_id: device.device_id });
+		}
+
 		const data = await session.save();
+		await pruneSessions(user_id, data._id);
+
 		const raw = data.toObject();
 		const accessToken = generateAccessToken({
 			user_id: user_id,
@@ -71,6 +91,17 @@ exports.getOrCreate = async (email, user_id) => {
 		return { error: false, data: { ...raw, access_token: accessToken } };
 	} catch (err) {
 		return { error: true, message: err.message };
+	}
+};
+
+// Delete the user's least recently used sessions beyond MAX_SESSIONS_PER_USER
+const pruneSessions = async (user_id, keep_id) => {
+	const stale = await Session.find({ user_id, _id: { $ne: keep_id } })
+		.sort({ updatedAt: -1 })
+		.skip(MAX_SESSIONS_PER_USER - 1)
+		.select("_id");
+	if (stale.length > 0) {
+		await Session.deleteMany({ _id: { $in: stale.map((s) => s._id) } });
 	}
 };
 
@@ -134,8 +165,11 @@ exports.updateAccessToken = async (incoming_refresh_token) => {
 					}
 				};
 			} else {
-				await Session.deleteMany({ user_id: session.user_id });
-				return { error: true, code: 401, message: "Token reuse detected. All sessions invalidated." };
+				// Revoke only the session whose token was replayed, so one
+				// compromised device does not log the user out everywhere
+				await Session.deleteOne({ _id: session._id });
+				console.warn(`Refresh token reuse detected; revoked session ${session._id} for user ${session.user_id}`);
+				return { error: true, code: 401, message: "Token reuse detected. Session invalidated." };
 			}
 		}
 
@@ -157,6 +191,7 @@ exports.updateAccessToken = async (incoming_refresh_token) => {
         session.consumed_at = Date.now();
         session.refresh_token = new_refresh_token;
         session.refresh_token_expires_at = new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000);
+        session.last_used_at = new Date();
 
         await session.save();
 

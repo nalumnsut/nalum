@@ -4,8 +4,9 @@ const sessions = require('../../controllers/session.controller');
 
 router.post('/', async (req, res) => {
     try {
-        // Get refresh token from cookie
-        const refreshToken = req.cookies.refresh_token;
+        // Get refresh token from cookie (web) or body (mobile app)
+        const bodyToken = typeof req.body?.refresh_token === 'string' ? req.body.refresh_token : undefined;
+        const refreshToken = req.cookies.refresh_token || bodyToken;
 
         if (refreshToken) {
             // Delete the session from database using the refresh token
