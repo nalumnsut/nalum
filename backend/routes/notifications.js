@@ -12,6 +12,8 @@ const {
   clearPostNotifications,
   subscribePush,
   unsubscribePush,
+  registerMobilePush,
+  unregisterMobilePush,
   getPreferences,
   updatePreferences,
   getVapidPublicKey,
@@ -31,6 +33,8 @@ router.delete('/:notificationId', protect, deleteNotification);
 router.post('/push/subscribe', protect, subscribePush);
 router.post('/push/unsubscribe', protect, unsubscribePush);
 router.get('/push/vapid-public-key', getVapidPublicKey);
+router.post('/push/mobile/register', protect, registerMobilePush);
+router.post('/push/mobile/unregister', protect, unregisterMobilePush);
 
 // Preferences
 router.get('/preferences', protect, getPreferences);

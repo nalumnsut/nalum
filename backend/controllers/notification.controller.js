@@ -1,5 +1,6 @@
 const notificationService = require('../services/notificationService');
 const PushSubscription = require('../models/pushSubscription.model');
+const MobilePushToken = require('../models/mobilePushToken.model');
 const NotificationPreferences = require('../models/notificationPreferences.model');
 
 /**
@@ -287,6 +288,88 @@ exports.unsubscribePush = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to remove push subscription',
+    });
+  }
+};
+
+const MOBILE_PLATFORMS = ['ios', 'android'];
+const isShortString = (value, max) => typeof value === 'string' && value.length > 0 && value.length <= max;
+
+/**
+ * Register (or re-register) the mobile app's FCM token for this device
+ */
+exports.registerMobilePush = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { token, platform, device_id, app_version } = req.body || {};
+
+    if (!isShortString(token, 4096) || !MOBILE_PLATFORMS.includes(platform) || !isShortString(device_id, 128)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid push token data',
+      });
+    }
+
+    // A device has one current token: drop any older one it registered
+    await MobilePushToken.deleteMany({ user: userId, device_id, token: { $ne: token } });
+
+    // Upsert by token, so a token reused after an account switch moves to the new user
+    await MobilePushToken.findOneAndUpdate(
+      { token },
+      {
+        user: userId,
+        token,
+        platform,
+        device_id,
+        app_version: isShortString(app_version, 64) ? app_version : undefined,
+        active: true,
+        lastUsed: new Date(),
+      },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Mobile push token saved',
+    });
+  } catch (error) {
+    console.error('Error saving mobile push token:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save mobile push token',
+    });
+  }
+};
+
+/**
+ * Stop sending pushes to one of the user's mobile tokens
+ */
+exports.unregisterMobilePush = async (req, res) => {
+  try {
+    const { token } = req.body || {};
+
+    if (!isShortString(token, 4096)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid push token data',
+      });
+    }
+
+    await MobilePushToken.deleteOne({ token, user: req.user.user_id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Mobile push token removed',
+    });
+  } catch (error) {
+    console.error('Error removing mobile push token:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to remove mobile push token',
     });
   }
 };
