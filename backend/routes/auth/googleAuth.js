@@ -8,6 +8,16 @@ const { startSession, deliverRefreshToken, isMobileClient } = require("../../uti
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// Client IDs whose ID tokens we accept: the website's GOOGLE_CLIENT_ID plus
+// any extra ones (Android/iOS apps) listed comma-separated in GOOGLE_CLIENT_IDS
+const allowedAudiences = () => [
+  ...new Set(
+    [process.env.GOOGLE_CLIENT_ID, ...(process.env.GOOGLE_CLIENT_IDS || "").split(",")]
+      .map((id) => id && id.trim())
+      .filter(Boolean),
+  ),
+];
+
 router.post("/", async (req, res) => {
   try {
     const { credential, role } = req.body; // This is the JWT token Google gives our frontend
@@ -20,7 +30,7 @@ router.post("/", async (req, res) => {
     // This ensures no one is faking the token
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: allowedAudiences(),
     });
 
     const payload = ticket.getPayload();
